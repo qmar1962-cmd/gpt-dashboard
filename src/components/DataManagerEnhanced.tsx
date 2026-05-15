@@ -75,6 +75,19 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
     }
   };
 
+  const handleClearCache = async () => {
+    if (confirm('确定要清除所有缓存数据吗？\n清除后页面将自动重新加载，并从 public/database/ 重新加载所有数据。\n此操作不可恢复！')) {
+      try {
+        await clearAllData();
+        alert('缓存已清除，页面即将重新加载...');
+        window.location.reload();
+      } catch (error) {
+        console.error('清除缓存失败:', error);
+        alert(`清除缓存失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      }
+    }
+  };
+
   return (
     <div className="w-full h-full bg-zinc-50">
       {/* 顶部操作栏 */}
@@ -100,6 +113,13 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
           >
             <Trash2 size={14} />
             清理过期数据
+          </button>
+          <button
+            onClick={handleClearCache}
+            className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-red-200 transition-colors"
+          >
+            <Trash2 size={14} />
+            清除缓存并重新加载
           </button>
         </div>
       </div>
