@@ -10,14 +10,38 @@ import { saveRawData, initDatabase } from './database';
 
 /**
  * Excel 文件名 -> 数据类型的映射
- * 根据实际文件名调整
+ * 支持中英文关键词匹配
  */
 const FILE_TYPE_MAP: Record<string, DataType> = {
+  // 效能异常 / 岗位效能
+  '效能': 'job_performance',
+  '绩效': 'job_performance',
+  '岗位': 'job_performance',
   'job': 'job_performance',
+  
+  // 薪资异常 / 工资偏高
+  '薪资': 'salary_performance',
+  '工资': 'salary_performance',
   'salary': 'salary_performance',
+  
+  // 连续15日出勤
+  '连续15': 'attendance_15days',
+  '15天': 'attendance_15days',
   'attendance15': 'attendance_15days',
+  
+  // 连续7日未出勤
+  '连续7': 'attendance_7days',
+  '7天': 'attendance_7days',
+  '未出勤': 'attendance_7days',
   'attendance7': 'attendance_7days',
+  
+  // 花名册
+  '花名册': 'employee_roster',
   'roster': 'employee_roster',
+  
+  // 中心考勤
+  '中心考勤': 'center_daily_attendance',
+  '考勤': 'center_daily_attendance',
   'daily': 'center_daily_attendance',
 };
 
@@ -27,12 +51,43 @@ const FILE_TYPE_MAP: Record<string, DataType> = {
 function inferDataType(filename: string): DataType | null {
   const lowerName = filename.toLowerCase();
   for (const [key, type] of Object.entries(FILE_TYPE_MAP)) {
-    if (lowerName.includes(key)) {
+    if (lowerName.includes(key.toLowerCase())) {
       return type as DataType;
     }
   }
   return null;
 }
+
+/**
+ * 内置文件列表（回退用）
+ * 根据实际部署的文件名更新
+ */
+const BUILTIN_FILE_LIST = [
+  '花名册-2026-05-11.xlsx',
+  '岗位效能异常.xlsx',
+  '效能异常5.12.xlsx',
+  '绩效异常岗位5.13.xlsx',
+  '绩效异常岗位5.14.xlsx',
+  '绩效异常岗位5.15.xlsx',
+  '工资偏高人员5.12.xlsx',
+  '工资偏高人员5.13.xlsx',
+  '工资偏高人员5.14.xlsx',
+  '工资偏高人员5.15.xlsx',
+  '薪资异常数据表.xlsx',
+  '连续15天出勤人员明细5.12.xlsx',
+  '连续15天出勤人员明细5.13.xlsx',
+  '连续15天出勤人员明细5.14.xlsx',
+  '连续15天出勤人员明细5.15.xlsx',
+  '连续15日出勤.xlsx',
+  '连续7天未出勤人员明细5.12.xlsx',
+  '连续7天未出勤人员明细5.13.xlsx',
+  '连续7天未出勤人员明细5.14.xlsx',
+  '连续7天未出勤人员明细5.15.xlsx',
+  '连续7日未出勤.xlsx',
+  '中心考勤固定工-明细5.13.xlsx',
+  '中心考勤固定工-明细5.14.xlsx',
+  '中心考勤固定工-明细5.15.xlsx',
+];
 
 /**
  * 从 public/database/ 获取文件列表
@@ -41,24 +96,26 @@ async function fetchFileList(): Promise<string[]> {
   try {
     const response = await fetch('/database/');
     if (!response.ok) {
-      console.warn('[默认数据] 无法列出 database/ 目录，尝试直接加载常见文件名');
-      // 回退：尝试常见文件名
-      return [
-        'job_performance.xlsx',
-        'salary_performance.xlsx',
-        'attendance15.xlsx',
-        'attendance7.xlsx',
-        'roster.xlsx',
-        'daily_attendance.xlsx',
-      ];
+      console.warn('[默认数据] 无法列出 database/ 目录，使用内置列表');
+      return BUILTIN_FILE_LIST;
     }
     const text = await response.text();
-    // 解析 HTML 目录列表（简单方式）
+    // 解析 HTML 目录列表（支持中文文件名）
     const matches = text.match(/href="([^"]+\.xlsx?)"/gi) || [];
-    return matches.map(m => m.match(/href="([^"]+)"/)?.[1] || '').filter(Boolean);
+    const files = matches.map(m => {
+      const match = m.match(/href="([^"]+)"/);
+      return match ? decodeURIComponent(match[1]) : '';
+    }).filter(Boolean);
+    
+    if (files.length === 0) {
+      console.warn('[默认数据] 目录列表为空，使用内置列表');
+      return BUILTIN_FILE_LIST;
+    }
+    
+    return files;
   } catch (e) {
     console.warn('[默认数据] 获取文件列表失败，使用内置列表', e);
-    return [];
+    return BUILTIN_FILE_LIST;
   }
 }
 
