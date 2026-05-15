@@ -77,20 +77,21 @@ export default function App() {
   // 管理员模式
   const { adminMode, toggleAdmin, exemptCenters, toggleExempt, isExempt } = useAdminMode();
   
-  // 获取北京时间（避免 UTC 时区偏移）
+  // 获取北京时间（不受浏览器时区影响）
   const now = new Date();
-  const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-  const year = beijingTime.getUTCFullYear();
-  const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(beijingTime.getUTCDate()).padStart(2, '0');
+  const beijingTimestamp = now.getTime() + 8 * 60 * 60 * 1000;
+  const beijingDate = new Date(beijingTimestamp);
+  const year = beijingDate.getUTCFullYear();
+  const month = String(beijingDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(beijingDate.getUTCDate()).padStart(2, '0');
   const formattedDate = `${year}-${month}-${day}`;
 
   // 获取 T-2 日期（前天，北京时间）
-  const t2Beijing = new Date(beijingTime.getTime());
-  t2Beijing.setUTCDate(t2Beijing.getUTCDate() - 2);
-  const t2Year = t2Beijing.getUTCFullYear();
-  const t2Month = String(t2Beijing.getUTCMonth() + 1).padStart(2, '0');
-  const t2Day = String(t2Beijing.getUTCDate()).padStart(2, '0');
+  const t2Date = new Date(beijingTimestamp);
+  t2Date.setUTCDate(t2Date.getUTCDate() - 2);
+  const t2Year = t2Date.getUTCFullYear();
+  const t2Month = String(t2Date.getUTCMonth() + 1).padStart(2, '0');
+  const t2Day = String(t2Date.getUTCDate()).padStart(2, '0');
   const formattedT2Date = `${t2Year}年${t2Month}月${t2Day}日`;
 
   // 页面初始化时从数据库加载最新数据

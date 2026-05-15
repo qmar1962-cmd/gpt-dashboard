@@ -45,17 +45,26 @@ function convertExcelDate(excelDate: any): string {
  * @param dataType 数据类型
  * @param date 数据日期（T-2）
  */
+/**
+ * 获取北京时间（Asia/Shanghai）的 YYYY-MM-DD 字符串
+ * 不受浏览器时区影响，始终返回北京时间
+ */
+function getBeijingDateString(offsetDays: number = 0): string {
+  const now = new Date();
+  // 北京时间 = UTC + 8，直接算毫秒数
+  const beijingTimestamp = now.getTime() + 8 * 60 * 60 * 1000;
+  const d = new Date(beijingTimestamp);
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function buildFixedHuazhongData(rawData: any[], dataType: string, date: string): any[] {
-  // T-2 = 今天 - 2天（现实日期基准，和薪资异常保持一致）
-  const today = new Date();
-  const t2Date = new Date(today);
-  t2Date.setDate(today.getDate() - 2);
-  const t2DateStr = t2Date.toISOString().split('T')[0];
-  
-  // T-3 = T-2 前一天
-  const t3Date = new Date(t2Date);
-  t3Date.setDate(t3Date.getDate() - 1);
-  const t3DateStr = t3Date.toISOString().split('T')[0];
+  // T-2 = 今天 - 2天（北京时间基准）
+  const t2DateStr = getBeijingDateString(-2);
+  const t3DateStr = getBeijingDateString(-3);
 
   // 默认数据（用于无原始数据时的回退）
   const defaultDataMap = new Map([

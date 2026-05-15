@@ -131,6 +131,7 @@ async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataTy
 /**
  * 主函数：从 public/database/ 加载默认数据
  * 在应用启动时调用
+ * 智能缓存：已加载成功的文件不会重复加载
  */
 export async function loadDefaultData(): Promise<boolean> {
   try {
@@ -138,6 +139,10 @@ export async function loadDefaultData(): Promise<boolean> {
 
     // 确保数据库已初始化
     await initDatabase();
+
+    // 读取已加载的文件清单（localStorage 持久化）
+    const loadedFilesKey = 'gpt_loaded_files';
+    const loadedFiles = new Set<string>(JSON.parse(localStorage.getItem(loadedFilesKey) || '[]'));
 
     const files = BUILTIN_FILE_LIST;
     if (files.length === 0) {
@@ -147,10 +152,18 @@ export async function loadDefaultData(): Promise<boolean> {
 
     let loadedAny = false;
     let successCount = 0;
+    let skipCount = 0;
     let failCount = 0;
 
     for (const file of files) {
       if (!file.match(/\.xlsx?$/i)) continue;
+
+      // 已加载过的文件跳过（除非用户清除了缓存）
+      if (loadedFiles.has(file)) {
+        console.log(`[默认数据] 跳过已加载文件：${file}`);
+        skipCount++;
+        continue;
+      }
 
       const result = await loadAndParseFile(file);
       if (!result) {
@@ -163,12 +176,18 @@ export async function loadDefaultData(): Promise<boolean> {
       // 保存原始数据到 IndexedDB
       await saveRawData(data, dataType);
 
+      // 记录为已加载
+      loadedFiles.add(file);
+
       console.log(`[默认数据] 已加载：${file} -> ${dataType}，共 ${data.length} 条`);
       loadedAny = true;
       successCount++;
     }
 
-    console.log(`[默认数据] 加载完成：成功 ${successCount} 个，失败 ${failCount} 个`);
+    // 持久化已加载文件清单
+    localStorage.setItem(loadedFilesKey, JSON.stringify(Array.from(loadedFiles)));
+
+    console.log(`[默认数据] 加载完成：成功 ${successCount} 个，跳过 ${skipCount} 个，失败 ${failCount} 个`);
     return loadedAny;
   } catch (error) {
     console.error('[默认数据] 加载失败：', error);
