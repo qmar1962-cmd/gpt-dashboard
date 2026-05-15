@@ -5,8 +5,11 @@ package-lock.json
 # Build output
 dist/
 
-# Database files (sensitive)
+# Database files (sensitive) - 不跟踪原始文件
 数据库/
+
+# Public database - 跟踪部署用数据文件
+!public/database/
 
 # IDE
 .vscode/

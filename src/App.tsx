@@ -21,6 +21,7 @@ import { cn } from './lib/utils';
 import { buildFixedHuazhongData } from './lib/dataProcessor';
 import { DataType } from './lib/types.js';
 import { initDatabase, saveRawData, getLatestRawData, getSalaryRawData, getAttendance15RawData, getAttendance7RawData, getRosterRawData, idbGetRawData } from './lib/database.js';
+import { loadDefaultData, hasExistingData } from './lib/defaultDataLoader';
 import { useAdminMode } from './hooks/useAdminMode';
 
 export type Selection = {
@@ -94,6 +95,20 @@ export default function App() {
         await initDatabase();
         setLoadingProgress(20);
         
+        // 先检查是否已有数据
+        const hasData = await hasExistingData();
+        if (!hasData) {
+          // 没有数据，尝试从 public/database/ 加载默认数据
+          setLoadingMessage('正在加载默认数据...');
+          setLoadingProgress(30);
+          const loaded = await loadDefaultData();
+          if (loaded) {
+            console.log('[初始化] 已从 public/database/ 加载默认数据');
+          }
+        }
+        
+        setLoadingProgress(40);
+        
         // 加载薪资异常数据（独立存储，不影响效能数据）
         const salaryStored = await getSalaryRawData();
         if (salaryStored && salaryStored.rawData && salaryStored.rawData.length > 0) {
@@ -117,6 +132,8 @@ export default function App() {
         if (rosterStored && rosterStored.rawData && rosterStored.rawData.length > 0) {
           setRosterDataState(rosterStored.rawData);
         }
+        
+        setLoadingProgress(60);
         
         // 优先：用原始数据重新计算（确保 T-2/T-3 基于今天日期）
         const rawStored = await getLatestRawData();
