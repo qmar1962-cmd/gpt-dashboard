@@ -47,53 +47,6 @@ function inferDataType(filename: string): DataType | null {
 }
 
 /**
- * 内置文件列表（静态托管不支持目录列表，直接使用此清单）
- * 文件名全部为英文，避免 URL 编码问题
- */
-const BUILTIN_FILE_LIST: string[] = [
-  // 花名册
-  'roster_0511.xlsx',
-
-  // 岗位效能异常（最新优先，base 为基准）
-  'job_performance_base.xlsx',
-  'job_performance_0512.xlsx',
-  'job_performance_0513.xlsx',
-  'job_performance_0514.xlsx',
-  'job_performance_0515.xlsx',
-
-  // 薪资异常
-  'salary_performance_base.xlsx',
-  'salary_performance_0512.xlsx',
-  'salary_performance_0513.xlsx',
-  'salary_performance_0514.xlsx',
-  'salary_performance_0515.xlsx',
-
-  // 连续15日出勤
-  'attendance15_base.xlsx',
-  'attendance15_0512.xlsx',
-  'attendance15_0513.xlsx',
-  'attendance15_0514.xlsx',
-  'attendance15_0515.xlsx',
-
-  // 连续7日未出勤
-  'attendance7_base.xlsx',
-  'attendance7_0512.xlsx',
-  'attendance7_0513.xlsx',
-  'attendance7_0514.xlsx',
-  'attendance7_0515.xlsx',
-
-  // 中心考勤
-  'center_attendance_base.xlsx',
-  'center_attendance_0507.xlsx',
-  'center_attendance_0508.xlsx',
-  'center_attendance_0511.xlsx',
-  'center_attendance_0512.xlsx',
-  'center_attendance_0513.xlsx',
-  'center_attendance_0514.xlsx',
-  'center_attendance_0515.xlsx',
-];
-
-/**
  * 加载并解析单个 Excel 文件
  */
 async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataType: DataType } | null> {
@@ -129,8 +82,59 @@ async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataTy
 }
 
 /**
+ * 自动扫描 public/database/ 目录获取文件列表
+ * 构建时 Vite 插件会生成 filelist.json
+ */
+async function getDatabaseFileList(): Promise<string[]> {
+  try {
+    const res = await fetch('/database/filelist.json');
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list)) {
+        console.log(`[默认数据] 从 filelist.json 读取到 ${list.length} 个文件`);
+        return list;
+      }
+    }
+  } catch (e) {
+    console.warn('[默认数据] 读取 filelist.json 失败，尝试手动列表', e);
+  }
+
+  // filelist.json 不可用时，返回内置列表（兜底）
+  return [
+    'roster_0511.xlsx',
+    'job_performance_base.xlsx',
+    'job_performance_0512.xlsx',
+    'job_performance_0513.xlsx',
+    'job_performance_0514.xlsx',
+    'job_performance_0515.xlsx',
+    'salary_performance_base.xlsx',
+    'salary_performance_0512.xlsx',
+    'salary_performance_0513.xlsx',
+    'salary_performance_0514.xlsx',
+    'salary_performance_0515.xlsx',
+    'attendance15_base.xlsx',
+    'attendance15_0512.xlsx',
+    'attendance15_0513.xlsx',
+    'attendance15_0514.xlsx',
+    'attendance15_0515.xlsx',
+    'attendance7_base.xlsx',
+    'attendance7_0512.xlsx',
+    'attendance7_0513.xlsx',
+    'attendance7_0514.xlsx',
+    'attendance7_0515.xlsx',
+    'center_attendance_base.xlsx',
+    'center_attendance_0507.xlsx',
+    'center_attendance_0508.xlsx',
+    'center_attendance_0511.xlsx',
+    'center_attendance_0512.xlsx',
+    'center_attendance_0513.xlsx',
+    'center_attendance_0514.xlsx',
+    'center_attendance_0515.xlsx',
+  ];
+}
+
+/**
  * 主函数：从 public/database/ 加载默认数据
- * 在应用启动时调用
  * 智能缓存：已加载成功的文件不会重复加载
  */
 export async function loadDefaultData(): Promise<boolean> {
@@ -144,7 +148,7 @@ export async function loadDefaultData(): Promise<boolean> {
     const loadedFilesKey = 'gpt_loaded_files';
     const loadedFiles = new Set<string>(JSON.parse(localStorage.getItem(loadedFilesKey) || '[]'));
 
-    const files = BUILTIN_FILE_LIST;
+    const files = await getDatabaseFileList();
     if (files.length === 0) {
       console.log('[默认数据] 文件列表为空');
       return false;

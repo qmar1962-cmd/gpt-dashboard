@@ -30,15 +30,19 @@ let firebaseReady = false;
 
 /**
  * 初始化 Firebase，失败时静默降级到 localStorage
+ * 带 3 秒超时，避免网络阻塞页面加载
  */
 export async function initFirebase(): Promise<boolean> {
   try {
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
 
-    // 测试连接：尝试读一个不存在的文档
+    // 测试连接：尝试读一个不存在的文档（3秒超时）
     const testRef = doc(db, '_health', 'ping');
-    await getDoc(testRef);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Firebase 连接超时')), 3000)
+    );
+    await Promise.race([getDoc(testRef), timeoutPromise]);
 
     firebaseReady = true;
     return true;

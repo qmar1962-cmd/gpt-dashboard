@@ -50,11 +50,11 @@ function convertExcelDate(excelDate: any): string {
  * 不受浏览器时区影响，始终返回北京时间
  */
 function getBeijingDateString(offsetDays: number = 0): string {
+  // 最可靠方式：直接操作时间戳，完全避开 setUTCDate 的边界 bug
   const now = new Date();
-  // 北京时间 = UTC + 8，直接算毫秒数
-  const beijingTimestamp = now.getTime() + 8 * 60 * 60 * 1000;
-  const d = new Date(beijingTimestamp);
-  d.setUTCDate(d.getUTCDate() + offsetDays);
+  // 北京时间 = UTC + 8h；offsetDays 直接加毫秒数
+  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 + offsetDays * 24 * 60 * 60 * 1000;
+  const d = new Date(beijingMs);
   const year = d.getUTCFullYear();
   const month = String(d.getUTCMonth() + 1).padStart(2, '0');
   const day = String(d.getUTCDate()).padStart(2, '0');

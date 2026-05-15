@@ -86,9 +86,9 @@ export default function App() {
   const day = String(beijingDate.getUTCDate()).padStart(2, '0');
   const formattedDate = `${year}-${month}-${day}`;
 
-  // 获取 T-2 日期（前天，北京时间）
-  const t2Date = new Date(beijingTimestamp);
-  t2Date.setUTCDate(t2Date.getUTCDate() - 2);
+  // 获取 T-2 日期（前天，北京时间）—— 可靠算法
+  const t2Ms = beijingTimestamp - 2 * 24 * 60 * 60 * 1000;
+  const t2Date = new Date(t2Ms);
   const t2Year = t2Date.getUTCFullYear();
   const t2Month = String(t2Date.getUTCMonth() + 1).padStart(2, '0');
   const t2Day = String(t2Date.getUTCDate()).padStart(2, '0');
