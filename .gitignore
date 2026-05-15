@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+
+# Database files (sensitive)
+数据库/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Workbuddy
+.workbuddy/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Backup
+backup-*.zip

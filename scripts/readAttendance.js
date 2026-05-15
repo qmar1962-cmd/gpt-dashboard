@@ -1,0 +1,17 @@
+const XLSX = require('xlsx');
+const wb = XLSX.readFile('./数据库/武汉中心考勤表  - .xlsx');
+const ws = wb.Sheets[wb.SheetNames[0]];
+const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+const hdrs = data[0];
+const dayRow = data[1];
+const weekRow = hdrs.slice(9, 39);
+const dayNums = dayRow.slice(9, 39);
+console.log('日期行:', JSON.stringify(dayNums));
+console.log('星期行:', JSON.stringify(weekRow));
+const realRows = data.slice(3).filter(function(r) { return r[0] || r[7]; });
+console.log('有效数据行数:', realRows.length);
+console.log('第1条基本信息:', JSON.stringify(realRows[0].slice(0, 9)));
+console.log('第1条出勤日历:', JSON.stringify(realRows[0].slice(9, 39)));
+console.log('第1条统计列:', JSON.stringify(realRows[0].slice(39, 55)));
+console.log('第2条基本信息:', JSON.stringify(realRows[1].slice(0, 9)));
+console.log('第3条基本信息:', JSON.stringify(realRows[2].slice(0, 9)));

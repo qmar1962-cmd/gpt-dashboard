@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-zinc-50 text-zinc-900 antialiased;
+  }
+}
+
+/* 优化加载动画 */
+@keyframes spin-fast {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-faster {
+  animation: spin-fast 0.6s linear infinite;
+  transform-origin: center;
+}
+
+/* ── 登录界面样式（来自 Uiverse.io，已汉化）── */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: white;
+  padding: 2.5em;
+  border-radius: 25px;
+  transition: .4s ease-in-out;
+  box-shadow: rgba(0, 0, 0, 0.4) 1px 2px 2px;
+}
+
+.login-form:hover {
+  transform: translateX(-0.5em) translateY(-0.5em);
+  border: 1px solid #171717;
+  box-shadow: 10px 10px 0px #666666;
+}
+
+.login-heading {
+  color: black;
+  padding-bottom: 2em;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.login-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #3f3f46;
+}
+
+.login-input {
+  border-radius: 5px;
+  border: 1px solid #e4e4e7;
+  background-color: #f4f4f5;
+  outline: none;
+  padding: 0.7em;
+  transition: .4s ease-in-out;
+  font-size: 0.9rem;
+}
+
+.login-input:hover {
+  box-shadow: 6px 6px 0px #969696,
+             -3px -3px 10px #ffffff;
+}
+
+.login-input:focus {
+  background: #ffffff;
+  box-shadow: inset 2px 5px 10px rgba(0,0,0,0.3);
+}
+
+.login-error {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin: 0;
+}
+
+.login-btn {
+  margin-top: 2em;
+  align-self: center;
+  padding: 0.7em 2em;
+  border-radius: 10px;
+  border: none;
+  background-color: #18181b;
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: .4s ease-in-out;
+  box-shadow: rgba(0, 0, 0, 0.4) 1px 1px 1px;
+}
+
+.login-btn:hover {
+  box-shadow: 6px 6px 0px #969696,
+             -3px -3px 10px #ffffff;
+  transform: translateX(-0.5em) translateY(-0.5em);
+  background-color: #27272a;
+}
+
+.login-btn:active {
+  transition: .2s;
+  transform: translateX(0em) translateY(0em);
+  box-shadow: none;
+}
