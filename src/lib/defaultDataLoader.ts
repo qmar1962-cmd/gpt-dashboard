@@ -17,40 +17,16 @@ import {
 } from './database';
 
 /**
- * Excel 文件名 -> 数据类型的映射
- * 支持中英文关键词匹配
+ * Excel 文件名前缀 -> 数据类型的映射
+ * 文件名格式：{type}_{date}.xlsx，如 job_performance_0512.xlsx
  */
 const FILE_TYPE_MAP: Record<string, DataType> = {
-  // 效能异常 / 岗位效能
-  '效能': 'job_performance',
-  '绩效': 'job_performance',
-  '岗位': 'job_performance',
-  'job': 'job_performance',
-
-  // 薪资异常 / 工资偏高
-  '薪资': 'salary_performance',
-  '工资': 'salary_performance',
-  'salary': 'salary_performance',
-
-  // 连续15日出勤
-  '连续15': 'attendance_15days',
-  '15天': 'attendance_15days',
+  'job_performance': 'job_performance',
+  'salary_performance': 'salary_performance',
   'attendance15': 'attendance_15days',
-
-  // 连续7日未出勤
-  '连续7': 'attendance_7days',
-  '7天': 'attendance_7days',
-  '未出勤': 'attendance_7days',
   'attendance7': 'attendance_7days',
-
-  // 花名册
-  '花名册': 'employee_roster',
+  'center_attendance': 'center_daily_attendance',
   'roster': 'employee_roster',
-
-  // 中心考勤
-  '中心考勤': 'center_daily_attendance',
-  '考勤': 'center_daily_attendance',
-  'daily': 'center_daily_attendance',
 };
 
 /**
@@ -59,7 +35,7 @@ const FILE_TYPE_MAP: Record<string, DataType> = {
 function inferDataType(filename: string): DataType | null {
   const lowerName = filename.toLowerCase();
   for (const [key, type] of Object.entries(FILE_TYPE_MAP)) {
-    if (lowerName.includes(key.toLowerCase())) {
+    if (lowerName.startsWith(key)) {
       return type as DataType;
     }
   }
@@ -68,60 +44,57 @@ function inferDataType(filename: string): DataType | null {
 
 /**
  * 内置文件列表（静态托管不支持目录列表，直接使用此清单）
- * 与实际 public/database/ 下的文件名严格对应
+ * 文件名全部为英文，避免 URL 编码问题
  */
 const BUILTIN_FILE_LIST: string[] = [
   // 花名册
-  '花名册-2026-05-11.xlsx',
+  'roster_0511.xlsx',
 
-  // 岗位效能异常
-  '岗位效能异常.xlsx',
-  '效能异常5.12.xlsx',
-  '绩效异常岗位5.13.xlsx',
-  '绩效异常岗位5.14.xlsx',
-  '绩效异常岗位5.15.xlsx',
+  // 岗位效能异常（最新优先，base 为基准）
+  'job_performance_base.xlsx',
+  'job_performance_0512.xlsx',
+  'job_performance_0513.xlsx',
+  'job_performance_0514.xlsx',
+  'job_performance_0515.xlsx',
 
   // 薪资异常
-  '工资偏高人员5.12.xlsx',
-  '工资偏高人员5.13.xlsx',
-  '工资偏高人员5.14.xlsx',
-  '工资偏高人员5.15.xlsx',
-  '薪资异常数据表.xlsx',
+  'salary_performance_base.xlsx',
+  'salary_performance_0512.xlsx',
+  'salary_performance_0513.xlsx',
+  'salary_performance_0514.xlsx',
+  'salary_performance_0515.xlsx',
 
   // 连续15日出勤
-  '出勤异常人员➣连续15天出勤人员明细5.12.xlsx',
-  '连续15天出勤人员明细5.13.xlsx',
-  '连续15天出勤人员明细5.14.xlsx',
-  '连续15天出勤人员明细5.15.xlsx',
-  '连续15日出勤.xlsx',
+  'attendance15_base.xlsx',
+  'attendance15_0512.xlsx',
+  'attendance15_0513.xlsx',
+  'attendance15_0514.xlsx',
+  'attendance15_0515.xlsx',
 
   // 连续7日未出勤
-  '出勤异常人员➣连续7天未出勤人员明细5.12.xlsx',
-  '连续7天未出勤人员明细5.13.xlsx',
-  '连续7天未出勤人员明细5.14.xlsx',
-  '连续7天未出勤人员明细5.15.xlsx',
-  '连续7日未出勤.xlsx',
+  'attendance7_base.xlsx',
+  'attendance7_0512.xlsx',
+  'attendance7_0513.xlsx',
+  'attendance7_0514.xlsx',
+  'attendance7_0515.xlsx',
 
-  // 中心考勤（含历史明细）
-  '中心考勤➣固定工-明细.xlsx',
-  '中心考勤➣固定工➣固定工-明细_20260507104738.xlsx',
-  '中心考勤➣固定工➣固定工-明细_20260508093821.xlsx',
-  '中心考勤➣固定工➣固定工-明细_20260511091032.xlsx',
-  '中心考勤➣固定工➣固定工-明细_20260512103617.xlsx',
-  '中心考勤固定工-明细5.13.xlsx',
-  '中心考勤固定工-明细5.14.xlsx',
-  '中心考勤固定工-明细5.15.xlsx',
+  // 中心考勤
+  'center_attendance_base.xlsx',
+  'center_attendance_0507.xlsx',
+  'center_attendance_0508.xlsx',
+  'center_attendance_0511.xlsx',
+  'center_attendance_0512.xlsx',
+  'center_attendance_0513.xlsx',
+  'center_attendance_0514.xlsx',
+  'center_attendance_0515.xlsx',
 ];
 
 /**
  * 加载并解析单个 Excel 文件
  */
-async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataType: DataType; date: string } | null> {
+async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataType: DataType } | null> {
   try {
-    // URL 编码中文文件名（保留斜杠等）
-    const encodedName = encodeURIComponent(filename);
-    const url = `/database/${encodedName}`;
-
+    const url = `/database/${filename}`;
     const response = await fetch(url);
     if (!response.ok) {
       console.warn(`[默认数据] 无法加载文件(${response.status})：${filename}`);
@@ -144,10 +117,7 @@ async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataTy
       return null;
     }
 
-    // 提取日期
-    const date = extractDateFromData(rawData);
-
-    return { data: rawData, dataType, date };
+    return { data: rawData, dataType };
   } catch (error) {
     console.error(`[默认数据] 解析文件失败 ${filename}:`, error);
     return null;
