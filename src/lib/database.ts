@@ -440,6 +440,30 @@ export async function getRosterRawData(): Promise<{ rawData: any[]; dataType: st
 }
 
 /**
+ * 读取模块出勤明细原始数据
+ */
+export async function getModuleAttendanceRawData(): Promise<{ rawData: any[]; dataType: string; savedAt: number } | null> {
+  try {
+    return await idbGetRawData('module_attendance');
+  } catch (e) {
+    console.warn('[DB] IndexedDB 读取失败（module_attendance）:', e);
+    return null;
+  }
+}
+
+/**
+ * 读取中心在职人数原始数据
+ */
+export async function getCenterHeadcountRawData(): Promise<{ rawData: any[]; dataType: string; savedAt: number } | null> {
+  try {
+    return await idbGetRawData('center_headcount');
+  } catch (e) {
+    console.warn('[DB] IndexedDB 读取失败（center_headcount）:', e);
+    return null;
+  }
+}
+
+/**
  * 通用读取原始数据（按类型）
  */
 export { idbGetRawData };

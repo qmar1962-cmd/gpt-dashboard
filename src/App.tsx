@@ -21,7 +21,7 @@ import { cn } from './lib/utils';
 import { buildFixedHuazhongData } from './lib/dataProcessor';
 import { DataType } from './lib/types.js';
 import { initDatabase, saveRawData, getLatestRawData, getSalaryRawData, getAttendance15RawData, getAttendance7RawData, getRosterRawData, idbGetRawData } from './lib/database.js';
-import { loadDefaultData, hasExistingData } from './lib/defaultDataLoader';
+import { loadDefaultData } from './lib/defaultDataLoader';
 import { useAdminMode } from './hooks/useAdminMode';
 
 export type Selection = {
@@ -77,14 +77,21 @@ export default function App() {
   // 管理员模式
   const { adminMode, toggleAdmin, exemptCenters, toggleExempt, isExempt } = useAdminMode();
   
-  // 获取当前日期
-  const today = new Date();
-  const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  
-  // 获取 T-2 日期（前天）
-  const t2Date = new Date(today);
-  t2Date.setDate(t2Date.getDate() - 2);
-  const formattedT2Date = `${t2Date.getFullYear()}年${String(t2Date.getMonth() + 1).padStart(2, '0')}月${String(t2Date.getDate()).padStart(2, '0')}日`;
+  // 获取北京时间（避免 UTC 时区偏移）
+  const now = new Date();
+  const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+  const year = beijingTime.getUTCFullYear();
+  const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(beijingTime.getUTCDate()).padStart(2, '0');
+  const formattedDate = `${year}-${month}-${day}`;
+
+  // 获取 T-2 日期（前天，北京时间）
+  const t2Beijing = new Date(beijingTime.getTime());
+  t2Beijing.setUTCDate(t2Beijing.getUTCDate() - 2);
+  const t2Year = t2Beijing.getUTCFullYear();
+  const t2Month = String(t2Beijing.getUTCMonth() + 1).padStart(2, '0');
+  const t2Day = String(t2Beijing.getUTCDate()).padStart(2, '0');
+  const formattedT2Date = `${t2Year}年${t2Month}月${t2Day}日`;
 
   // 页面初始化时从数据库加载最新数据
   useEffect(() => {
@@ -95,16 +102,13 @@ export default function App() {
         await initDatabase();
         setLoadingProgress(20);
         
-        // 先检查是否已有数据
-        const hasData = await hasExistingData();
-        if (!hasData) {
-          // 没有数据，尝试从 public/database/ 加载默认数据
-          setLoadingMessage('正在加载默认数据...');
-          setLoadingProgress(30);
-          const loaded = await loadDefaultData();
-          if (loaded) {
-            console.log('[初始化] 已从 public/database/ 加载默认数据');
-          }
+        // 强制加载 public/database/ 中的所有默认数据文件
+        // idbSaveRawData 已修复为合并模式，不会重复加载相同数据
+        setLoadingMessage('正在加载默认数据...');
+        setLoadingProgress(30);
+        const loaded = await loadDefaultData();
+        if (loaded) {
+          console.log('[初始化] 已从 public/database/ 加载默认数据');
         }
         
         setLoadingProgress(40);

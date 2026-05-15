@@ -14,6 +14,8 @@ import {
   getAttendance15RawData,
   getAttendance7RawData,
   getRosterRawData,
+  getModuleAttendanceRawData,
+  getCenterHeadcountRawData,
 } from './database';
 
 /**
@@ -27,6 +29,8 @@ const FILE_TYPE_MAP: Record<string, DataType> = {
   'attendance7': 'attendance_7days',
   'center_attendance': 'center_daily_attendance',
   'roster': 'employee_roster',
+  'module_attendance': 'module_attendance',
+  'center_headcount': 'center_headcount',
 };
 
 /**
@@ -191,6 +195,12 @@ export async function hasExistingData(): Promise<boolean> {
 
     const rosterData = await getRosterRawData();
     if (rosterData?.rawData?.length > 0) return true;
+
+    const moduleAttData = await getModuleAttendanceRawData();
+    if (moduleAttData?.rawData?.length > 0) return true;
+
+    const headcountData = await getCenterHeadcountRawData();
+    if (headcountData?.rawData?.length > 0) return true;
 
     return false;
   } catch (e) {

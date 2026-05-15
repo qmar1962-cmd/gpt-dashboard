@@ -18,6 +18,9 @@ const DATA_TYPE_KEYS: Record<string, string> = {
   'attendance_15days': 'att15_raw',
   'attendance_7days': 'att7_raw',
   'employee_roster': 'roster_raw',
+  'center_daily_attendance': 'center_att_raw',
+  'module_attendance': 'module_att_raw',
+  'center_headcount': 'center_hc_raw',
 };
 
 let dbInstance: IDBDatabase | null = null;
@@ -78,33 +81,78 @@ function txComplete(tx: IDBTransaction): Promise<void> {
 
 /**
  * 保存原始数据到 IndexedDB
+ * 合并策略：先读取已有数据，追加新数据（去重基于日期+工号/唯一键）
  */
 export async function idbSaveRawData(rawData: any[], dataType: string): Promise<void> {
   const idKey = DATA_TYPE_KEYS[dataType] || dataType;
   const db = await openDB();
-  
+
   return new Promise((resolve, reject) => {
     const tx = db.transaction([RAW_DATA_STORE, META_STORE], 'readwrite');
     const rawStore = tx.objectStore(RAW_DATA_STORE);
     const metaStore = tx.objectStore(META_STORE);
 
-    // 存储原始数据
-    const rawRecord = {
-      id: idKey,
-      rawData,
-      dataType,
-      savedAt: Date.now(),
-      rowCount: rawData.length,
-    };
-    rawStore.put(rawRecord);
+    // 先读取已有数据
+    const getRequest = rawStore.get(idKey);
 
-    // 更新元数据
-    metaStore.put({
-      key: `${idKey}_meta`,
-      dataType,
-      rowCount: rawData.length,
-      savedAt: Date.now(),
-    });
+    getRequest.onsuccess = () => {
+      const existing = getRequest.result;
+      let mergedData: any[];
+
+      if (existing && existing.rawData && existing.rawData.length > 0) {
+        // 合并：新数据追加到已有数据后面
+        mergedData = [...existing.rawData, ...rawData];
+        // 简单去重：基于 JSON.stringify 去重（保留第一次出现的）
+        const seen = new Set<string>();
+        const deduplicated: any[] = [];
+        for (const row of mergedData) {
+          const key = JSON.stringify(row);
+          if (!seen.has(key)) {
+            seen.add(key);
+            deduplicated.push(row);
+          }
+        }
+        mergedData = deduplicated;
+      } else {
+        mergedData = rawData;
+      }
+
+      // 存储合并后的数据
+      const rawRecord = {
+        id: idKey,
+        rawData: mergedData,
+        dataType,
+        savedAt: Date.now(),
+        rowCount: mergedData.length,
+      };
+      rawStore.put(rawRecord);
+
+      // 更新元数据
+      metaStore.put({
+        key: `${idKey}_meta`,
+        dataType,
+        rowCount: mergedData.length,
+        savedAt: Date.now(),
+      });
+    };
+
+    getRequest.onerror = () => {
+      // 读取失败，直接保存新数据
+      const rawRecord = {
+        id: idKey,
+        rawData,
+        dataType,
+        savedAt: Date.now(),
+        rowCount: rawData.length,
+      };
+      rawStore.put(rawRecord);
+      metaStore.put({
+        key: `${idKey}_meta`,
+        dataType,
+        rowCount: rawData.length,
+        savedAt: Date.now(),
+      });
+    };
 
     tx.oncomplete = () => {
       resolve();
