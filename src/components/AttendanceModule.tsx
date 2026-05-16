@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import AttendanceSummaryDetailModal from './AttendanceSummaryDetailModal';
 import { idbGetRawData } from '../lib/database';
 import { LoadingSpinner } from './LoadingOverlay';
+import { saveSharedData, readSharedData, isFirebaseReady } from '../lib/firebase';
 
 // ── 类型定义 ─────────────────────────────────────────────
 interface AttendanceRow {
@@ -51,6 +52,7 @@ type AttendanceDataMap = { [key: string]: AttendanceCenterData };
 const ATTENDANCE_PAGE_SIZE = 20;
 const WARNING_PAGE_SIZE = 20;
 const GROUP_LEADERS_STORAGE_KEY = 'gpt_dashboard_group_leaders';
+const GROUP_LEADERS_FIRESTORE_DOC = 'shared_group_leaders';
 
 // ── 筛选下拉组件 ─────────────────────────────────────────
 interface FilterDropdownProps {
@@ -199,12 +201,28 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
         }
       }
     } catch { /* ignore */ }
+
+    // 异步合并 Firestore 云端数据
+    if (isFirebaseReady()) {
+      readSharedData(GROUP_LEADERS_FIRESTORE_DOC).then(cloud => {
+        if (cloud && typeof cloud === 'object') {
+          const localRaw = localStorage.getItem(GROUP_LEADERS_STORAGE_KEY);
+          const local: Record<string, string> = localRaw ? JSON.parse(localRaw) : {};
+          // 合并：本地覆盖优先（用户刚编辑的更权威），云端补充本地没有的
+          const merged = { ...(cloud as Record<string, string>), ...local };
+          localStorage.setItem(GROUP_LEADERS_STORAGE_KEY, JSON.stringify(merged));
+          setGroupLeaderOverrides(merged);
+        }
+      }).catch(() => {});
+    }
   }, []);
 
   const saveLeaderOverrides = useCallback((overrides: { [key: string]: string }) => {
     try {
       localStorage.setItem(GROUP_LEADERS_STORAGE_KEY, JSON.stringify(overrides));
       setGroupLeaderOverrides(overrides);
+      // 异步同步到 Firestore
+      saveSharedData(GROUP_LEADERS_FIRESTORE_DOC, overrides).catch(() => {});
     } catch (e) {
       console.error('[AttendanceModule] 保存负责人失败:', e);
     }

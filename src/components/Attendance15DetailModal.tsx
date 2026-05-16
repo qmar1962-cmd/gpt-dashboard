@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
+import { saveSharedData, readSharedData, isFirebaseReady } from '../lib/firebase';
 
-// ── 排休数据持久化（按工号全局记忆，15天过期） ──
+// ── 排休数据持久化（按工号全局记忆，15天过期 + Firestore 跨设备同步） ──
 
 const GLOBAL_STORAGE_KEY = 'leave_plans_global';
+const FIRESTORE_DOC_ID = 'shared_leave_plans';
 
 interface LeavePlanRecord {
   start: string;      // YYYY-MM-DD 排休开始
@@ -16,8 +18,8 @@ interface LeavePlanRecord {
   employeeId: string; // 工号（主键）
 }
 
-/** 加载全局排休数据并自动清理超过15天的记录 */
-function loadGlobalLeavePlans(): Record<string, LeavePlanRecord> {
+/** 加载全局排休数据并自动清理超过15天的记录（仅 localStorage） */
+function loadGlobalLeavePlansFromLocal(): Record<string, LeavePlanRecord> {
   try {
     const raw = localStorage.getItem(GLOBAL_STORAGE_KEY);
     const all: Record<string, LeavePlanRecord> = raw ? JSON.parse(raw) : {};
@@ -31,13 +33,54 @@ function loadGlobalLeavePlans(): Record<string, LeavePlanRecord> {
         cleaned = true;
       }
     }
-    if (cleaned) saveGlobalLeavePlans(all);
+    if (cleaned) localStorage.setItem(GLOBAL_STORAGE_KEY, JSON.stringify(all));
     return all;
   } catch { return {}; }
 }
 
+/** 加载全局排休数据：本地优先 + 异步合并 Firestore 云端数据 */
+async function loadGlobalLeavePlans(): Promise<Record<string, LeavePlanRecord>> {
+  const local = loadGlobalLeavePlansFromLocal();
+  if (!isFirebaseReady()) return local;
+
+  try {
+    const cloud = await readSharedData(FIRESTORE_DOC_ID) as Record<string, LeavePlanRecord> | null;
+    if (cloud && typeof cloud === 'object') {
+      const now = new Date();
+      const merged: Record<string, LeavePlanRecord> = {};
+
+      // 合并：按工号，保留 setDate 更新的
+      const allKeys = new Set([...Object.keys(local), ...Object.keys(cloud)]);
+      for (const id of allKeys) {
+        const l = local[id];
+        const c = cloud[id];
+        if (!l && c) {
+          // 只有云端有，检查是否过期
+          const setDt = new Date(c.setDate);
+          const diffDays = Math.floor((now.getTime() - setDt.getTime()) / 86400000);
+          if (diffDays <= 15) merged[id] = c;
+        } else if (l && !c) {
+          merged[id] = l; // 只有本地有
+        } else if (l && c) {
+          // 都有，保留更新的
+          const localTime = new Date(l.setDate).getTime();
+          const cloudTime = new Date(c.setDate).getTime();
+          merged[id] = localTime >= cloudTime ? l : c;
+        }
+      }
+
+      // 回写本地缓存
+      localStorage.setItem(GLOBAL_STORAGE_KEY, JSON.stringify(merged));
+      return merged;
+    }
+  } catch { /* 降级到纯本地 */ }
+  return local;
+}
+
 function saveGlobalLeavePlans(all: Record<string, LeavePlanRecord>) {
   localStorage.setItem(GLOBAL_STORAGE_KEY, JSON.stringify(all));
+  // 异步写入 Firestore，不阻塞 UI
+  saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
 }
 
 /** 按工号查找该人是否有15天内的排休记录 */
@@ -267,21 +310,30 @@ export default function Attendance15DetailModal({
   // 加载全局排休数据并自动匹配到当前列表中的人员
   useEffect(() => {
     if (!isOpen || !weeklyData.length) return;
-    const all = loadGlobalLeavePlans();
-    setGlobalPlans(all);
-    // 按工号自动匹配：遍历所有日期的所有人员
-    const matched: Record<string, LeavePlanRecord> = {};
-    for (const day of weeklyData) {
-      for (const person of day.details) {
-        if (person.employeeId) {
-          const plan = findActivePlan(all, person.employeeId);
-          if (plan) {
-            matched[`${day.date}_${person.name}`] = plan;
+    // 先用本地数据立即渲染，再异步合并云端数据
+    const localAll = loadGlobalLeavePlansFromLocal();
+    setGlobalPlans(localAll);
+    const matchAndSet = (all: Record<string, LeavePlanRecord>) => {
+      const matched: Record<string, LeavePlanRecord> = {};
+      for (const day of weeklyData) {
+        for (const person of day.details) {
+          if (person.employeeId) {
+            const plan = findActivePlan(all, person.employeeId);
+            if (plan) {
+              matched[`${day.date}_${person.name}`] = plan;
+            }
           }
         }
       }
-    }
-    setLeavePlans(matched);
+      return matched;
+    };
+    setLeavePlans(matchAndSet(localAll));
+
+    // 异步合并 Firestore 云端数据
+    loadGlobalLeavePlans().then(merged => {
+      setGlobalPlans(merged);
+      setLeavePlans(matchAndSet(merged));
+    });
   }, [isOpen, weeklyData]);
 
   // 格式化显示：4/27-4/30

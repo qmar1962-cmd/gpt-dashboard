@@ -170,6 +170,48 @@ export async function cleanupFirestore(maxDays: number = 30): Promise<number> {
   }
 }
 
+// ====== 共享数据操作（排休/缺勤原因/负责人，跨设备同步） ======
+
+/**
+ * 保存共享数据到 Firestore
+ * 使用 sharedData 集合，与 dailyData 隔离
+ * 文档路径：sharedData/{docId}
+ */
+export async function saveSharedData(docId: string, data: any): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const docRef = doc(db, 'sharedData', docId);
+    await setDoc(docRef, {
+      ...data,
+      updatedAt: new Date().toISOString(),
+    });
+    return true;
+  } catch (err) {
+    console.warn('[Firebase] 共享数据写入失败:', err);
+    return false;
+  }
+}
+
+/**
+ * 从 Firestore 读取共享数据
+ */
+export async function readSharedData(docId: string): Promise<any | null> {
+  if (!db) return null;
+  try {
+    const docRef = doc(db, 'sharedData', docId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const d = snap.data();
+      const { updatedAt: _u, ...rest } = d;
+      return rest;
+    }
+    return null;
+  } catch (err) {
+    console.warn('[Firebase] 共享数据读取失败:', err);
+    return null;
+  }
+}
+
 /**
  * 清空 Firestore 所有数据
  */
