@@ -440,6 +440,9 @@ export default function App() {
         const center = row.中心 || row.中心名称 || '';
         const dateStr = normalizeDate(row['数据日期'] || row.date || row.日期);
         if (!dateStr) return;
+        // 只统计目标偏离（%）>= 10 的异常岗位
+        const deviation = parseFloat(row['目标偏离（%）'] || row.targetDeviation || 0);
+        if (deviation < 10) return;
         const key = `${center}_${province}_${dateStr}`;
         jobByCenterDate.set(key, (jobByCenterDate.get(key) || 0) + 1);
       });
@@ -629,12 +632,11 @@ export default function App() {
         const t3JobCount = findCount(jobByCenterDate, center.name, province.province, t3DateStr);
         // 得分：每触发 1 个岗位扣 5 分，最低 0 分
         const jobScore = Math.max(0, 25 - t2JobCount * 5);
-        if (t2JobCount > 0 || t3JobCount > 0) {
-          enrichedCenter.metrics.job = jobScore;
-          enrichedCenter.abnormalCount = t2JobCount;
-          enrichedCenter.prevAbnormalCount = t3JobCount;
-          enrichedCenter.t2JobCount = t2JobCount;
-        }
+        // 无论异常数是否为 0 都要赋值（0 异常 = 满分 25）
+        enrichedCenter.metrics.job = jobScore;
+        enrichedCenter.abnormalCount = t2JobCount;
+        enrichedCenter.prevAbnormalCount = t3JobCount;
+        enrichedCenter.t2JobCount = t2JobCount;
 
         // T-2 / T-3 薪资异常人数（模糊匹配）
         const t2SalaryCount = findCount(salaryByCenterDate, center.name, province.province, t2DateStr);
