@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
-import { HelpCircle, X, Table2, ArrowRight, Hash, FileSpreadsheet, CalendarDays, AlertCircle } from 'lucide-react';
+import { HelpCircle, X, Table2, ArrowRight, Hash, FileSpreadsheet, CalendarDays, AlertCircle, Upload, GitBranch, RefreshCw, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
+
+// ── 章节定义 ──
+type SectionId = 'overview' | 'operation' | 'metrics' | 'scope' | 'attendance' | 'matching';
+
+const SECTIONS: { id: SectionId; label: string; icon: React.ReactNode }[] = [
+  { id: 'overview', label: '概览', icon: <Table2 size={12} /> },
+  { id: 'operation', label: '操作规范', icon: <Upload size={12} /> },
+  { id: 'metrics', label: '指标口径', icon: <ArrowRight size={12} /> },
+  { id: 'scope', label: '管幅', icon: <Hash size={12} /> },
+  { id: 'attendance', label: '中心考勤', icon: <CalendarDays size={12} /> },
+  { id: 'matching', label: '匹配逻辑', icon: <GitBranch size={12} /> },
+];
 
 // ── 日期概念 ──
 const DATE_CONCEPTS = [
@@ -18,6 +30,39 @@ const DATA_SOURCES = [
   { id: 'employee_roster', name: '中心在职花名册', rows: '全部在职人员（含非操作部门）', dedup: '工号' },
   { id: 'center_daily_attendance', name: '中心日出勤明细', rows: '每人每天一条（有记录=出勤）', dedup: '工号 + 数据日期' },
 ];
+
+// ── 操作规范 ──
+const OPERATION_SPEC = {
+  naming: [
+    { type: '岗位效能异常', pattern: '岗位效能异常_YYYYMMDD.xlsx', example: '岗位效能异常_20260514.xlsx' },
+    { type: '薪资绩效异常', pattern: '薪资绩效异常_YYYYMMDD.xlsx', example: '薪资绩效异常_20260514.xlsx' },
+    { type: '连续15日出勤', pattern: '连续15日出勤_YYYYMMDD.xlsx', example: '连续15日出勤_20260514.xlsx' },
+    { type: '连续7日未出勤', pattern: '连续7日未出勤_YYYYMMDD.xlsx', example: '连续7日未出勤_20260514.xlsx' },
+    { type: '中心在职花名册', pattern: '中心在职花名册_YYYYMMDD.xlsx', example: '中心在职花名册_20260514.xlsx' },
+    { type: '中心日出勤明细', pattern: '中心日出勤明细_YYYYMMDD.xlsx', example: '中心日出勤明细_20260514.xlsx' },
+  ],
+  uploadSteps: [
+    '1. 将 Excel 文件放入项目 public/database/ 目录',
+    '2. 文件命名遵循"类型_日期"格式（如：岗位效能异常_20260514.xlsx）',
+    '3. 前端会自动扫描 public/database/ 目录，无需手动维护文件列表',
+    '4. 浏览器中点击"数据管理" → "清除缓存并重新加载"，强制刷新数据',
+    '5. 或直接 Ctrl+F5 强制刷新页面，系统会自动加载新文件',
+  ],
+  updateFreq: [
+    { item: '岗位效能异常 / 薪资绩效异常', freq: '每日', note: 'T-2 数据，每天更新' },
+    { item: '连续15日出勤 / 连续7日未出勤', freq: '每日', note: 'T-2 数据，每天更新' },
+    { item: '中心日出勤明细', freq: '每日', note: '用于考勤模块，可按需上传多天数据' },
+    { item: '中心在职花名册', freq: '每周或按需', note: '人员变动时更新，影响管幅和覆盖率分母' },
+  ],
+  codeUpdate: [
+    '1. 本地修改代码后，运行 npm run build 确认无报错',
+    '2. git add -A && git commit -m "描述修改内容"',
+    '3. git push 推送到远程仓库',
+    '4. Vercel/Netlify 会自动部署（约 1-2 分钟）',
+    '5. 线上按 Ctrl+F5 强制刷新，清除浏览器缓存',
+  ],
+  cacheNote: '系统使用 IndexedDB 缓存数据，并追踪已加载文件名。重复加载同一文件不会导致数据重复，但新增/修改文件后需"清除缓存并重新加载"才能生效。',
+};
 
 // ── 汇总指标 ──
 const AGGREGATION_SPEC = {
@@ -214,7 +259,6 @@ const ATTENDANCE_SPEC = {
     { col: '报表出勤', desc: '原始报表中的出勤天数' },
     { col: '系统差异', desc: '报表出勤 - 实际出勤（非0时有差异）' },
   ],
-  // 排休计划口径（连续出勤弹窗）
   leavePlanSpec: {
     trigger: '连续出勤 ≥ 15天的人员',
     storage: '按工号存储在 localStorage（key: leave_plans_global），15天自动过期',
@@ -225,7 +269,6 @@ const ATTENDANCE_SPEC = {
       { col: '设置日期', desc: '记录创建日期，用于判断15天过期' },
     ],
   },
-  // 未出勤原因口径（长期未出勤弹窗）
   absenceReasonSpec: {
     trigger: '连续未出勤 ≥ 7天的人员',
     options: '工伤 / 事假 / 病假 / 纠纷 / 挂编 / 出差 / 离职未清 / 已返岗',
@@ -236,6 +279,7 @@ const ATTENDANCE_SPEC = {
 
 export default function MetricHelpPanel() {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<SectionId>('overview');
 
   return (
     <>
@@ -243,8 +287,9 @@ export default function MetricHelpPanel() {
         <HelpCircle size={13} className="text-zinc-400 group-hover:text-red-500 transition-colors" />
       </button>
       <AnimateWrapper isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
+        <div className="flex flex-col h-full">
+          {/* 头部 */}
+          <div className="flex items-center justify-between pb-4 border-b border-zinc-100 shrink-0">
             <div>
               <h3 className="text-sm font-black text-zinc-900 tracking-tight">指标口径说明</h3>
               <p className="text-[10px] text-zinc-400 mt-0.5">数据来源 / 取数字段 / 计算规则</p>
@@ -252,213 +297,33 @@ export default function MetricHelpPanel() {
             <button onClick={() => setIsOpen(false)} className="w-6 h-6 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors"><X size={14} className="text-zinc-400" /></button>
           </div>
 
-          {/* 日期概念 */}
-          <div className="bg-zinc-50 rounded-lg p-3 space-y-2">
-            <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">日期概念</div>
-            <div className="grid grid-cols-3 gap-1.5">
-              {DATE_CONCEPTS.map(dc => (
-                <div key={dc.term} className="bg-white rounded-md px-2 py-1.5 border border-zinc-100">
-                  <span className="font-mono font-black text-[11px] text-zinc-800">{dc.term}</span>
-                  <p className="text-[9px] text-zinc-400 mt-0.5 leading-tight">{dc.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 数据源总览 */}
-          <div className="space-y-1.5">
-            <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">数据源总览（6种上传类型）</div>
-            <div className="grid gap-1">
-              {DATA_SOURCES.map(ds => (
-                <div key={ds.id} className="bg-zinc-50 rounded-md px-3 py-2 flex items-center gap-3">
-                  <span className="font-mono font-bold text-[10px] text-zinc-700 min-w-[140px]">{ds.name}</span>
-                  <span className="text-[9px] text-zinc-400">{ds.rows}</span>
-                  <span className="ml-auto text-[8px] text-zinc-300 font-mono">{ds.dedup}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 汇总指标 */}
-          <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-2">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider"><ArrowRight size={10} /> 汇总指标</div>
-            {AGGREGATION_SPEC.items.map(item => (
-              <div key={item.name} className="space-y-0.5">
-                <span className="text-[10px] font-bold text-white">{item.name}</span>
-                <pre className="text-[9px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{item.formula}</pre>
-              </div>
+          {/* 章节导航 */}
+          <div className="flex gap-1 py-3 border-b border-zinc-100 overflow-x-auto shrink-0">
+            {SECTIONS.map(sec => (
+              <button
+                key={sec.id}
+                onClick={() => setActiveSection(sec.id)}
+                className={cn(
+                  "flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors",
+                  activeSection === sec.id
+                    ? "bg-zinc-900 text-white"
+                    : "bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
+                )}
+              >
+                {sec.icon}
+                {sec.label}
+              </button>
             ))}
-            <div className="pt-1.5 border-t border-zinc-700 text-[9px] text-amber-400/80 italic">{AGGREGATION_SPEC.exemptions}</div>
           </div>
 
-          {/* 匹配逻辑 */}
-          <div className="bg-blue-50/40 rounded-lg p-3 space-y-1.5">
-            <div className="text-[10px] font-black text-blue-600 uppercase tracking-wider">匹配逻辑</div>
-            {MATCHING_SPEC.rules.map(rule => (
-              <div key={rule.name} className="flex items-start gap-1.5 text-[9px]">
-                <span className="font-bold text-blue-600 shrink-0">{rule.name}</span>
-                <span className="text-zinc-500">{rule.desc}</span>
-              </div>
-            ))}
-            <div className="text-[8px] text-zinc-400 italic mt-1">{MATCHING_SPEC.notes}</div>
-          </div>
-
-          {METRIC_SPECS.map((spec) => (
-            <div key={spec.id} className="group">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={cn("text-[10px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider", spec.color)}>{spec.weight}分</span>
-                <span className="font-bold text-xs text-zinc-900">{spec.name}</span>
-                <FileSpreadsheet size={11} className="text-zinc-300 ml-auto" />
-              </div>
-              <div className="bg-zinc-50 rounded-lg p-3 mb-2 space-y-2">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
-                <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{spec.sourceTable}</div>
-                <div className="grid grid-cols-2 gap-1">
-                  {spec.keyColumns.map((col) => (
-                    <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
-                      <Hash size={9} className="text-zinc-300 mt-0.5 flex-shrink-0" />
-                      <span className="font-mono font-bold text-zinc-700">{col.col}</span>
-                      <span className="text-zinc-400">{col.desc}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-red-400 uppercase tracking-wider"><ArrowRight size={10} /> 计算公式</div>
-                <pre className="text-[10px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{spec.formula}</pre>
-                {spec.denominator && (<div className="mt-1.5 pt-1.5 border-t border-zinc-700"><span className="text-[9px] text-zinc-500">分母: </span><span className="text-[10px] text-emerald-400 font-medium">{spec.denominator}</span></div>)}
-                {spec.notes && (<div className="mt-1 pt-1.5 border-t border-zinc-700 text-[9px] text-zinc-500 italic">{spec.notes}</div>)}
-              </div>
-              {spec.detailFields && (
-                <div className="bg-amber-50/40 rounded-lg p-2.5 mt-1.5 space-y-1.5">
-                  <div className="text-[9px] font-black text-amber-600 uppercase tracking-wider">弹窗明细字段</div>
-                  <div className="grid grid-cols-2 gap-0.5">
-                    {spec.detailFields.map((f: { col: string; desc: string }) => (
-                      <div key={f.col} className="flex items-start gap-1 text-[9px]">
-                        <span className="font-mono font-bold text-zinc-600">{f.col}</span>
-                        <span className="text-zinc-400">{f.desc}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* 管幅 */}
-          <div className="pt-4 border-t border-zinc-200 mt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-black px-1.5 py-0.5 rounded border border-zinc-300 text-zinc-600 uppercase tracking-wider">辅助</span>
-              <span className="font-bold text-xs text-zinc-800">管幅 &amp; 超目标</span>
-            </div>
-            <div className="bg-blue-50/50 rounded-lg p-3 mb-2 space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
-              <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{SCOPE_SPEC.sourceTable}</div>
-              <div className="grid grid-cols-2 gap-1">
-                {SCOPE_SPEC.keyColumns.map((col) => (
-                  <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
-                    <Hash size={9} className="text-zinc-300 mt-0.5 flex-shrink-0" />
-                    <span className="font-mono font-bold text-zinc-700">{col.col}</span>
-                    <span className="text-zinc-400">{col.desc}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider"><ArrowRight size={10} /> 计算公式</div>
-              {SCOPE_SPEC.formulas.map((f, i) => (<pre key={i} className="text-[10px] leading-relaxed text-zinc-300 font-mono">{f}</pre>))}
-              <div className="mt-1 pt-1.5 border-t border-zinc-700 text-[9px] text-zinc-500 italic">操作人数 = 总人数 - 组长数 - 主管数</div>
-              {SCOPE_SPEC.rosterTargetNote && <div className="pt-1 text-[9px] text-amber-400/80 italic">{SCOPE_SPEC.rosterTargetNote}</div>}
-            </div>
-          </div>
-
-          {/* 中心考勤 */}
-          <div className="pt-4 border-t border-zinc-200 mt-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarDays size={14} className="text-cyan-500" />
-              <span className="font-bold text-xs text-zinc-800">中心考勤</span>
-              <span className="text-[9px] text-zinc-400 font-normal ml-1">独立模块 - 日历视图 + 预警</span>
-            </div>
-
-            {ATTENDANCE_SPEC.dataSources.map((ds, idx) => (
-              <div key={idx} className="bg-zinc-50 rounded-lg p-3 mb-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源{idx + 1}</div>
-                  <span className="text-[8px] font-medium px-1.5 py-0.5 rounded-full bg-cyan-50 text-cyan-600 border border-cyan-100">{ds.role.split('-')[0].trim()}</span>
-                </div>
-                <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{ds.table}</div>
-                <div className="grid grid-cols-1 gap-0.5">
-                  {ds.columns.map((col) => (
-                    <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
-                      <Hash size={9} className="text-cyan-300 mt-0.5 flex-shrink-0" />
-                      <span className="font-mono font-bold text-zinc-700 min-w-0">{col.col}</span>
-                      <span className="text-zinc-400 flex-shrink-0">-&gt;</span>
-                      <span className="text-zinc-500">{col.desc}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            <div className="space-y-2 mt-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-red-500 uppercase tracking-wider"><ArrowRight size={10} /> 指标计算 (共 {ATTENDANCE_SPEC.metrics.length} 项)</div>
-              <div className="grid gap-1.5">
-                {ATTENDANCE_SPEC.metrics.map((m) => (
-                  <div key={m.name} className="bg-zinc-900 text-white rounded-lg p-2.5 space-y-1">
-                    <span className="text-[10px] font-bold text-white block">{m.name}</span>
-                    <pre className="text-[9px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{m.formula}</pre>
-                    {m.note && <span className="text-[8px] text-emerald-400/70 italic block">* {m.note}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-3 bg-blue-50/40 rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 uppercase tracking-wider"><Table2 size={11} /> 出勤汇总统计表字段</div>
-              <div className="grid gap-0.5">
-                {ATTENDANCE_SPEC.summaryTableSpec.map((f: { col: string; desc: string }) => (
-                  <div key={f.col} className="flex items-start gap-1.5 text-[9px]">
-                    <span className="font-mono font-bold text-zinc-600 min-w-[56px] shrink-0">{f.col}</span>
-                    <span className="text-zinc-400">{f.desc}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 排休计划口径 */}
-            <div className="bg-orange-50/40 rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 uppercase tracking-wider"><CalendarDays size={10} /> 排休计划（连续出勤弹窗）</div>
-              <div className="space-y-1 text-[9px]">
-                <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">触发条件</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.trigger}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.storage}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">自动匹配</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.autoMatch}</span></div>
-              </div>
-              <div className="grid grid-cols-2 gap-0.5 mt-1">
-                {ATTENDANCE_SPEC.leavePlanSpec.fields.map((f: { col: string; desc: string }) => (
-                  <div key={f.col} className="flex items-start gap-1 text-[9px]">
-                    <span className="font-mono font-bold text-zinc-600">{f.col}</span>
-                    <span className="text-zinc-400">{f.desc}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 未出勤原因口径 */}
-            <div className="bg-purple-50/40 rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-purple-600 uppercase tracking-wider"><AlertCircle size={10} /> 未出勤原因（长期未出勤弹窗）</div>
-              <div className="space-y-1 text-[9px]">
-                <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">触发条件</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.trigger}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">原因选项</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.options}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.storage}</span></div>
-                <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">自动清理</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.autoClean}</span></div>
-              </div>
-            </div>
-
-            <div className="mt-2 text-[9px] text-zinc-400 italic leading-relaxed space-y-1">
-              <p>* 出勤判定: 日出勤明细中有该人该日期的记录 = 出勤(true); 无记录 = 缺勤(false)</p>
-              <p>* 人员筛选: 花名册中 二级部门 包含[中心操作] 且 转运中心 匹配当前选中中心</p>
-              <p>* 数据优先级: IndexedDB 真实数据 &gt; 静态 JSON fallback</p>
-            </div>
+          {/* 内容区 */}
+          <div className="flex-1 overflow-y-auto pt-4 space-y-5">
+            {activeSection === 'overview' && <OverviewSection />}
+            {activeSection === 'operation' && <OperationSection />}
+            {activeSection === 'metrics' && <MetricsSection />}
+            {activeSection === 'scope' && <ScopeSection />}
+            {activeSection === 'attendance' && <AttendanceSection />}
+            {activeSection === 'matching' && <MatchingSection />}
           </div>
         </div>
       </AnimateWrapper>
@@ -466,7 +331,320 @@ export default function MetricHelpPanel() {
   );
 }
 
-function AnimateWrapper({ isOpen, onClose, children }) {
+// ── 概览章节 ──
+function OverviewSection() {
+  return (
+    <div className="space-y-5">
+      {/* 日期概念 */}
+      <div className="bg-zinc-50 rounded-lg p-3 space-y-2">
+        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">日期概念</div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {DATE_CONCEPTS.map(dc => (
+            <div key={dc.term} className="bg-white rounded-md px-2 py-1.5 border border-zinc-100">
+              <span className="font-mono font-black text-[11px] text-zinc-800">{dc.term}</span>
+              <p className="text-[9px] text-zinc-400 mt-0.5 leading-tight">{dc.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 数据源总览 */}
+      <div className="space-y-1.5">
+        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">数据源总览（6种上传类型）</div>
+        <div className="grid gap-1">
+          {DATA_SOURCES.map(ds => (
+            <div key={ds.id} className="bg-zinc-50 rounded-md px-3 py-2 flex items-center gap-3">
+              <span className="font-mono font-bold text-[10px] text-zinc-700 min-w-[140px]">{ds.name}</span>
+              <span className="text-[9px] text-zinc-400">{ds.rows}</span>
+              <span className="ml-auto text-[8px] text-zinc-300 font-mono">{ds.dedup}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 汇总指标 */}
+      <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider"><ArrowRight size={10} /> 汇总指标</div>
+        {AGGREGATION_SPEC.items.map(item => (
+          <div key={item.name} className="space-y-0.5">
+            <span className="text-[10px] font-bold text-white">{item.name}</span>
+            <pre className="text-[9px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{item.formula}</pre>
+          </div>
+        ))}
+        <div className="pt-1.5 border-t border-zinc-700 text-[9px] text-amber-400/80 italic">{AGGREGATION_SPEC.exemptions}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── 操作规范章节 ──
+function OperationSection() {
+  return (
+    <div className="space-y-5">
+      {/* 文件命名规范 */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-zinc-500 uppercase tracking-wider"><FileSpreadsheet size={11} /> 文件命名规范</div>
+        <div className="grid gap-1">
+          {OPERATION_SPEC.naming.map(n => (
+            <div key={n.type} className="bg-zinc-50 rounded-md px-3 py-2 space-y-1">
+              <span className="text-[10px] font-bold text-zinc-700">{n.type}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-mono text-zinc-500 bg-white px-1.5 py-0.5 rounded border border-zinc-100">{n.pattern}</span>
+                <span className="text-[8px] text-zinc-400">例: {n.example}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 数据上传流程 */}
+      <div className="bg-blue-50/40 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 uppercase tracking-wider"><Upload size={11} /> 数据上传流程</div>
+        <ol className="space-y-1">
+          {OPERATION_SPEC.uploadSteps.map((step, i) => (
+            <li key={i} className="text-[10px] text-zinc-600 leading-relaxed">{step}</li>
+          ))}
+        </ol>
+      </div>
+
+      {/* 更新频率 */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-zinc-500 uppercase tracking-wider"><Clock size={11} /> 更新频率</div>
+        <div className="grid gap-1">
+          {OPERATION_SPEC.updateFreq.map(u => (
+            <div key={u.item} className="bg-zinc-50 rounded-md px-3 py-2 flex items-center gap-2">
+              <span className="text-[10px] font-bold text-zinc-700 flex-1">{u.item}</span>
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{u.freq}</span>
+              <span className="text-[9px] text-zinc-400">{u.note}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 代码更新流程 */}
+      <div className="bg-purple-50/40 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-purple-600 uppercase tracking-wider"><GitBranch size={11} /> 网页代码更新流程</div>
+        <ol className="space-y-1">
+          {OPERATION_SPEC.codeUpdate.map((step, i) => (
+            <li key={i} className="text-[10px] text-zinc-600 leading-relaxed">{step}</li>
+          ))}
+        </ol>
+      </div>
+
+      {/* 缓存说明 */}
+      <div className="flex items-start gap-2 bg-amber-50/40 rounded-lg p-3">
+        <RefreshCw size={12} className="text-amber-500 mt-0.5 shrink-0" />
+        <p className="text-[10px] text-zinc-600 leading-relaxed">{OPERATION_SPEC.cacheNote}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── 指标口径章节 ──
+function MetricsSection() {
+  return (
+    <div className="space-y-6">
+      {METRIC_SPECS.map((spec) => (
+        <div key={spec.id} className="group">
+          <div className="flex items-center gap-2 mb-2">
+            <span className={cn("text-[10px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider", spec.color)}>{spec.weight}分</span>
+            <span className="font-bold text-xs text-zinc-900">{spec.name}</span>
+            <FileSpreadsheet size={11} className="text-zinc-300 ml-auto" />
+          </div>
+          <div className="bg-zinc-50 rounded-lg p-3 mb-2 space-y-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
+            <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{spec.sourceTable}</div>
+            <div className="grid grid-cols-2 gap-1">
+              {spec.keyColumns.map((col) => (
+                <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
+                  <Hash size={9} className="text-zinc-300 mt-0.5 flex-shrink-0" />
+                  <span className="font-mono font-bold text-zinc-700">{col.col}</span>
+                  <span className="text-zinc-400">{col.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-red-400 uppercase tracking-wider"><ArrowRight size={10} /> 计算公式</div>
+            <pre className="text-[10px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{spec.formula}</pre>
+            {spec.denominator && (<div className="mt-1.5 pt-1.5 border-t border-zinc-700"><span className="text-[9px] text-zinc-500">分母: </span><span className="text-[10px] text-emerald-400 font-medium">{spec.denominator}</span></div>)}
+            {spec.notes && (<div className="mt-1 pt-1.5 border-t border-zinc-700 text-[9px] text-zinc-500 italic">{spec.notes}</div>)}
+          </div>
+          {spec.detailFields && (
+            <div className="bg-amber-50/40 rounded-lg p-2.5 mt-1.5 space-y-1.5">
+              <div className="text-[9px] font-black text-amber-600 uppercase tracking-wider">弹窗明细字段</div>
+              <div className="grid grid-cols-2 gap-0.5">
+                {spec.detailFields.map((f: { col: string; desc: string }) => (
+                  <div key={f.col} className="flex items-start gap-1 text-[9px]">
+                    <span className="font-mono font-bold text-zinc-600">{f.col}</span>
+                    <span className="text-zinc-400">{f.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── 管幅章节 ──
+function ScopeSection() {
+  return (
+    <div className="space-y-4">
+      <div className="bg-blue-50/50 rounded-lg p-3 mb-2 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
+        <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{SCOPE_SPEC.sourceTable}</div>
+        <div className="grid grid-cols-2 gap-1">
+          {SCOPE_SPEC.keyColumns.map((col) => (
+            <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
+              <Hash size={9} className="text-zinc-300 mt-0.5 flex-shrink-0" />
+              <span className="font-mono font-bold text-zinc-700">{col.col}</span>
+              <span className="text-zinc-400">{col.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-1.5">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider"><ArrowRight size={10} /> 计算公式</div>
+        {SCOPE_SPEC.formulas.map((f, i) => (<pre key={i} className="text-[10px] leading-relaxed text-zinc-300 font-mono">{f}</pre>))}
+        <div className="mt-1 pt-1.5 border-t border-zinc-700 text-[9px] text-zinc-500 italic">操作人数 = 总人数 - 组长数 - 主管数</div>
+        {SCOPE_SPEC.rosterTargetNote && <div className="pt-1 text-[9px] text-amber-400/80 italic">{SCOPE_SPEC.rosterTargetNote}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── 中心考勤章节 ──
+function AttendanceSection() {
+  return (
+    <div className="space-y-4">
+      {ATTENDANCE_SPEC.dataSources.map((ds, idx) => (
+        <div key={idx} className="bg-zinc-50 rounded-lg p-3 mb-2 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源{idx + 1}</div>
+            <span className="text-[8px] font-medium px-1.5 py-0.5 rounded-full bg-cyan-50 text-cyan-600 border border-cyan-100">{ds.role.split('-')[0].trim()}</span>
+          </div>
+          <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{ds.table}</div>
+          <div className="grid grid-cols-1 gap-0.5">
+            {ds.columns.map((col) => (
+              <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
+                <Hash size={9} className="text-cyan-300 mt-0.5 flex-shrink-0" />
+                <span className="font-mono font-bold text-zinc-700 min-w-0">{col.col}</span>
+                <span className="text-zinc-400 flex-shrink-0">-&gt;</span>
+                <span className="text-zinc-500">{col.desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <div className="space-y-2 mt-3">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-red-500 uppercase tracking-wider"><ArrowRight size={10} /> 指标计算 (共 {ATTENDANCE_SPEC.metrics.length} 项)</div>
+        <div className="grid gap-1.5">
+          {ATTENDANCE_SPEC.metrics.map((m) => (
+            <div key={m.name} className="bg-zinc-900 text-white rounded-lg p-2.5 space-y-1">
+              <span className="text-[10px] font-bold text-white block">{m.name}</span>
+              <pre className="text-[9px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{m.formula}</pre>
+              {m.note && <span className="text-[8px] text-emerald-400/70 italic block">* {m.note}</span>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 bg-blue-50/40 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 uppercase tracking-wider"><Table2 size={11} /> 出勤汇总统计表字段</div>
+        <div className="grid gap-0.5">
+          {ATTENDANCE_SPEC.summaryTableSpec.map((f: { col: string; desc: string }) => (
+            <div key={f.col} className="flex items-start gap-1.5 text-[9px]">
+              <span className="font-mono font-bold text-zinc-600 min-w-[56px] shrink-0">{f.col}</span>
+              <span className="text-zinc-400">{f.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 排休计划口径 */}
+      <div className="bg-orange-50/40 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 uppercase tracking-wider"><CalendarDays size={10} /> 排休计划（连续出勤弹窗）</div>
+        <div className="space-y-1 text-[9px]">
+          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">触发条件</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.trigger}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.storage}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">自动匹配</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.autoMatch}</span></div>
+        </div>
+        <div className="grid grid-cols-2 gap-0.5 mt-1">
+          {ATTENDANCE_SPEC.leavePlanSpec.fields.map((f: { col: string; desc: string }) => (
+            <div key={f.col} className="flex items-start gap-1 text-[9px]">
+              <span className="font-mono font-bold text-zinc-600">{f.col}</span>
+              <span className="text-zinc-400">{f.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 未出勤原因口径 */}
+      <div className="bg-purple-50/40 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-purple-600 uppercase tracking-wider"><AlertCircle size={10} /> 未出勤原因（长期未出勤弹窗）</div>
+        <div className="space-y-1 text-[9px]">
+          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">触发条件</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.trigger}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">原因选项</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.options}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.storage}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">自动清理</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.autoClean}</span></div>
+        </div>
+      </div>
+
+      <div className="mt-2 text-[9px] text-zinc-400 italic leading-relaxed space-y-1">
+        <p>* 出勤判定: 日出勤明细中有该人该日期的记录 = 出勤(true); 无记录 = 缺勤(false)</p>
+        <p>* 人员筛选: 花名册中 二级部门 包含[中心操作] 且 转运中心 匹配当前选中中心</p>
+        <p>* 数据优先级: IndexedDB 真实数据 &gt; 静态 JSON fallback</p>
+      </div>
+    </div>
+  );
+}
+
+// ── 匹配逻辑章节 ──
+function MatchingSection() {
+  return (
+    <div className="space-y-5">
+      <div className="bg-blue-50/40 rounded-lg p-3 space-y-1.5">
+        <div className="text-[10px] font-black text-blue-600 uppercase tracking-wider">匹配逻辑</div>
+        {MATCHING_SPEC.rules.map(rule => (
+          <div key={rule.name} className="flex items-start gap-1.5 text-[9px]">
+            <span className="font-bold text-blue-600 shrink-0">{rule.name}</span>
+            <span className="text-zinc-500">{rule.desc}</span>
+          </div>
+        ))}
+        <div className="text-[8px] text-zinc-400 italic mt-1">{MATCHING_SPEC.notes}</div>
+      </div>
+
+      {/* 各指标明细字段汇总 */}
+      <div className="space-y-3">
+        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">弹窗明细字段汇总</div>
+        {([
+          { title: '效能异常', fields: DETAIL_FIELDS.job, color: 'text-red-600' },
+          { title: '绩效异常', fields: DETAIL_FIELDS.salary, color: 'text-amber-600' },
+          { title: '连续出勤', fields: DETAIL_FIELDS.att15, color: 'text-orange-600' },
+          { title: '长期未出勤', fields: DETAIL_FIELDS.att7, color: 'text-purple-600' },
+        ]).map(g => (
+          <div key={g.title} className="bg-zinc-50 rounded-lg p-2.5 space-y-1">
+            <div className={cn("text-[9px] font-black uppercase tracking-wider", g.color)}>{g.title}</div>
+            <div className="grid grid-cols-2 gap-0.5">
+              {g.fields.map((f: { col: string; desc: string }) => (
+                <div key={f.col} className="flex items-start gap-1 text-[9px]">
+                  <span className="font-mono font-bold text-zinc-600">{f.col}</span>
+                  <span className="text-zinc-400">{f.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AnimateWrapper({ isOpen, onClose, children }: { isOpen: boolean; onClose: () => void; children: React.ReactNode }) {
   if (!isOpen) return null;
   return (
     <>

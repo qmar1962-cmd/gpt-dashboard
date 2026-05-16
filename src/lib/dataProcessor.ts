@@ -323,21 +323,20 @@ export function getWeeklyEfficiencyDetail(
     return convertExcelDate(rawDate);
   }).filter(d => d).sort((a, b) => b.localeCompare(a));
   
-  // T-2 = 今天 - 2天（现实日期基准，和薪资异常保持一致）
-  const today = new Date();
-  const t2 = new Date(today);
-  t2.setDate(today.getDate() - 2);
-  t2.setUTCHours(0, 0, 0, 0);
+  // T-2 = 今天 - 2天（北京时间基准，和 App.tsx / 薪资异常保持一致）
+  const now = new Date();
+  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
+  const t2 = new Date(beijingMs);
 
   // 展示 T-2 前7天（含T-2当天），即 T-8 ~ T-2
   const days: WeeklyDetail[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(t2);
-    d.setDate(t2.getDate() - i);
-    // 本地时区日期字符串 YYYY-MM-DD
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
+    d.setUTCDate(t2.getUTCDate() - i);
+    // UTC 日期字符串 YYYY-MM-DD（与 convertExcelDate 输出保持一致）
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     // 筛选该中心该天的数据
@@ -369,9 +368,9 @@ export function getWeeklyEfficiencyDetail(
       avgDeviation: parseFloat(row['均值偏离（%）'] || row.avgDeviation || 0),
     }));
 
-    // 格式化日期为 MM/DD（本地时区）
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
+    // 格式化日期为 MM/DD（UTC，即北京时间）
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
     const dateLabel = `${month}/${day}`;
 
     days.push({
@@ -488,18 +487,18 @@ export function getWeeklySalaryDetail(
     });
   }
 
-  // T-2 = 今天往前推 2 天（现实日期基准）
-  const today = new Date();
-  const t2 = new Date(today);
-  t2.setDate(today.getDate() - 2);
+  // T-2 = 今天往前推 2 天（北京时间基准）
+  const now = new Date();
+  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
+  const t2 = new Date(beijingMs);
 
   const days: SalaryWeeklyDetail[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(t2);
-    d.setDate(t2.getDate() - i);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
+    d.setUTCDate(t2.getUTCDate() - i);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     // 筛选该中心该天的数据（模糊匹配：数据中可能带"区"/"中心"后缀）
@@ -523,8 +522,8 @@ export function getWeeklySalaryDetail(
       avgDeviation: parseFloat(row['均值偏离（%）'] || 0),
     }));
 
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
     const dateLabel = `${month}/${day}`;
 
     // 每天用各自日期的算薪人数计算覆盖率
@@ -594,17 +593,17 @@ export function getWeeklyAttendance15Detail(
     _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
   }));
 
-  const today = new Date();
-  const t2 = new Date(today);
-  t2.setDate(today.getDate() - 2);
+  const now = new Date();
+  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
+  const t2 = new Date(beijingMs);
 
   const days: Attendance15WeeklyDetail[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(t2);
-    d.setDate(t2.getDate() - i);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
+    d.setUTCDate(t2.getUTCDate() - i);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     const rows = normalized.filter(row => {
@@ -625,8 +624,8 @@ export function getWeeklyAttendance15Detail(
       employeeId: String(row.工号 || row['员工编号'] || '').trim(),
     }));
 
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
     const dateLabel = `${month}/${day}`;
 
     days.push({
@@ -668,17 +667,17 @@ export function getWeeklyAttendance7Detail(
     _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
   }));
 
-  const today = new Date();
-  const t2 = new Date(today);
-  t2.setDate(today.getDate() - 2);
+  const now = new Date();
+  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
+  const t2 = new Date(beijingMs);
 
   const days: Attendance7WeeklyDetail[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(t2);
-    d.setDate(t2.getDate() - i);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
+    d.setUTCDate(t2.getUTCDate() - i);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     const rows = normalized.filter(row => {
@@ -699,8 +698,8 @@ export function getWeeklyAttendance7Detail(
       employeeId: String(row.工号 || row['员工编号'] || '').trim(),
     }));
 
-    const month = d.getMonth() + 1;
-    const day = d.getDate();
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
     const dateLabel = `${month}/${day}`;
 
     days.push({
