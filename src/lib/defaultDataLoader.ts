@@ -136,8 +136,11 @@ async function getDatabaseFileList(): Promise<string[]> {
 /**
  * 主函数：从 public/database/ 加载默认数据
  * 智能缓存：已加载成功的文件不会重复加载
+ * 支持进度回调（用于 UI 展示加载进度）
  */
-export async function loadDefaultData(): Promise<boolean> {
+export async function loadDefaultData(
+  onProgress?: (loaded: number, total: number, currentFile: string) => void
+): Promise<boolean> {
   try {
     console.log('[默认数据] 开始加载默认数据...');
 
@@ -154,45 +157,50 @@ export async function loadDefaultData(): Promise<boolean> {
       return false;
     }
 
-    let loadedAny = false;
+    const xlsxFiles = files.filter(f => f.match(/\.xlsx?$/i));
+    const toLoad = xlsxFiles.filter(f => !loadedFiles.has(f));
+    const skipCount = xlsxFiles.length - toLoad.length;
+
+    if (skipCount > 0) {
+      console.log(`[默认数据] 跳过 ${skipCount} 个已加载文件`);
+    }
+
+    // ── 并行加载：所有待加载文件同时发起请求 ──
     let successCount = 0;
-    let skipCount = 0;
     let failCount = 0;
 
-    for (const file of files) {
-      if (!file.match(/\.xlsx?$/i)) continue;
+    const loadPromises = toLoad.map(async (file, idx) => {
+      try {
+        const result = await loadAndParseFile(file);
+        if (!result) {
+          failCount++;
+          return;
+        }
 
-      // 已加载过的文件跳过（除非用户清除了缓存）
-      if (loadedFiles.has(file)) {
-        console.log(`[默认数据] 跳过已加载文件：${file}`);
-        skipCount++;
-        continue;
-      }
+        const { data, dataType } = result;
+        await saveRawData(data, dataType);
 
-      const result = await loadAndParseFile(file);
-      if (!result) {
+        loadedFiles.add(file);
+        console.log(`[默认数据] 已加载：${file} -> ${dataType}，共 ${data.length} 条`);
+        successCount++;
+
+        // 进度回调
+        if (onProgress) {
+          onProgress(idx + 1, toLoad.length, file);
+        }
+      } catch (err) {
+        console.error(`[默认数据] 加载文件失败 ${file}:`, err);
         failCount++;
-        continue;
       }
+    });
 
-      const { data, dataType } = result;
-
-      // 保存原始数据到 IndexedDB
-      await saveRawData(data, dataType);
-
-      // 记录为已加载
-      loadedFiles.add(file);
-
-      console.log(`[默认数据] 已加载：${file} -> ${dataType}，共 ${data.length} 条`);
-      loadedAny = true;
-      successCount++;
-    }
+    await Promise.all(loadPromises);
 
     // 持久化已加载文件清单
     localStorage.setItem(loadedFilesKey, JSON.stringify(Array.from(loadedFiles)));
 
     console.log(`[默认数据] 加载完成：成功 ${successCount} 个，跳过 ${skipCount} 个，失败 ${failCount} 个`);
-    return loadedAny;
+    return successCount > 0;
   } catch (error) {
     console.error('[默认数据] 加载失败：', error);
     return false;

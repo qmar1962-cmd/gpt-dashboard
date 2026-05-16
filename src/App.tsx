@@ -103,18 +103,20 @@ export default function App() {
         await initDatabase();
         setLoadingProgress(20);
         
-        // 强制加载 public/database/ 中的所有默认数据文件
-        // idbSaveRawData 已修复为合并模式，不会重复加载相同数据
-        setLoadingMessage('正在加载默认数据...');
+        // ── 首次加载默认数据 ──
+        setLoadingMessage('正在加载数据文件...');
         setLoadingProgress(30);
-        const loaded = await loadDefaultData();
+        const loaded = await loadDefaultData((loaded, total, file) => {
+          setLoadingMessage(`正在加载 (${loaded}/${total})...`);
+          setLoadingProgress(30 + Math.round((loaded / total) * 30)); // 30→60
+        });
         if (loaded) {
           console.log('[初始化] 已从 public/database/ 加载默认数据');
         }
         
-        setLoadingProgress(40);
+        setLoadingProgress(65);
         
-        // 加载薪资异常数据（独立存储，不影响效能数据）
+        // 加载薪资异常数据
         const salaryStored = await getSalaryRawData();
         if (salaryStored && salaryStored.rawData && salaryStored.rawData.length > 0) {
           setSalaryDataState(salaryStored.rawData);
@@ -138,8 +140,6 @@ export default function App() {
           setRosterDataState(rosterStored.rawData);
         }
         
-        setLoadingProgress(60);
-        
         // 优先：用原始数据重新计算（确保 T-2/T-3 基于今天日期）
         const rawStored = await getLatestRawData();
         if (rawStored && rawStored.rawData && rawStored.rawData.length > 0) {
@@ -149,7 +149,57 @@ export default function App() {
             setCustomData(rebuilt);
             setDataFileName('从存储加载');
             setDataDate(new Date().toISOString().split('T')[0]);
+            setLoadingProgress(90);
             return;
+          }
+        }
+        
+        // ── IndexedDB 空数据检测 + 自动修复 ──
+        // 如果所有数据读取都为空，说明 IndexedDB 被清空但 localStorage 缓存还在
+        // 清除缓存标记，强制重新加载所有文件
+        const allEmpty = !salaryStored?.rawData?.length
+          && !att15Stored?.rawData?.length
+          && !att7Stored?.rawData?.length
+          && !rosterStored?.rawData?.length
+          && !rawStored?.rawData?.length;
+        
+        if (allEmpty) {
+          console.warn('[初始化] 检测到 IndexedDB 数据为空，清除缓存标记并重新加载...');
+          setLoadingMessage('正在修复数据缓存...');
+          localStorage.removeItem('gpt_loaded_files');
+          
+          // 重新加载所有数据文件
+          const reloaded = await loadDefaultData((loaded, total, file) => {
+            setLoadingMessage(`正在重新加载 (${loaded}/${total})...`);
+            setLoadingProgress(30 + Math.round((loaded / total) * 30));
+          });
+          
+          if (reloaded) {
+            // 重新读取数据
+            const salaryStored2 = await getSalaryRawData();
+            if (salaryStored2?.rawData?.length) setSalaryDataState(salaryStored2.rawData);
+            
+            const att15Stored2 = await getAttendance15RawData();
+            if (att15Stored2?.rawData?.length) setAttendance15DataState(att15Stored2.rawData);
+            
+            const att7Stored2 = await getAttendance7RawData();
+            if (att7Stored2?.rawData?.length) setAttendance7DataState(att7Stored2.rawData);
+            
+            const rosterStored2 = await getRosterRawData();
+            if (rosterStored2?.rawData?.length) setRosterDataState(rosterStored2.rawData);
+            
+            const rawStored2 = await getLatestRawData();
+            if (rawStored2?.rawData?.length) {
+              setRawDataState(rawStored2.rawData);
+              const rebuilt = buildFixedHuazhongData(rawStored2.rawData, rawStored2.dataType, '');
+              if (rebuilt?.length) {
+                setCustomData(rebuilt);
+                setDataFileName('从存储加载');
+                setDataDate(new Date().toISOString().split('T')[0]);
+              }
+            }
+            
+            console.log('[初始化] 数据修复完成');
           }
         }
       } catch (error) {
