@@ -653,7 +653,8 @@ export default function App() {
         const rateNum = t2SalaryBase > 0 ? (t2SalaryCount / t2SalaryBase) * 100 : 0;
         const salaryScore = rateNum <= 3 ? 25 : Math.max(0, 25 - Math.round((rateNum - 3) * 5));
 
-        if (t2SalaryCount > 0 || t3SalaryCount > 0) {
+        // 薪资异常：有全局数据时始终计算得分（覆盖率为0即无异常，得满分25）
+        if (salaryDataState && salaryDataState.length > 0) {
           enrichedCenter.metrics.salary = salaryScore;
           enrichedCenter.prevSalaryCount = t3SalaryCount;
           enrichedCenter.salaryCount = t2SalaryBase;
@@ -678,7 +679,8 @@ export default function App() {
         const over30Deduction = t2Over30 * 2;
         const att15Score = Math.max(0, 25 - coverageDeduction - over30Deduction);
 
-        if (t2Att15Count > 0 || t3Att15Count > 0) {
+        // 连续出勤：有全局数据时始终计算得分（覆盖率为0即无异常，得满分25）
+        if (attendance15DataState && attendance15DataState.length > 0) {
           enrichedCenter.metrics.att15 = att15Score;
           enrichedCenter.att15Count = t2Att15Count;
           enrichedCenter.att15Rate = att15Rate;
@@ -695,7 +697,8 @@ export default function App() {
         // 得分：每出现 1 人扣 2 分，累计计分，最低 0 分
         const att7Score = Math.max(0, 25 - t2Att7Count * 2);
 
-        if (t2Att7Count > 0 || t3Att7Count > 0) {
+        // 长期未出勤：有全局数据时始终计算得分（0人异常即无异常，得满分25）
+        if (attendance7DataState && attendance7DataState.length > 0) {
           enrichedCenter.metrics.att7 = att7Score;
           enrichedCenter.att7Count = t2Att7Count;
           enrichedCenter.att7New = att7New;
@@ -1012,7 +1015,7 @@ export default function App() {
             <div className="p-12 border-b border-zinc-200 bg-zinc-50/50">
               <div className="flex justify-between items-end mb-8">
                 <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-zinc-400 block">加权平均得分统计</label>
+                  <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-zinc-400 block">中区加权平均得分统计</label>
                   <span className="text-6xl font-black leading-none tracking-tighter">{avgTotalScore} 分</span>
                 </div>
                 <div className="max-w-2xl text-right">
@@ -1154,6 +1157,7 @@ export default function App() {
                               score: c.score || 0,
                               jobCount: c.abnormalCount || 0,
                               salaryCount: c.t2SalaryCount || 0,
+                              att15Count: c.t2Att15Count || 0,
                               att7Count: c.t2Att7Count || 0,
                             });
                           }
@@ -1165,9 +1169,10 @@ export default function App() {
                         let actions: string[] = [];
                         
                         worstCenters.forEach(c => {
-                          if (c.jobCount > 0) actions.push(`提升${c.center}效能`);
-                          if (c.salaryCount > 0) actions.push(`改善${c.center}薪资异常`);
-                          if (c.att7Count > 0) actions.push(`解决${c.center}长期未出勤`);
+                          if (c.jobCount > 0) actions.push(`改善${c.center}岗位效能异常`);
+                          if (c.salaryCount > 0) actions.push(`修正${c.center}薪资异常`);
+                          if (c.att15Count > 0) actions.push(`确定${c.center}对应模块出勤率，落实调休计划`);
+                          if (c.att7Count > 0) actions.push(`确定${c.center}员工未出勤原因明细，及时清理离职员工`);
                         });
                         
                         if (actions.length > 0) {

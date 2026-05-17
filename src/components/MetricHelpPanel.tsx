@@ -34,17 +34,17 @@ const DATA_SOURCES = [
 // ── 操作规范 ──
 const OPERATION_SPEC = {
   naming: [
-    { type: '岗位效能异常', pattern: '岗位效能异常_YYYYMMDD.xlsx', example: '岗位效能异常_20260514.xlsx' },
-    { type: '薪资绩效异常', pattern: '薪资绩效异常_YYYYMMDD.xlsx', example: '薪资绩效异常_20260514.xlsx' },
-    { type: '连续15日出勤', pattern: '连续15日出勤_YYYYMMDD.xlsx', example: '连续15日出勤_20260514.xlsx' },
-    { type: '连续7日未出勤', pattern: '连续7日未出勤_YYYYMMDD.xlsx', example: '连续7日未出勤_20260514.xlsx' },
-    { type: '中心在职花名册', pattern: '中心在职花名册_YYYYMMDD.xlsx', example: '中心在职花名册_20260514.xlsx' },
-    { type: '中心日出勤明细', pattern: '中心日出勤明细_YYYYMMDD.xlsx', example: '中心日出勤明细_20260514.xlsx' },
+    { type: '岗位效能异常', pattern: 'job_performance_YYYYMMDD.xlsx', example: 'job_performance_20260514.xlsx' },
+    { type: '薪资绩效异常', pattern: 'salary_performance_YYYYMMDD.xlsx', example: 'salary_performance_20260514.xlsx' },
+    { type: '连续15日出勤', pattern: 'attendance15_YYYYMMDD.xlsx', example: 'attendance15_20260514.xlsx' },
+    { type: '连续7日未出勤', pattern: 'attendance7_YYYYMMDD.xlsx', example: 'attendance7_20260514.xlsx' },
+    { type: '中心在职花名册', pattern: 'roster_YYYYMMDD.xlsx', example: 'roster_20260514.xlsx' },
+    { type: '中心日出勤明细', pattern: 'center_attendance_YYYYMMDD.xlsx', example: 'center_attendance_20260514.xlsx' },
   ],
   uploadSteps: [
     '1. 将 Excel 文件放入项目 public/database/ 目录',
-    '2. 文件命名遵循"类型_日期"格式（如：岗位效能异常_20260514.xlsx）',
-    '3. 前端会自动扫描 public/database/ 目录，无需手动维护文件列表',
+    '2. 文件命名必须为英文，遵循"类型_日期"格式（如：job_performance_20260514.xlsx）',
+    '3. 前端会自动扫描 public/database/ 目录，按英文前缀匹配文件，无需手动维护文件列表',
     '4. 浏览器中点击"数据管理" → "清除缓存并重新加载"，强制刷新数据',
     '5. 或直接 Ctrl+F5 强制刷新页面，系统会自动加载新文件',
   ],
@@ -395,16 +395,37 @@ function OperationSection() {
             </div>
           ))}
         </div>
+        <div className="bg-amber-50/60 rounded-md p-2.5 space-y-1 border border-amber-100">
+          <div className="text-[10px] font-bold text-amber-700">为什么文件命名必须使用英文？</div>
+          <ul className="space-y-0.5">
+            <li className="text-[9px] text-zinc-600 leading-relaxed">1. 跨平台兼容：英文文件名在不同操作系统（Windows/Mac/Linux）间传输不会乱码，中文文件名在部分服务器环境可能显示为乱码</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed">2. 程序自动扫描：系统按英文前缀（如 job_performance、salary_performance）匹配文件，中文前缀无法被正确识别</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed">3. Git 版本控制：Git 对中文文件名支持不稳定，英文命名可避免提交冲突和乱码问题</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed">4. 减少人为错误：英文命名避免因输入法切换、全半角等问题导致文件名格式不一致</li>
+          </ul>
+        </div>
       </div>
 
       {/* 数据上传流程 */}
       <div className="bg-blue-50/40 rounded-lg p-3 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 uppercase tracking-wider"><Upload size={11} /> 数据上传流程</div>
-        <ol className="space-y-1">
+        <ol className="space-y-1.5">
           {OPERATION_SPEC.uploadSteps.map((step, i) => (
             <li key={i} className="text-[10px] text-zinc-600 leading-relaxed">{step}</li>
           ))}
         </ol>
+        <div className="mt-2 pt-2 border-t border-blue-100">
+          <div className="text-[10px] font-bold text-blue-700 mb-1">详细操作步骤：</div>
+          <ol className="space-y-1">
+            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 1：</span>准备好 Excel 数据文件，确保列名与指标口径中要求的字段一致</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 2：</span>按"英文类型_日期"格式重命名文件，如 job_performance_20260515.xlsx（日期必须与数据日期一致）</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 3：</span>将文件放入项目根目录下的 public/database/ 文件夹中</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 4：</span>运行 git add -A && git commit -m "更新数据文件" && git push 将文件推送到仓库</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 5：</span>等待 Netlify 自动部署（约 1-2 分钟）</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 6：</span>线上打开看板页面，点击"数据管理" → "清除缓存并重新加载"，或直接按 Ctrl+F5 强制刷新</li>
+            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 7：</span>验证数据是否生效：检查对应省区/中心的指标数值是否与 Excel 数据一致</li>
+          </ol>
+        </div>
       </div>
 
       {/* 更新频率 */}

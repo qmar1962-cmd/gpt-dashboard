@@ -396,12 +396,12 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
 
 // 数据类型配置
 const DATA_TYPE_CONFIG: { key: string; label: string; icon: string; color: string; bgColor: string; desc: string }[] = [
-  { key: 'salary_performance', label: '薪资异常数据', icon: '💰', color: 'text-amber-700', bgColor: 'bg-amber-50', desc: '工资偏高人员明细，用于绩效异常弹窗和覆盖率计算' },
-  { key: 'attendance_15days', label: '连续15日出勤', icon: '📅', color: 'text-orange-700', bgColor: 'bg-orange-50', desc: '连续15日出勤数据，用于连续出勤得分计算' },
-  { key: 'attendance_7days', label: '连续7日未出勤', icon: '🚫', color: 'text-purple-700', bgColor: 'bg-purple-50', desc: '连续7日未出勤数据，用于长期未出勤得分计算' },
-  { key: 'employee_roster', label: '在职花名册', icon: '👥', color: 'text-emerald-700', bgColor: 'bg-emerald-50', desc: '中心在职花名册，用于管幅计算（综合管幅+组长管幅）和覆盖率分母' },
-  { key: 'center_daily_attendance', label: '日出勤明细', icon: '📆', color: 'text-cyan-700', bgColor: 'bg-cyan-50', desc: '个人当天是否出勤数据，用于考勤汇总统计' },
-  { key: 'job_performance', label: '岗位效能异常', icon: '📊', color: 'text-red-700', bgColor: 'bg-red-50', desc: '岗位效能异常数据，用于效能异常弹窗展示' },
+  { key: 'salary_performance', label: '薪资异常 (salary_performance)', icon: '💰', color: 'text-amber-700', bgColor: 'bg-amber-50', desc: '工资偏高人员明细，用于绩效异常弹窗和覆盖率计算' },
+  { key: 'attendance_15days', label: '连续15日出勤 (attendance15)', icon: '📅', color: 'text-orange-700', bgColor: 'bg-orange-50', desc: '连续15日出勤数据，用于连续出勤得分计算' },
+  { key: 'attendance_7days', label: '连续7日未出勤 (attendance7)', icon: '🚫', color: 'text-purple-700', bgColor: 'bg-purple-50', desc: '连续7日未出勤数据，用于长期未出勤得分计算' },
+  { key: 'employee_roster', label: '在职花名册 (roster)', icon: '👥', color: 'text-emerald-700', bgColor: 'bg-emerald-50', desc: '中心在职花名册，用于管幅计算（综合管幅+组长管幅）和覆盖率分母' },
+  { key: 'center_daily_attendance', label: '日出勤明细 (center_attendance)', icon: '📆', color: 'text-cyan-700', bgColor: 'bg-cyan-50', desc: '个人当天是否出勤数据，用于考勤汇总统计' },
+  { key: 'job_performance', label: '岗位效能异常 (job_performance)', icon: '📊', color: 'text-red-700', bgColor: 'bg-red-50', desc: '岗位效能异常数据，用于效能异常弹窗展示' },
 ];
 
 
