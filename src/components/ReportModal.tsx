@@ -184,9 +184,16 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
 
               <div className="space-y-3 pl-4">
                 {prov.centers.map(center => {
-                  const hasIssue = center.jobAbnormalCount > 0 || center.salaryCount > 0 || center.att15Count > 0 || center.att7Count > 0;
+                  const hasJobOrSalaryIssue = center.jobAbnormalCount > 0 || center.salaryCount > 0;
+                  const hasAttWarning = center.att15Count > 0 || center.att7Count > 0;
+                  const hasIssue = hasJobOrSalaryIssue || hasAttWarning;
+                  const borderClass = hasJobOrSalaryIssue
+                    ? 'border-red-200 bg-red-50/30'
+                    : hasAttWarning
+                      ? 'border-amber-200 bg-amber-50/30'
+                      : 'border-zinc-200 bg-zinc-50/50';
                   return (
-                    <div key={center.centerName} className={`p-3 rounded-lg border ${hasIssue ? 'border-red-200 bg-red-50/30' : 'border-zinc-200 bg-zinc-50/50'}`}>
+                    <div key={center.centerName} className={`p-3 rounded-lg border ${borderClass}`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-black">{center.centerName}</span>
@@ -199,42 +206,42 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
 
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         {/* 效能异常 */}
-                        <div className={`p-2 rounded ${center.jobAbnormalCount > 0 ? 'bg-red-50' : 'bg-zinc-100'}`}>
+                        <div className={`p-2 rounded ${center.jobAbnormalCount > 0 ? 'bg-red-50' : 'bg-zinc-50'}`}>
                           <span className="text-zinc-500">效能异常</span>
                           <div className="font-mono font-bold">{
                             center.jobAbnormalCount > 0
                               ? <span className="text-red-600">{center.jobAbnormalCount} 个 <span className="text-[10px] text-zinc-400">(前一天 {center.jobPrevCount})</span></span>
-                              : <span className="text-zinc-400">—</span>
+                              : <span className="text-zinc-500">0 <span className="text-[10px] text-zinc-400">(前一天 {center.jobPrevCount})</span></span>
                           }</div>
                         </div>
 
                         {/* 绩效异常 */}
-                        <div className={`p-2 rounded ${center.salaryCount > 0 ? 'bg-red-50' : 'bg-zinc-100'}`}>
+                        <div className={`p-2 rounded ${center.salaryCount > 0 ? 'bg-red-50' : 'bg-zinc-50'}`}>
                           <span className="text-zinc-500">绩效异常</span>
                           <div className="font-mono font-bold">{
                             center.salaryCount > 0
                               ? <span className="text-red-600">{center.salaryCount} 人 <span className="text-[10px] text-zinc-400">({center.salaryCoverage})</span></span>
-                              : <span className="text-zinc-400">—</span>
+                              : <span className="text-zinc-500">0 <span className="text-[10px] text-zinc-400">({center.salaryCoverage})</span></span>
                           }</div>
                         </div>
 
                         {/* 连续出勤 */}
-                        <div className={`p-2 rounded ${center.att15Count > 0 ? 'bg-red-50' : 'bg-zinc-100'}`}>
+                        <div className={`p-2 rounded ${center.att15Count > 0 ? 'bg-amber-50' : 'bg-zinc-50'}`}>
                           <span className="text-zinc-500">连续出勤</span>
                           <div className="font-mono font-bold">{
                             center.att15Count > 0
-                              ? <span className="text-red-600">{center.att15Count} 人 <span className="text-[10px] text-zinc-400">({center.att15Rate})</span></span>
-                              : <span className="text-zinc-400">—</span>
+                              ? <span className="text-amber-600">{center.att15Count} 人 <span className="text-[10px] text-zinc-400">({center.att15Rate})</span></span>
+                              : <span className="text-zinc-500">0 <span className="text-[10px] text-zinc-400">({center.att15Rate})</span></span>
                           }</div>
                         </div>
 
                         {/* 长期未出勤 */}
-                        <div className={`p-2 rounded ${center.att7Count > 0 ? 'bg-red-50' : 'bg-zinc-100'}`}>
+                        <div className={`p-2 rounded ${center.att7Count > 0 ? 'bg-amber-50' : 'bg-zinc-50'}`}>
                           <span className="text-zinc-500">长期未出勤</span>
                           <div className="font-mono font-bold">{
                             center.att7Count > 0
-                              ? <span className="text-red-600">{center.att7Count} 人</span>
-                              : <span className="text-zinc-400">—</span>
+                              ? <span className="text-amber-600">{center.att7Count} 人</span>
+                              : <span className="text-zinc-500">0 人</span>
                           }</div>
                         </div>
                       </div>
@@ -266,6 +273,40 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                             ))}
                             {center.salaryDetails && center.salaryDetails.length > 5 && (
                               <div className="text-[10px] text-zinc-400">... 等 {center.salaryDetails.length} 条</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 连续出勤≥15天明细 */}
+                      {hasIssue && center.att15Count > 0 && (
+                        <div className="mt-2 pt-2 border-t border-amber-100">
+                          <p className="text-[10px] text-amber-600 font-black uppercase mb-1">连续出勤≥15天明细</p>
+                          <div className="space-y-1">
+                            {center.att15Details?.slice(0, 5).map((d, i) => (
+                              <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-amber-300">
+                                {d.name}（{d.jobName}）：连续 {d.continuousDays} 天
+                              </div>
+                            ))}
+                            {center.att15Details && center.att15Details.length > 5 && (
+                              <div className="text-[10px] text-zinc-400">... 等 {center.att15Details.length} 条</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 长期未出勤≥7天明细 */}
+                      {hasIssue && center.att7Count > 0 && (
+                        <div className="mt-2 pt-2 border-t border-amber-100">
+                          <p className="text-[10px] text-amber-600 font-black uppercase mb-1">长期未出勤≥7天明细</p>
+                          <div className="space-y-1">
+                            {center.att7Details?.slice(0, 5).map((d, i) => (
+                              <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-amber-300">
+                                {d.name}（{d.jobName}）：未出勤 {d.continuousDays} 天
+                              </div>
+                            ))}
+                            {center.att7Details && center.att7Details.length > 5 && (
+                              <div className="text-[10px] text-zinc-400">... 等 {center.att7Details.length} 条</div>
                             )}
                           </div>
                         </div>
