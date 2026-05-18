@@ -140,7 +140,7 @@ export function generateReport(params: {
         });
         const abnormalRows = t2Rows.filter(r => parseFloat(r['目标偏离（%）'] || 0) >= 10);
         item.jobDetails = abnormalRows.map(r => ({
-          jobName: r['岗位名称'] || r.jobName || '未知岗位',
+          jobName: r['岗位'] || r['岗位名称'] || r.jobName || '未知岗位',
           deviation: parseFloat(r['目标偏离（%）'] || 0),
           actualValue: parseFloat(r['当月人均日绩效'] || 0),
           targetValue: parseFloat(r['目标值'] || 0),
