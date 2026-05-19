@@ -43,7 +43,7 @@ export async function initFirebase(): Promise<boolean> {
     try {
       console.log(`[Firebase] 第 ${attempt}/${maxRetries} 次尝试初始化...`);
       app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
+      db = getFirestore(app, "shujukuid");
 
       // 测试连接：尝试读一个不存在的文档（3秒超时）
       const testRef = doc(db, '_health', 'ping');
