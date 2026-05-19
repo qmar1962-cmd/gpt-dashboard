@@ -306,6 +306,8 @@ export default function Attendance15DetailModal({
   const [globalPlans, setGlobalPlans] = useState<Record<string, LeavePlanRecord>>({});
   // 当前打开的日期选择器位置
   const [pickerFor, setPickerFor] = useState<{ date: string; name: string; employeeId: string } | null>(null);
+  // Firebase 状态
+  const [firebaseReady, setFirebaseReady] = useState(isFirebaseReady);
 
   // 加载全局排休数据并自动匹配到当前列表中的人员
   useEffect(() => {
@@ -595,6 +597,11 @@ export default function Attendance15DetailModal({
               <p className="text-[9px] text-zinc-400 font-bold text-center">
                 仅展示连续出勤 ≥ 15 天的人员明细
               </p>
+              {!firebaseReady && (
+                <p className="text-[9px] text-amber-600 font-bold text-center mt-1">
+                  ⚠️ 离线模式：排休计划仅保存在本地，其他用户不可见
+                </p>
+              )}
             </div>
           </motion.div>
         </>

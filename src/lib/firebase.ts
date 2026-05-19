@@ -31,26 +31,43 @@ let firebaseReady = false;
 /**
  * 初始化 Firebase，失败时静默降级到 localStorage
  * 带 3 秒超时，避免网络阻塞页面加载
+ * 带重试机制（最多 3 次）
  */
 export async function initFirebase(): Promise<boolean> {
-  try {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-
-    // 测试连接：尝试读一个不存在的文档（3秒超时）
-    const testRef = doc(db, '_health', 'ping');
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Firebase 连接超时')), 3000)
-    );
-    await Promise.race([getDoc(testRef), timeoutPromise]);
-
-    firebaseReady = true;
+  if (firebaseReady) {
+    console.log('[Firebase] 已初始化，跳过');
     return true;
-  } catch (err) {
-    console.warn('[Firebase] 初始化失败，降级到 localStorage:', err);
-    firebaseReady = false;
-    return false;
   }
+
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[Firebase] 第 ${attempt}/${maxRetries} 次尝试初始化...`);
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+
+      // 测试连接：尝试读一个不存在的文档（3秒超时）
+      const testRef = doc(db, '_health', 'ping');
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Firebase 连接超时')), 3000)
+      );
+      await Promise.race([getDoc(testRef), timeoutPromise]);
+
+      firebaseReady = true;
+      console.log('[Firebase] ✅ 初始化成功');
+      return true;
+    } catch (err) {
+      console.warn(`[Firebase] ❌ 第 ${attempt} 次初始化失败:`, err);
+      if (attempt < maxRetries) {
+        console.log(`[Firebase] 等待 2 秒后重试...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+  }
+
+  console.error('[Firebase] 🔴 所有重试失败，降级到 localStorage');
+  firebaseReady = false;
+  return false;
 }
 
 /**
@@ -178,16 +195,20 @@ export async function cleanupFirestore(maxDays: number = 30): Promise<number> {
  * 文档路径：sharedData/{docId}
  */
 export async function saveSharedData(docId: string, data: any): Promise<boolean> {
-  if (!db) return false;
+  if (!db) {
+    console.warn(`[Firebase] saveSharedData(${docId}) 失败: db 未初始化`);
+    return false;
+  }
   try {
     const docRef = doc(db, 'sharedData', docId);
     await setDoc(docRef, {
       ...data,
       updatedAt: new Date().toISOString(),
     });
+    console.log(`[Firebase] ✅ saveSharedData(${docId}) 成功`);
     return true;
   } catch (err) {
-    console.warn('[Firebase] 共享数据写入失败:', err);
+    console.error(`[Firebase] ❌ saveSharedData(${docId}) 失败:`, err);
     return false;
   }
 }
@@ -196,18 +217,23 @@ export async function saveSharedData(docId: string, data: any): Promise<boolean>
  * 从 Firestore 读取共享数据
  */
 export async function readSharedData(docId: string): Promise<any | null> {
-  if (!db) return null;
+  if (!db) {
+    console.warn(`[Firebase] readSharedData(${docId}) 失败: db 未初始化`);
+    return null;
+  }
   try {
     const docRef = doc(db, 'sharedData', docId);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const d = snap.data();
       const { updatedAt: _u, ...rest } = d;
+      console.log(`[Firebase] ✅ readSharedData(${docId}) 成功，数据条数: ${Object.keys(rest).length}`);
       return rest;
     }
+    console.log(`[Firebase] readSharedData(${docId}) 文档不存在`);
     return null;
   } catch (err) {
-    console.warn('[Firebase] 共享数据读取失败:', err);
+    console.error(`[Firebase] ❌ readSharedData(${docId}) 失败:`, err);
     return null;
   }
 }

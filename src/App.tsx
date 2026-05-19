@@ -48,6 +48,7 @@ export default function App() {
   const [attendance7DataState, setAttendance7DataState] = useState<any[] | null>(null);
   const [rosterDataState, setRosterDataState] = useState<any[] | null>(null);
   const [dataFileName, setDataFileName] = useState<string>('');
+  const [dataDate, setDataDate] = useState<string>('');
   
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('gpt_loggedin') === '1');
   const [loggedInUser, setLoggedInUser] = useState<{ name: string; empId: string } | null>(() => {

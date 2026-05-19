@@ -22,6 +22,11 @@ interface AbsenceReasonRecord {
   name: string;        // 姓名（显示用）
 }
 
+/** 获取存储 key：优先用 employeeId，没有则用 name */
+function getStorageKey(employeeId: string, name: string): string {
+  return employeeId || name || 'unknown';
+}
+
 /** 加载全局原因数据（仅 localStorage） */
 function loadAbsenceReasonsFromLocal(): Record<string, AbsenceReasonRecord> {
   try {
@@ -102,21 +107,24 @@ export default function Attendance7DetailModal({
   const [reasonMap, setReasonMap] = useState<Record<string, string>>({});
   // 当前展开的下拉框位置
   const [openDropdownFor, setOpenDropdownFor] = useState<{ date: string; name: string; employeeId: string } | null>(null);
+  // Firebase 状态
+  const [firebaseReady, setFirebaseReady] = useState(isFirebaseReady);
 
   // 加载未出勤原因：按工号自动匹配 + 断天清理 + Firestore 合并
   useEffect(() => {
     if (!isOpen || !weeklyData.length) return;
 
-    // 收集当前视图中所有出现的工号（用于断天清理）
+    // 收集当前视图中所有出现的工号/姓名（用于断天清理）
     const activeIds = new Set<string>();
 
     const matchAndSet = (allStored: Record<string, AbsenceReasonRecord>) => {
       const matched: Record<string, string> = {};
       for (const day of weeklyData) {
         for (const person of day.details) {
-          if (person.employeeId) {
-            activeIds.add(person.employeeId);
-            const rec = allStored[person.employeeId];
+          if (person.employeeId || person.name) {
+            const key = getStorageKey(person.employeeId || '', person.name || '');
+            activeIds.add(key);
+            const rec = allStored[key];
             if (rec) {
               matched[`${day.date}_${person.name}`] = rec.reason;
             }
@@ -150,9 +158,10 @@ export default function Attendance7DetailModal({
     }));
 
     // 写入全局存储
-    if (employeeId) {
+    if (employeeId || name) {
       const all = loadAbsenceReasonsFromLocal();
-      all[employeeId] = { employeeId, name, reason };
+      const key = getStorageKey(employeeId, name);
+      all[key] = { employeeId: employeeId || '', name, reason };
       localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(all));
       // 异步同步到 Firestore
       saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
@@ -169,9 +178,10 @@ export default function Attendance7DetailModal({
       return updated;
     });
 
-    if (employeeId) {
+    if (employeeId || name) {
       const all = loadAbsenceReasonsFromLocal();
-      delete all[employeeId];
+      const key = getStorageKey(employeeId, name);
+      delete all[key];
       localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(all));
       // 异步同步到 Firestore
       saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
@@ -433,6 +443,11 @@ export default function Attendance7DetailModal({
               <p className="text-[9px] text-zinc-400 font-bold text-center">
                 仅展示连续未出勤 ≥ 7 天的人员明细 · 原因按工号记忆，断天后自动清除
               </p>
+              {!firebaseReady && (
+                <p className="text-[9px] text-amber-600 font-bold text-center mt-1">
+                  ⚠️ 离线模式：原因仅保存在本地，其他用户不可见
+                </p>
+              )}
             </div>
           </motion.div>
         </>

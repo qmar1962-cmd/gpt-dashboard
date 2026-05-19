@@ -87,7 +87,9 @@ export async function initDatabase(): Promise<boolean> {
   
   const success = await initFirebase();
   if (success) {
+    console.log('[DB] ✅ Firebase 初始化成功，共享数据功能已启用');
   } else {
+    console.warn('[DB] 🔴 Firebase 初始化失败，共享数据功能不可用（仅本地模式）');
   }
   
   return success;
