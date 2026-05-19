@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json 需要提交给 GitHub Actions 缓存使用
 
 # Build output
 dist/
