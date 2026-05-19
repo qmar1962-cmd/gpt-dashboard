@@ -21,7 +21,6 @@ const firebaseConfig = {
   storageBucket: "gpt-day.firebasestorage.app",
   messagingSenderId: "317463926945",
   appId: "1:317463926945:web:f598512266aa0f9c53f8e0",
-  measurementId: "G-DQ6VZ33JE4"
 };
 
 let app: FirebaseApp | null = null;
