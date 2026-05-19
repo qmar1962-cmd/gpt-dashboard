@@ -35,8 +35,8 @@ function loadAbsenceReasonsFromLocal(): Record<string, AbsenceReasonRecord> {
   } catch { return {}; }
 }
 
-/** 加载全局原因数据：本地优先 + 异步合并 Firestore 云端数据 */
-async function loadAbsenceReasons(activeIds?: Set<string>): Promise<Record<string, AbsenceReasonRecord>> {
+/** 加载全局原因数据：本地优先 + 异步合并 Firestore 云端数据（不再清理数据） */
+async function loadAbsenceReasons(): Promise<Record<string, AbsenceReasonRecord>> {
   const local = loadAbsenceReasonsFromLocal();
   if (!isCloudBaseReady()) return local;
 
@@ -45,19 +45,6 @@ async function loadAbsenceReasons(activeIds?: Set<string>): Promise<Record<strin
     if (cloud && typeof cloud === 'object') {
       // 合并：本地覆盖优先，云端补充本地没有的
       const merged: Record<string, AbsenceReasonRecord> = { ...cloud, ...local };
-
-      // 如果提供了 activeIds，只保留当前视图中的工号（断天清理）
-      if (activeIds) {
-        const cleaned: Record<string, AbsenceReasonRecord> = {};
-        for (const [id, rec] of Object.entries(merged)) {
-          if (activeIds.has(id)) cleaned[id] = rec;
-        }
-        localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(cleaned));
-        // 同步清理云端
-        saveSharedData(FIRESTORE_DOC_ID, cleaned).catch(() => {});
-        return cleaned;
-      }
-
       localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(merged));
       return merged;
     }
@@ -65,21 +52,13 @@ async function loadAbsenceReasons(activeIds?: Set<string>): Promise<Record<strin
   return local;
 }
 
-/** 保存并清理：只保留当前视图内出现的工号记录，其余删除（断天失效） */
-function saveAndCleanAbsenceReasons(
-  all: Record<string, AbsenceReasonRecord>,
-  activeEmployeeIds: Set<string>
+/** 保存原因到 localStorage 和 Firestore（不再清理其他数据） */
+function saveAbsenceReason(
+  all: Record<string, AbsenceReasonRecord>
 ): void {
-  const cleaned: Record<string, AbsenceReasonRecord> = {};
-  for (const [id, rec] of Object.entries(all)) {
-    if (activeEmployeeIds.has(id)) {
-      cleaned[id] = rec;
-    }
-    // 不在 activeSet 中的 → 断天了，不保留
-  }
-  localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(cleaned));
+  localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(all));
   // 异步同步到 Firestore
-  saveSharedData(FIRESTORE_DOC_ID, cleaned).catch(() => {});
+  saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
 }
 
 interface Attendance7DetailModalProps {
@@ -110,12 +89,9 @@ export default function Attendance7DetailModal({
   // CloudBase 状态
   const [cloudbaseReady, setCloudBaseReady] = useState(isCloudBaseReady);
 
-  // 加载未出勤原因：按工号自动匹配 + 断天清理 + Firestore 合并
+  // 加载未出勤原因：按工号自动匹配 + Firestore 合并
   useEffect(() => {
     if (!isOpen || !weeklyData.length) return;
-
-    // 收集当前视图中所有出现的工号/姓名（用于断天清理）
-    const activeIds = new Set<string>();
 
     const matchAndSet = (allStored: Record<string, AbsenceReasonRecord>) => {
       const matched: Record<string, string> = {};
@@ -123,7 +99,6 @@ export default function Attendance7DetailModal({
         for (const person of day.details) {
           if (person.employeeId || person.name) {
             const key = getStorageKey(person.employeeId || '', person.name || '');
-            activeIds.add(key);
             const rec = allStored[key];
             if (rec) {
               matched[`${day.date}_${person.name}`] = rec.reason;
@@ -138,11 +113,9 @@ export default function Attendance7DetailModal({
     const localAll = loadAbsenceReasonsFromLocal();
     const matchedLocal = matchAndSet(localAll);
     setReasonMap(matchedLocal);
-    // 用 matchAndSet 之后的 activeIds 来清理
-    saveAndCleanAbsenceReasons(localAll, activeIds);
 
     // 异步合并 Firestore 云端数据
-    loadAbsenceReasons(activeIds).then(merged => {
+    loadAbsenceReasons().then(merged => {
       const matchedCloud = matchAndSet(merged);
       setReasonMap(matchedCloud);
     });
