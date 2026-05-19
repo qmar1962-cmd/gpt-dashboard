@@ -128,14 +128,19 @@ export default function Attendance7DetailModal({
 
     // 先用本地数据立即渲染
     const localAll = loadAbsenceReasonsFromLocal();
-    setReasonMap(matchAndSet(localAll));
+    const matchedLocal = matchAndSet(localAll);
+    setReasonMap(matchedLocal);
+    // 用 matchAndSet 之后的 activeIds 来清理
     saveAndCleanAbsenceReasons(localAll, activeIds);
 
     // 异步合并 Firestore 云端数据
     loadAbsenceReasons(activeIds).then(merged => {
-      setReasonMap(matchAndSet(merged));
+      const matchedCloud = matchAndSet(merged);
+      setReasonMap(matchedCloud);
     });
-  }, [isOpen, weeklyData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, centerName, weeklyData]);
+  // 依赖 centerName：切换中心时重新加载原因数据
 
   // 选择原因
   const handleSelectReason = useCallback((date: string, name: string, employeeId: string, reason: string) => {
