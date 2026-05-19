@@ -10,6 +10,8 @@ dist/
 
 # Public database - 跟踪部署用数据文件
 !public/database/
+# data.json 是构建时生成的，不应该提交到 Git
+public/database/data.json
 
 # IDE
 .vscode/
