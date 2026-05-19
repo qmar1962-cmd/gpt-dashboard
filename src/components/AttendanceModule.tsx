@@ -8,7 +8,7 @@ import { cn } from '../lib/utils';
 import AttendanceSummaryDetailModal from './AttendanceSummaryDetailModal';
 import { idbGetRawData } from '../lib/database';
 import { LoadingSpinner } from './LoadingOverlay';
-import { saveSharedData, readSharedData, isFirebaseReady } from '../lib/firebase';
+import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
 
 // ── 类型定义 ─────────────────────────────────────────────
 interface AttendanceRow {
@@ -203,7 +203,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
     } catch { /* ignore */ }
 
     // 异步合并 Firestore 云端数据
-    if (isFirebaseReady()) {
+    if (isCloudBaseReady()) {
       readSharedData(GROUP_LEADERS_FIRESTORE_DOC).then(cloud => {
         if (cloud && typeof cloud === 'object') {
           const localRaw = localStorage.getItem(GROUP_LEADERS_STORAGE_KEY);

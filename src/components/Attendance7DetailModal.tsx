@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, TrendingUp, AlertCircle, ChevronDown } from 'lucide-react';
 import { Attendance7WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
-import { saveSharedData, readSharedData, isFirebaseReady } from '../lib/firebase';
+import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
 
 // ── 未出勤原因选项 ──
 const REASON_OPTIONS = [
@@ -38,7 +38,7 @@ function loadAbsenceReasonsFromLocal(): Record<string, AbsenceReasonRecord> {
 /** 加载全局原因数据：本地优先 + 异步合并 Firestore 云端数据 */
 async function loadAbsenceReasons(activeIds?: Set<string>): Promise<Record<string, AbsenceReasonRecord>> {
   const local = loadAbsenceReasonsFromLocal();
-  if (!isFirebaseReady()) return local;
+  if (!isCloudBaseReady()) return local;
 
   try {
     const cloud = await readSharedData(FIRESTORE_DOC_ID) as Record<string, AbsenceReasonRecord> | null;
@@ -107,8 +107,8 @@ export default function Attendance7DetailModal({
   const [reasonMap, setReasonMap] = useState<Record<string, string>>({});
   // 当前展开的下拉框位置
   const [openDropdownFor, setOpenDropdownFor] = useState<{ date: string; name: string; employeeId: string } | null>(null);
-  // Firebase 状态
-  const [firebaseReady, setFirebaseReady] = useState(isFirebaseReady);
+  // CloudBase 状态
+  const [cloudbaseReady, setCloudBaseReady] = useState(isCloudBaseReady);
 
   // 加载未出勤原因：按工号自动匹配 + 断天清理 + Firestore 合并
   useEffect(() => {
@@ -443,7 +443,7 @@ export default function Attendance7DetailModal({
               <p className="text-[9px] text-zinc-400 font-bold text-center">
                 仅展示连续未出勤 ≥ 7 天的人员明细 · 原因按工号记忆，断天后自动清除
               </p>
-              {!firebaseReady && (
+              {!isCloudBaseReady() && (
                 <p className="text-[9px] text-amber-600 font-bold text-center mt-1">
                   ⚠️ 离线模式：原因仅保存在本地，其他用户不可见
                 </p>

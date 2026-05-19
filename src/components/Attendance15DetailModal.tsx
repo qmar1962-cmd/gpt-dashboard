@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
-import { saveSharedData, readSharedData, isFirebaseReady } from '../lib/firebase';
+import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
 
-// ── 排休数据持久化（按工号全局记忆，15天过期 + Firestore 跨设备同步） ──
+// ── 排休数据持久化（按工号全局记忆，15天过期 + CloudBase 跨设备同步） ──
 
 const GLOBAL_STORAGE_KEY = 'leave_plans_global';
 const FIRESTORE_DOC_ID = 'shared_leave_plans';
@@ -38,10 +38,10 @@ function loadGlobalLeavePlansFromLocal(): Record<string, LeavePlanRecord> {
   } catch { return {}; }
 }
 
-/** 加载全局排休数据：本地优先 + 异步合并 Firestore 云端数据 */
+/** 加载全局排休数据：本地优先 + 异步合并 CloudBase 云端数据 */
 async function loadGlobalLeavePlans(): Promise<Record<string, LeavePlanRecord>> {
   const local = loadGlobalLeavePlansFromLocal();
-  if (!isFirebaseReady()) return local;
+  if (!isCloudBaseReady()) return local;
 
   try {
     const cloud = await readSharedData(FIRESTORE_DOC_ID) as Record<string, LeavePlanRecord> | null;
@@ -306,8 +306,8 @@ export default function Attendance15DetailModal({
   const [globalPlans, setGlobalPlans] = useState<Record<string, LeavePlanRecord>>({});
   // 当前打开的日期选择器位置
   const [pickerFor, setPickerFor] = useState<{ date: string; name: string; employeeId: string } | null>(null);
-  // Firebase 状态
-  const [firebaseReady, setFirebaseReady] = useState(isFirebaseReady);
+  // CloudBase 状态
+  const [cloudbaseReady, setCloudbaseReady] = useState(isCloudBaseReady);
 
   // 加载全局排休数据并自动匹配到当前列表中的人员
   useEffect(() => {
@@ -597,7 +597,7 @@ export default function Attendance15DetailModal({
               <p className="text-[9px] text-zinc-400 font-bold text-center">
                 仅展示连续出勤 ≥ 15 天的人员明细
               </p>
-              {!firebaseReady && (
+              {!isCloudBaseReady() && (
                 <p className="text-[9px] text-amber-600 font-bold text-center mt-1">
                   ⚠️ 离线模式：排休计划仅保存在本地，其他用户不可见
                 </p>

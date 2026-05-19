@@ -1,19 +1,19 @@
 ﻿/**
  * 数据库存储服务
- * - 核心业务数据（每日汇总）: localStorage + Firebase Firestore 双写
+ * - 核心业务数据（每日汇总）: localStorage + 腾讯云 CloudBase 双写
  * - 原始大体积数据（薪资/出勤/效能）: IndexedDB（容量几百MB~数GB）
  */
 
 import { DataType, CenterData, DailyData, TrendQuery } from '../types/data';
 import {
-  initFirebase,
-  isFirebaseReady,
-  saveToFirestore,
-  readFromFirestore,
-  getAllFromFirestore,
-  cleanupFirestore,
-  clearFirestore,
-} from './firebase';
+  initCloudBase,
+  isCloudBaseReady,
+  saveToCloudBase,
+  readFromCloudBase,
+  getAllFromCloudBase,
+  cleanupCloudBase,
+  clearCloudBase,
+} from './cloudbase';
 import {
   idbSaveRawData,
   idbGetRawData,
@@ -52,11 +52,11 @@ function setToStorage<T>(key: string, value: T): void {
 
 // ====== 初始化 ======
 
-let firebaseInitialized = false;
+let cloudbaseInitialized = false;
 
 /**
  * 初始化数据库（调用一次即可）
- * 自动尝试连接 Firebase，失败则使用 localStorage
+ * 自动尝试连接 CloudBase，失败则使用 localStorage
  */
 export async function initDatabase(): Promise<boolean> {
   // 启动时修复 localStorage 中的脏数据（centers 为 undefined 的情况）
@@ -81,15 +81,15 @@ export async function initDatabase(): Promise<boolean> {
     console.warn('[DB] 启动时数据修复失败', e);
   }
 
-  if (firebaseInitialized) return isFirebaseReady();
+  if (cloudbaseInitialized) return isCloudBaseReady();
   
-  firebaseInitialized = true;
+  cloudbaseInitialized = true;
   
-  const success = await initFirebase();
+  const success = await initCloudBase();
   if (success) {
-    console.log('[DB] ✅ Firebase 初始化成功，共享数据功能已启用');
+    console.log('[DB] ✅ CloudBase 初始化成功，共享数据功能已启用');
   } else {
-    console.warn('[DB] 🔴 Firebase 初始化失败，共享数据功能不可用（仅本地模式）');
+    console.warn('[DB] 🔴 CloudBase 初始化失败，共享数据功能不可用（仅本地模式）');
   }
   
   return success;
@@ -157,11 +157,11 @@ export async function saveDailyData(
     setToStorage(DAILY_DATA_KEY, metaData);
   }
 
-  // ===== 2. Firestore 写入（异步，不阻塞） =====
-  if (isFirebaseReady()) {
+  // ===== 2. CloudBase 写入（异步，不阻塞） =====
+  if (isCloudBaseReady()) {
     // 写入日期文档
     const dateDocKey = `daily_${date}`;
-    saveToFirestore(dateDocKey, {
+    saveToCloudBase(dateDocKey, {
       date,
       uploadTime: Date.now(),
       centers: centerDataList.reduce((acc, c) => ({ ...acc, [c.id]: c }), {}),
@@ -170,7 +170,7 @@ export async function saveDailyData(
     // 写入各中心数据
     centerDataList.forEach(centerData => {
       const key = `${centerData.id}_${dataType}_${date}`;
-      saveToFirestore(key, centerData);
+      saveToCloudBase(key, centerData);
     });
   }
 }
@@ -180,14 +180,14 @@ export async function saveDailyData(
  * 优先从 Firestore 读，降级到 localStorage
  */
 export async function getDataByDate(date: string): Promise<DailyData | null> {
-  // 优先 Firestore
-  if (isFirebaseReady()) {
+  // 优先 CloudBase
+  if (isCloudBaseReady()) {
     try {
       const key = `daily_${date}`;
-      const data = await readFromFirestore(key);
+      const data = await readFromCloudBase(key);
       if (data) return data as DailyData;
     } catch (e) {
-      console.warn('[DB] Firestore 读取失败，降级到 localStorage');
+      console.warn('[DB] CloudBase 读取失败，降级到 localStorage');
     }
   }
 
@@ -200,10 +200,10 @@ export async function getDataByDate(date: string): Promise<DailyData | null> {
  * 获取所有日期列表
  */
 export async function getAllDates(): Promise<string[]> {
-  // 优先 Firestore
-  if (isFirebaseReady()) {
+  // 优先 CloudBase
+  if (isCloudBaseReady()) {
     try {
-      const allData = await getAllFromFirestore();
+      const allData = await getAllFromCloudBase();
       const dates = new Set<string>();
       Object.values(allData).forEach((v: any) => {
         if (v.date) dates.add(v.date);
@@ -211,7 +211,7 @@ export async function getAllDates(): Promise<string[]> {
       const sorted = Array.from(dates).sort((a, b) => b.localeCompare(a));
       if (sorted.length > 0) return sorted;
     } catch (e) {
-      console.warn('[DB] Firestore 获取日期列表失败');
+      console.warn('[DB] CloudBase 获取日期列表失败');
     }
   }
 
@@ -237,9 +237,9 @@ export async function getTrendData(query: TrendQuery): Promise<CenterData[]> {
 
     let data: any = null;
 
-    // 优先 Firestore
-    if (isFirebaseReady()) {
-      data = await readFromFirestore(key);
+    // 优先 CloudBase
+    if (isCloudBaseReady()) {
+      data = await readFromCloudBase(key);
     }
 
     // 降级 localStorage
@@ -270,10 +270,10 @@ export async function getTrendData(query: TrendQuery): Promise<CenterData[]> {
  * 获取所有中心列表
  */
 export async function getAllCenters(): Promise<{ id: string; province: string; center: string }[]> {
-  // 优先 Firestore
-  if (isFirebaseReady()) {
+  // 优先 CloudBase
+  if (isCloudBaseReady()) {
     try {
-      const allData = await getAllFromFirestore();
+      const allData = await getAllFromCloudBase();
       const centerSet = new Set<string>();
       const centers: { id: string; province: string; center: string }[] = [];
 
@@ -286,7 +286,7 @@ export async function getAllCenters(): Promise<{ id: string; province: string; c
 
       if (centers.length > 0) return centers.sort((a, b) => a.province.localeCompare(b.province));
     } catch (e) {
-      console.warn('[DB] Firestore 获取中心列表失败');
+      console.warn('[DB] CloudBase 获取中心列表失败');
     }
   }
 
@@ -325,9 +325,9 @@ export async function getAllCenters(): Promise<{ id: string; province: string; c
 export async function cleanupExpiredData(daysToKeep: number = 30): Promise<number> {
   let totalDeleted = 0;
 
-  // Firestore 清理
-  if (isFirebaseReady()) {
-    totalDeleted += await cleanupFirestore(daysToKeep);
+  // CloudBase 清理
+  if (isCloudBaseReady()) {
+    totalDeleted += await cleanupCloudBase(daysToKeep);
   }
 
   // localStorage 清理
@@ -524,7 +524,7 @@ export async function getStorageStats() {
   } catch (e) { /* ignore */ }
 
   return {
-    storageMode: isFirebaseReady() ? 'Firebase Firestore + IndexedDB 缓存' : 'IndexedDB（本地）',
+    storageMode: isCloudBaseReady() ? '腾讯云 CloudBase + IndexedDB 缓存' : 'IndexedDB（本地）',
     totalDays: dates.length,
     totalDataPoints: centerKeys.length,
     storageSize: totalSize,
@@ -533,7 +533,7 @@ export async function getStorageStats() {
     idbQuotaMB: idbQuota,
     oldestDate: dates.length > 0 ? [...dates].sort()[0] : '无数据',
     newestDate: dates.length > 0 ? [...dates].sort().reverse()[0] : '无数据',
-    firebaseConnected: isFirebaseReady(),
+    cloudbaseConnected: isCloudBaseReady(),
   };
 }
 
@@ -541,9 +541,9 @@ export async function getStorageStats() {
  * 清空所有数据（Firestore + IndexedDB + localStorage）
  */
 export async function clearAllData(): Promise<void> {
-  // 清空 Firestore
-  if (isFirebaseReady()) {
-    await clearFirestore();
+  // 清空 CloudBase
+  if (isCloudBaseReady()) {
+    await clearCloudBase();
   }
 
   // 清空 IndexedDB
