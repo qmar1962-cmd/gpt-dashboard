@@ -1,6 +1,8 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * 版本：2026-05-19 - 触发部署，修复连续出勤原因刷新消失问题
  */
 
 import { useState, useEffect, useMemo } from 'react';
