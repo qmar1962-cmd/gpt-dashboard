@@ -20,6 +20,7 @@ interface AbsenceReasonRecord {
   reason: string;      // 选中的原因
   employeeId: string;  // 工号（主键）
   name: string;        // 姓名（显示用）
+  date: string;        // 记录这是哪一天的异常（格式：YYYY-MM-DD）
 }
 
 /** 获取存储 key：优先用 employeeId，没有则用 name */
@@ -89,9 +90,17 @@ export default function Attendance7DetailModal({
   // CloudBase 状态
   const [cloudbaseReady, setCloudBaseReady] = useState(isCloudBaseReady);
 
-  // 加载未出勤原因：按工号自动匹配 + Firestore 合并
+  // 加载未出勤原因：按工号自动匹配 + 检查日期间隔 + Firestore 合并
   useEffect(() => {
     if (!isOpen || !weeklyData.length) return;
+
+    // 计算两个日期之间的天数差（date1 - date2）
+    const getDaysDiff = (date1: string, date2: string): number => {
+      const d1 = new Date(date1);
+      const d2 = new Date(date2);
+      const diffTime = d1.getTime() - d2.getTime();
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    };
 
     const matchAndSet = (allStored: Record<string, AbsenceReasonRecord>) => {
       const matched: Record<string, string> = {};
@@ -100,8 +109,12 @@ export default function Attendance7DetailModal({
           if (person.employeeId || person.name) {
             const key = getStorageKey(person.employeeId || '', person.name || '');
             const rec = allStored[key];
-            if (rec) {
-              matched[`${day.date}_${person.name}`] = rec.reason;
+            if (rec && rec.date) {
+              // 检查日期间隔：只有间隔不超过1天，才填充原因
+              const daysDiff = getDaysDiff(day.date, rec.date);
+              if (daysDiff <= 1) {
+                matched[`${day.date}_${person.name}`] = rec.reason;
+              }
             }
           }
         }
@@ -134,7 +147,7 @@ export default function Attendance7DetailModal({
     if (employeeId || name) {
       const all = loadAbsenceReasonsFromLocal();
       const key = getStorageKey(employeeId, name);
-      all[key] = { employeeId: employeeId || '', name, reason };
+      all[key] = { employeeId: employeeId || '', name, reason, date };  // 新增：记录日期
       localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(all));
       // 异步同步到 Firestore
       saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
