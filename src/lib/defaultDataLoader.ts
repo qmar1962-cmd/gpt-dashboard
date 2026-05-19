@@ -51,7 +51,7 @@ function inferDataType(filename: string): DataType | null {
  */
 async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataType: DataType } | null> {
   try {
-    const url = `/database/${filename}`;
+    const url = `./database/${filename}`;
     const response = await fetch(url);
     if (!response.ok) {
       console.warn(`[默认数据] 无法加载文件(${response.status})：${filename}`);
@@ -87,7 +87,7 @@ async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataTy
  */
 async function getDatabaseFileList(): Promise<string[]> {
   try {
-    const res = await fetch('/database/filelist.json');
+    const res = await fetch('./database/filelist.json');
     if (res.ok) {
       const list = await res.json();
       if (Array.isArray(list)) {
