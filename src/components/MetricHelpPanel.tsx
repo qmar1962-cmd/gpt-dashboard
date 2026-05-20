@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, X, Table2, ArrowRight, Hash, FileSpreadsheet, CalendarDays, AlertCircle, Upload, GitBranch, RefreshCw, Clock } from 'lucide-react';
+import { HelpCircle, X, Table2, ArrowRight, Hash, FileSpreadsheet, CalendarDays, AlertCircle, Upload, GitBranch, RefreshCw, Clock, Book } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // ── 章节定义 ──
@@ -279,12 +279,16 @@ const ATTENDANCE_SPEC = {
 
 export default function MetricHelpPanel() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
 
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="w-5 h-5 rounded-full border border-zinc-300 flex items-center justify-center transition-all duration-200 hover:border-red-400 hover:bg-red-50 group" title="查看各指标数据口径说明">
         <HelpCircle size={13} className="text-zinc-400 group-hover:text-red-500 transition-colors" />
+      </button>
+      <button onClick={() => setIsManualOpen(true)} className="w-5 h-5 rounded-full border border-zinc-300 flex items-center justify-center transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 group" title="查看版本修订历史">
+        <Book size={13} className="text-zinc-400 group-hover:text-blue-500 transition-colors" />
       </button>
       <AnimateWrapper isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <div className="flex flex-col h-full">
@@ -324,6 +328,67 @@ export default function MetricHelpPanel() {
             {activeSection === 'scope' && <ScopeSection />}
             {activeSection === 'attendance' && <AttendanceSection />}
             {activeSection === 'matching' && <MatchingSection />}
+          </div>
+        </div>
+      </AnimateWrapper>
+
+      {/* 版本修订历史手册 */}
+      <AnimateWrapper isOpen={isManualOpen} onClose={() => setIsManualOpen(false)}>
+        <div className="flex flex-col h-full">
+          {/* 头部 */}
+          <div className="flex items-center justify-between pb-4 border-b border-zinc-100 shrink-0">
+            <div>
+              <h3 className="text-sm font-black text-zinc-900 tracking-tight">版本修订历史</h3>
+              <p className="text-[10px] text-zinc-400 mt-0.5">功能更新 / 修复记录 / 版本说明</p>
+            </div>
+            <button onClick={() => setIsManualOpen(false)} className="w-6 h-6 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors"><X size={14} className="text-zinc-400" /></button>
+          </div>
+
+          {/* 版本历史内容 */}
+          <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+            {/* V2.0 - 2026-05-20 */}
+            <div className="bg-blue-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">V2.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-20</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">添加版本修订历史手册（点击口径说明旁边的书本图标查看）</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">分离连续出勤和连续未出勤的筛选功能（各自独立筛选）</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">分离连续出勤和连续未出勤的导出图片功能（分别导出两张图片）</span>
+                </div>
+              </div>
+            </div>
+
+            {/* V1.0 - 2026-05-15 */}
+            <div className="bg-zinc-50 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-700">V1.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-15</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">初始</span>
+                  <span className="text-zinc-600">GPT每日通报可视化看板正式上线</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">功能</span>
+                  <span className="text-zinc-600">支持岗位效能、薪资绩效、连续出勤、长期未出勤四大指标展示</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">功能</span>
+                  <span className="text-zinc-600">中心考勤模块：出勤日历、预警统计、导出图片</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </AnimateWrapper>

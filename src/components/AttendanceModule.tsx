@@ -160,11 +160,16 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [deptFilter, setDeptFilter] = useState<string>('');
   const [groupFilter, setGroupFilter] = useState<string>('');
-  // 出勤预警筛选
-  const [warningDeptFilter, setWarningDeptFilter] = useState<string>('');
-  const [warningGroupFilter, setWarningGroupFilter] = useState<string>('');
-  const [warningLeaderFilter, setWarningLeaderFilter] = useState<string>('');
-  const [warningDaysFilter, setWarningDaysFilter] = useState<string>('');
+  // 出勤预警筛选 - 连续出勤
+  const [warningWorkDeptFilter, setWarningWorkDeptFilter] = useState<string>('');
+  const [warningWorkGroupFilter, setWarningWorkGroupFilter] = useState<string>('');
+  const [warningWorkLeaderFilter, setWarningWorkLeaderFilter] = useState<string>('');
+  const [warningWorkDaysFilter, setWarningWorkDaysFilter] = useState<string>('');
+  // 出勤预警筛选 - 连续未出勤
+  const [warningAbsentDeptFilter, setWarningAbsentDeptFilter] = useState<string>('');
+  const [warningAbsentGroupFilter, setWarningAbsentGroupFilter] = useState<string>('');
+  const [warningAbsentLeaderFilter, setWarningAbsentLeaderFilter] = useState<string>('');
+  const [warningAbsentDaysFilter, setWarningAbsentDaysFilter] = useState<string>('');
   const [detailModal, setDetailModal] = useState<{
     dept2: string;
     group: string;
@@ -182,7 +187,8 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   // 预警分页
   const [warningWorkPage, setWarningWorkPage] = useState(1);
   const [warningAbsentPage, setWarningAbsentPage] = useState(1);
-  const [copyState, setCopyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [workCopyState, setWorkCopyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [absentCopyState, setAbsentCopyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [textCopyState, setTextCopyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   // 小组负责人手动编辑
@@ -430,10 +436,14 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
     setSearch('');
     setDeptFilter('');
     setGroupFilter('');
-    setWarningDeptFilter('');
-    setWarningGroupFilter('');
-    setWarningLeaderFilter('');
-    setWarningDaysFilter('');
+    setWarningWorkDeptFilter('');
+    setWarningWorkGroupFilter('');
+    setWarningWorkLeaderFilter('');
+    setWarningWorkDaysFilter('');
+    setWarningAbsentDeptFilter('');
+    setWarningAbsentGroupFilter('');
+    setWarningAbsentLeaderFilter('');
+    setWarningAbsentDaysFilter('');
     setWarningWorkPage(1);
     setWarningAbsentPage(1);
   }, [center]);
@@ -608,18 +618,19 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
               });
             }
 
-            // 出勤预警筛选
+            // 出勤预警筛选 - 连续出勤
             const filteredLongWorkList = longWorkList.filter(item =>
-              (!warningDeptFilter || item.dept2 === warningDeptFilter) &&
-              (!warningGroupFilter || item.group === warningGroupFilter) &&
-              (!warningLeaderFilter || item.leader === warningLeaderFilter) &&
-              (!warningDaysFilter || String(item.days) === warningDaysFilter)
+              (!warningWorkDeptFilter || item.dept2 === warningWorkDeptFilter) &&
+              (!warningWorkGroupFilter || item.group === warningWorkGroupFilter) &&
+              (!warningWorkLeaderFilter || item.leader === warningWorkLeaderFilter) &&
+              (!warningWorkDaysFilter || String(item.days) === warningWorkDaysFilter)
             );
+            // 出勤预警筛选 - 连续未出勤
             const filteredLongAbsentList = longAbsentList.filter(item =>
-              (!warningDeptFilter || item.dept2 === warningDeptFilter) &&
-              (!warningGroupFilter || item.group === warningGroupFilter) &&
-              (!warningLeaderFilter || item.leader === warningLeaderFilter) &&
-              (!warningDaysFilter || String(item.days) === warningDaysFilter)
+              (!warningAbsentDeptFilter || item.dept2 === warningAbsentDeptFilter) &&
+              (!warningAbsentGroupFilter || item.group === warningAbsentGroupFilter) &&
+              (!warningAbsentLeaderFilter || item.leader === warningAbsentLeaderFilter) &&
+              (!warningAbsentDaysFilter || String(item.days) === warningAbsentDaysFilter)
             );
 
             const warningWorkTotalPages = Math.max(1, Math.ceil(filteredLongWorkList.length / WARNING_PAGE_SIZE));
@@ -628,23 +639,25 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
             const warningAbsentPageData = filteredLongAbsentList.slice((warningAbsentPage - 1) * WARNING_PAGE_SIZE, warningAbsentPage * WARNING_PAGE_SIZE);
 
             // Canvas 截图导出
-            const handleExportWarningImage = async (): Promise<void> => {
-              setCopyState('loading');
+            const handleExportWarningImage = async (
+              type: 'work' | 'absent' = 'work',
+              setState: (s: 'idle' | 'loading' | 'success' | 'error') => void
+            ): Promise<void> => {
+              setState('loading');
               try {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 if (!ctx) throw new Error('无法创建 Canvas');
                 const dpr = window.devicePixelRatio || 1;
-                const width = 2000;
+                const width = 900;
                 const rowHeight = 36;
                 const headerHeight = 40;
                 const titleHeight = 60;
-                const colWidth = Math.floor((width - 48) / 2);
+                const colWidth = width - 32;
                 const col1X = 16;
-                const col2X = col1X + colWidth + 16;
-                const col1ContentHeight = headerHeight + rowHeight * filteredLongWorkList.length;
-                const col2ContentHeight = headerHeight + rowHeight * filteredLongAbsentList.length;
-                const height = titleHeight + Math.max(col1ContentHeight, col2ContentHeight) + 40;
+                const col2X = 16;
+                const contentHeight = headerHeight + rowHeight * (type === 'work' ? filteredLongWorkList.length : filteredLongAbsentList.length);
+                const height = titleHeight + contentHeight + 40;
                 canvas.width = width * dpr;
                 canvas.height = height * dpr;
                 ctx.scale(dpr, dpr);
@@ -652,105 +665,109 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                 ctx.fillRect(0, 0, width, height);
                 ctx.fillStyle = '#18181b';
                 ctx.font = 'bold 18px sans-serif';
-                ctx.fillText(`${center} · 出勤预警`, 24, 36);
+                ctx.fillText(`${center} · ${type === 'work' ? '连续出勤预警' : '连续缺勤预警'}`, 24, 36);
                 ctx.fillStyle = '#a1a1aa';
                 ctx.font = '11px sans-serif';
                 ctx.fillText(`导出时间：${new Date().toLocaleString('zh-CN')}`, 24, 52);
                 let currentY = titleHeight;
 
-                // Column 1: 连续出勤
-                ctx.fillStyle = '#18181b';
-                ctx.font = 'bold 13px sans-serif';
-                ctx.fillText(`连续出勤 ≥10 天（${filteredLongWorkList.length} 人）`, col1X + 8, currentY + 20);
-                let col1Y = currentY + headerHeight;
-                ctx.fillStyle = '#f4f4f5';
-                ctx.fillRect(col1X, col1Y, colWidth, rowHeight);
-                ctx.fillStyle = '#71717a';
-                ctx.font = '11px sans-serif';
-                ctx.fillText('工号', col1X + 20, col1Y + 22);
-                ctx.fillText('姓名', col1X + 120, col1Y + 22);
-                ctx.fillText('部门', col1X + 210, col1Y + 22);
-                ctx.fillText('组别', col1X + 340, col1Y + 22);
-                ctx.fillText('出勤率', col1X + 540, col1Y + 22);
-                ctx.fillText('负责人', col1X + 640, col1Y + 22);
-                ctx.fillText('连续天数', col1X + 760, col1Y + 22);
-                col1Y += rowHeight;
-                filteredLongWorkList.forEach((item, i) => {
-                  const y = col1Y + i * rowHeight;
-                  if (i % 2 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(col1X, y, colWidth, rowHeight); }
-                  ctx.fillStyle = '#3f3f46';
-                  ctx.font = '12px sans-serif';
-                  ctx.fillText(item.empId, col1X + 20, y + 22);
-                  ctx.fillText(item.name, col1X + 120, y + 22);
-                  ctx.fillText(item.dept2, col1X + 210, y + 22);
-                  ctx.fillText(item.group, col1X + 340, y + 22);
-                  const rate1 = parseFloat(item.attendanceRate);
-                  ctx.fillStyle = rate1 >= 85 ? '#dc2626' : '#16a34a';
-                  ctx.font = rate1 >= 85 ? 'bold 12px sans-serif' : '12px sans-serif';
-                  ctx.fillText(item.attendanceRate, col1X + 540, y + 22);
-                  ctx.fillStyle = '#3f3f46';
-                  ctx.fillText(item.leader || '-', col1X + 640, y + 22);
-                  ctx.fillStyle = '#dc2626';
-                  ctx.font = 'bold 12px sans-serif';
-                  ctx.fillText(`${item.days} 天`, col1X + 760, y + 22);
-                });
+                if (type === 'work') {
+                  // Column 1: 连续出勤
+                  ctx.fillStyle = '#18181b';
+                  ctx.font = 'bold 13px sans-serif';
+                  ctx.fillText(`连续出勤 ≥10 天（${filteredLongWorkList.length} 人）`, col1X + 8, currentY + 20);
+                  let col1Y = currentY + headerHeight;
+                  ctx.fillStyle = '#f4f4f5';
+                  ctx.fillRect(col1X, col1Y, colWidth, rowHeight);
+                  ctx.fillStyle = '#71717a';
+                  ctx.font = '11px sans-serif';
+                  ctx.fillText('工号', col1X + 20, col1Y + 22);
+                  ctx.fillText('姓名', col1X + 100, col1Y + 22);
+                  ctx.fillText('部门', col1X + 180, col1Y + 22);
+                  ctx.fillText('组别', col1X + 280, col1Y + 22);
+                  ctx.fillText('出勤率', col1X + 540, col1Y + 22);
+                  ctx.fillText('负责人', col1X + 640, col1Y + 22);
+                  ctx.fillText('连续天数', col1X + 760, col1Y + 22);
+                  col1Y += rowHeight;
+                  filteredLongWorkList.forEach((item, i) => {
+                    const y = col1Y + i * rowHeight;
+                    if (i % 2 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(col1X, y, colWidth, rowHeight); }
+                    ctx.fillStyle = '#3f3f46';
+                    ctx.font = '12px sans-serif';
+                    ctx.fillText(item.empId, col1X + 20, y + 22);
+                    ctx.fillText(item.name, col1X + 100, y + 22);
+                    ctx.fillText(item.dept2, col1X + 180, y + 22);
+                    ctx.fillText(item.group, col1X + 280, y + 22);
+                    const rate1 = parseFloat(item.attendanceRate);
+                    ctx.fillStyle = rate1 >= 85 ? '#dc2626' : '#16a34a';
+                    ctx.font = rate1 >= 85 ? 'bold 12px sans-serif' : '12px sans-serif';
+                    ctx.fillText(item.attendanceRate, col1X + 540, y + 22);
+                    ctx.fillStyle = '#3f3f46';
+                    ctx.fillText(item.leader || '-', col1X + 640, y + 22);
+                    ctx.fillStyle = '#dc2626';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText(`${item.days} 天`, col1X + 760, y + 22);
+                  });
+                }
 
-                // Column 2: 连续缺勤
-                ctx.fillStyle = '#18181b';
-                ctx.font = 'bold 13px sans-serif';
-                ctx.fillText(`连续缺勤 ≥5 天（${filteredLongAbsentList.length} 人）`, col2X + 8, currentY + 20);
-                let col2Y = currentY + headerHeight;
-                ctx.fillStyle = '#f4f4f5';
-                ctx.fillRect(col2X, col2Y, colWidth, rowHeight);
-                ctx.fillStyle = '#71717a';
-                ctx.font = '11px sans-serif';
-                ctx.fillText('工号', col2X + 20, col2Y + 22);
-                ctx.fillText('姓名', col2X + 120, col2Y + 22);
-                ctx.fillText('部门', col2X + 210, col2Y + 22);
-                ctx.fillText('组别', col2X + 340, col2Y + 22);
-                ctx.fillText('出勤率', col2X + 540, col2Y + 22);
-                ctx.fillText('负责人', col2X + 640, col2Y + 22);
-                ctx.fillText('连续天数', col2X + 760, col2Y + 22);
-                col2Y += rowHeight;
-                filteredLongAbsentList.forEach((item, i) => {
-                  const y = col2Y + i * rowHeight;
-                  if (i % 2 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(col2X, y, colWidth, rowHeight); }
-                  ctx.fillStyle = '#3f3f46';
-                  ctx.font = '12px sans-serif';
-                  ctx.fillText(item.empId, col2X + 20, y + 22);
-                  ctx.fillText(item.name, col2X + 120, y + 22);
-                  ctx.fillText(item.dept2, col2X + 210, y + 22);
-                  ctx.fillText(item.group, col2X + 340, y + 22);
-                  const rate2 = parseFloat(item.attendanceRate);
-                  ctx.fillStyle = rate2 >= 85 ? '#dc2626' : '#16a34a';
-                  ctx.font = rate2 >= 85 ? 'bold 12px sans-serif' : '12px sans-serif';
-                  ctx.fillText(item.attendanceRate, col2X + 540, y + 22);
-                  ctx.fillStyle = '#3f3f46';
-                  ctx.fillText(item.leader || '-', col2X + 640, y + 22);
-                  ctx.fillStyle = '#dc2626';
-                  ctx.font = 'bold 12px sans-serif';
-                  ctx.fillText(`${item.days} 天`, col2X + 760, y + 22);
-                });
+                if (type === 'absent') {
+                  // Column 2: 连续缺勤
+                  ctx.fillStyle = '#18181b';
+                  ctx.font = 'bold 13px sans-serif';
+                  ctx.fillText(`连续缺勤 ≥5 天（${filteredLongAbsentList.length} 人）`, col2X + 8, currentY + 20);
+                  let col2Y = currentY + headerHeight;
+                  ctx.fillStyle = '#f4f4f5';
+                  ctx.fillRect(col2X, col2Y, colWidth, rowHeight);
+                  ctx.fillStyle = '#71717a';
+                  ctx.font = '11px sans-serif';
+                  ctx.fillText('工号', col2X + 20, col2Y + 22);
+                  ctx.fillText('姓名', col2X + 100, col2Y + 22);
+                  ctx.fillText('部门', col2X + 180, col2Y + 22);
+                  ctx.fillText('组别', col2X + 280, col2Y + 22);
+                  ctx.fillText('出勤率', col2X + 540, col2Y + 22);
+                  ctx.fillText('负责人', col2X + 640, col2Y + 22);
+                  ctx.fillText('连续天数', col2X + 760, col2Y + 22);
+                  col2Y += rowHeight;
+                  filteredLongAbsentList.forEach((item, i) => {
+                    const y = col2Y + i * rowHeight;
+                    if (i % 2 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(col2X, y, colWidth, rowHeight); }
+                    ctx.fillStyle = '#3f3f46';
+                    ctx.font = '12px sans-serif';
+                    ctx.fillText(item.empId, col2X + 20, y + 22);
+                    ctx.fillText(item.name, col2X + 100, y + 22);
+                    ctx.fillText(item.dept2, col2X + 180, y + 22);
+                    ctx.fillText(item.group, col2X + 280, y + 22);
+                    const rate2 = parseFloat(item.attendanceRate);
+                    ctx.fillStyle = rate2 >= 85 ? '#dc2626' : '#16a34a';
+                    ctx.font = rate2 >= 85 ? 'bold 12px sans-serif' : '12px sans-serif';
+                    ctx.fillText(item.attendanceRate, col2X + 540, y + 22);
+                    ctx.fillStyle = '#3f3f46';
+                    ctx.fillText(item.leader || '-', col2X + 640, y + 22);
+                    ctx.fillStyle = '#dc2626';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText(`${item.days} 天`, col2X + 760, y + 22);
+                  });
+                }
                 canvas.toBlob(async (blob) => {
-                  if (!blob) { setCopyState('error'); return; }
+                  if (!blob) { setState('error'); return; }
                   try {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                    setCopyState('success');
-                    setTimeout(() => setCopyState('idle'), 2000);
+                    setState('success');
+                    setTimeout(() => setState('idle'), 2000);
                   } catch {
                     const url = canvas.toDataURL('image/png');
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `出勤预警_${center}_${new Date().toISOString().slice(0, 10)}.png`;
+                    a.download = `${type === 'work' ? '连续出勤' : '连续缺勤'}_${center}_${new Date().toISOString().slice(0, 10)}.png`;
                     a.click();
-                    setCopyState('success');
-                    setTimeout(() => setCopyState('idle'), 2000);
+                    setState('success');
+                    setTimeout(() => setState('idle'), 2000);
                   }
                 }, 'image/png');
               } catch (e) {
-                console.error('[预警导出] 失败:', e);
-                setCopyState('error');
-                setTimeout(() => setCopyState('idle'), 2000);
+                console.error(`[${type === 'work' ? '连续出勤导出' : '连续缺勤导出'}] 失败:`, e);
+                setState('error');
+                setTimeout(() => setState('idle'), 2000);
               }
             };
 
@@ -765,7 +782,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                     <button
                         onClick={() => handleExportText(centersList)}
                         disabled={textCopyState === 'loading'}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all border border-zinc-200 hover:scale-[1.02] active:scale-[0.98] $
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all border border-zinc-200 hover:scale-[1.02] active:scale-[0.98] ${
                           textCopyState === 'loading' ? 'text-zinc-400 cursor-wait'
                           : textCopyState === 'success' ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
                           : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 hover:border-zinc-300'
@@ -773,17 +790,6 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                       >
                         {textCopyState === 'loading' ? '复制中...' : textCopyState === 'success' ? <><CheckCircle2 size={11} className="mr-0.5"/>已复制</> : <><Copy size={11} className="mr-0.5"/>导出通报</>}
                       </button>
-                  <button
-                      onClick={handleExportWarningImage}
-                      disabled={copyState === 'loading'}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all border border-zinc-200 hover:scale-[1.02] active:scale-[0.98] ${
-                        copyState === 'loading' ? 'text-zinc-400 cursor-wait'
-                        : copyState === 'success' ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
-                        : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 hover:border-zinc-300'
-                      }`}
-                    >
-                      {copyState === 'loading' ? '生成中...' : copyState === 'success' ? <><CheckCircle2 size={11} />已复制</> : <><Copy size={11} />导出图片</>}
-                    </button>
                   </div>
                 </div>
                 <div className="flex gap-0">
@@ -796,6 +802,17 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                           {filteredLongWorkList.length} 人
                         </span>
                       </span>
+                      <button
+                        onClick={() => handleExportWarningImage('work', setWorkCopyState)}
+                        disabled={workCopyState === 'loading'}
+                        className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium rounded-md transition-all border border-zinc-200 hover:scale-[1.02] active:scale-[0.98] ${
+                          workCopyState === 'loading' ? 'text-zinc-400 cursor-wait'
+                          : workCopyState === 'success' ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                          : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 hover:border-zinc-300'
+                        }`}
+                      >
+                        {workCopyState === 'loading' ? '生成中...' : workCopyState === 'success' ? <><CheckCircle2 size={10} />已复制</> : <><Copy size={10} />导出图片</>}
+                      </button>
                     </div>
                     {filteredLongWorkList.length === 0 ? (
                       <div className="text-[10px] text-zinc-400 py-4 text-center">暂无数据</div>
@@ -809,24 +826,24 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                                 <th className="px-2 py-1.5 text-left font-medium w-20">姓名</th>
                                 <th className="px-2 py-1.5 text-left font-medium w-24">
                                   <div className="flex items-center gap-0.5">部门
-                                    <FilterDropdown label="部门" options={Array.from(new Set(longWorkList.map(r => r.dept2))).sort()} value={warningDeptFilter} onChange={v => { setWarningDeptFilter(v); setWarningGroupFilter(''); setWarningWorkPage(1); }} />
+                                    <FilterDropdown label="部门" options={Array.from(new Set(longWorkList.map(r => r.dept2))).sort()} value={warningWorkDeptFilter} onChange={v => { setWarningWorkDeptFilter(v); setWarningWorkGroupFilter(''); setWarningWorkPage(1); }} />
                                   </div>
                                 </th>
                                 <th className="px-2 py-1.5 text-left font-medium w-28">
                                   <div className="flex items-center gap-0.5">组别
-                                    <FilterDropdown label="组别" options={Array.from(new Set(longWorkList.filter(r => !warningDeptFilter || r.dept2 === warningDeptFilter).map(r => r.group))).sort()} value={warningGroupFilter} onChange={v => { setWarningGroupFilter(v); setWarningWorkPage(1); }} />
+                                    <FilterDropdown label="组别" options={Array.from(new Set(longWorkList.filter(r => !warningWorkDeptFilter || r.dept2 === warningWorkDeptFilter).map(r => r.group))).sort()} value={warningWorkGroupFilter} onChange={v => { setWarningWorkGroupFilter(v); setWarningWorkPage(1); }} />
                                   </div>
                                 </th>
                                 <th className="px-2 py-1.5 text-right font-medium w-16">出勤率</th>
                                 <th className="px-2 py-1.5 text-left font-medium w-24">
                                   <div className="flex items-center gap-0.5">负责人
-                                    <FilterDropdown label="负责人" options={Array.from(new Set(longWorkList.map(r => r.leader).filter(Boolean))).sort()} value={warningLeaderFilter} onChange={v => { setWarningLeaderFilter(v); setWarningWorkPage(1); }} />
+                                    <FilterDropdown label="负责人" options={Array.from(new Set(longWorkList.map(r => r.leader).filter(Boolean))).sort()} value={warningWorkLeaderFilter} onChange={v => { setWarningWorkLeaderFilter(v); setWarningWorkPage(1); }} />
                                   </div>
                                 </th>
                                 <th className="px-2 py-1.5 text-right font-medium w-20">
                                   <div className="flex items-center justify-end gap-0.5">
                                     连续天数
-                                    <FilterDropdown label="连续天数" options={Array.from(new Set(longWorkList.map(r => String(r.days)))).sort((a, b) => Number(a) - Number(b))} value={warningDaysFilter} onChange={v => { setWarningDaysFilter(v); setWarningWorkPage(1); }} />
+                                    <FilterDropdown label="连续天数" options={Array.from(new Set(longWorkList.map(r => String(r.days)))).sort((a, b) => Number(a) - Number(b))} value={warningWorkDaysFilter} onChange={v => { setWarningWorkDaysFilter(v); setWarningWorkPage(1); }} />
                                   </div>
                                 </th>
                               </tr>
@@ -865,6 +882,17 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                           {filteredLongAbsentList.length} 人
                         </span>
                       </span>
+                      <button
+                        onClick={() => handleExportWarningImage('absent', setAbsentCopyState)}
+                        disabled={absentCopyState === 'loading'}
+                        className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium rounded-md transition-all border border-zinc-200 hover:scale-[1.02] active:scale-[0.98] ${
+                          absentCopyState === 'loading' ? 'text-zinc-400 cursor-wait'
+                          : absentCopyState === 'success' ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                          : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 hover:border-zinc-300'
+                        }`}
+                      >
+                        {absentCopyState === 'loading' ? '生成中...' : absentCopyState === 'success' ? <><CheckCircle2 size={10} />已复制</> : <><Copy size={10} />导出图片</>}
+                      </button>
                     </div>
                     {filteredLongAbsentList.length === 0 ? (
                       <div className="text-[10px] text-zinc-400 py-4 text-center">暂无数据</div>
@@ -878,24 +906,24 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                                 <th className="px-2 py-1.5 text-left font-medium w-20">姓名</th>
                                 <th className="px-2 py-1.5 text-left font-medium w-24">
                                   <div className="flex items-center gap-0.5">部门
-                                    <FilterDropdown label="部门" options={Array.from(new Set(longAbsentList.map(r => r.dept2))).sort()} value={warningDeptFilter} onChange={v => { setWarningDeptFilter(v); setWarningGroupFilter(''); setWarningAbsentPage(1); }} />
+                                    <FilterDropdown label="部门" options={Array.from(new Set(longAbsentList.map(r => r.dept2))).sort()} value={warningAbsentDeptFilter} onChange={v => { setWarningAbsentDeptFilter(v); setWarningAbsentGroupFilter(''); setWarningAbsentPage(1); }} />
                                   </div>
                                 </th>
                                 <th className="px-2 py-1.5 text-left font-medium w-28">
                                   <div className="flex items-center gap-0.5">组别
-                                    <FilterDropdown label="组别" options={Array.from(new Set(longAbsentList.filter(r => !warningDeptFilter || r.dept2 === warningDeptFilter).map(r => r.group))).sort()} value={warningGroupFilter} onChange={v => { setWarningGroupFilter(v); setWarningAbsentPage(1); }} />
+                                    <FilterDropdown label="组别" options={Array.from(new Set(longAbsentList.filter(r => !warningAbsentDeptFilter || r.dept2 === warningAbsentDeptFilter).map(r => r.group))).sort()} value={warningAbsentGroupFilter} onChange={v => { setWarningAbsentGroupFilter(v); setWarningAbsentPage(1); }} />
                                   </div>
                                 </th>
                                 <th className="px-2 py-1.5 text-right font-medium w-16">出勤率</th>
                                 <th className="px-2 py-1.5 text-left font-medium w-24">
                                   <div className="flex items-center gap-0.5">负责人
-                                    <FilterDropdown label="负责人" options={Array.from(new Set(longAbsentList.map(r => r.leader).filter(Boolean))).sort()} value={warningLeaderFilter} onChange={v => { setWarningLeaderFilter(v); setWarningAbsentPage(1); }} />
+                                    <FilterDropdown label="负责人" options={Array.from(new Set(longAbsentList.map(r => r.leader).filter(Boolean))).sort()} value={warningAbsentLeaderFilter} onChange={v => { setWarningAbsentLeaderFilter(v); setWarningAbsentPage(1); }} />
                                   </div>
                                 </th>
                                 <th className="px-2 py-1.5 text-right font-medium w-20">
                                   <div className="flex items-center justify-end gap-0.5">
                                     连续天数
-                                    <FilterDropdown label="连续天数" options={Array.from(new Set(longAbsentList.map(r => String(r.days)))).sort((a, b) => Number(a) - Number(b))} value={warningDaysFilter} onChange={v => { setWarningDaysFilter(v); setWarningAbsentPage(1); }} />
+                                    <FilterDropdown label="连续天数" options={Array.from(new Set(longAbsentList.map(r => String(r.days)))).sort((a, b) => Number(a) - Number(b))} value={warningAbsentDaysFilter} onChange={v => { setWarningAbsentDaysFilter(v); setWarningAbsentPage(1); }} />
                                   </div>
                                 </th>
                               </tr>
