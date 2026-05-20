@@ -794,7 +794,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                 </div>
                 <div className="flex gap-0">
                   {/* 左：长出勤 */}
-                  <div className="flex-1 px-4 py-3 border-r border-zinc-100 min-w-0">
+                  <div className="flex-1 px-4 py-3 border-r border-zinc-100 min-w-0 min-h-[400px]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-bold text-zinc-500">
                         连续出勤 ≥10 天
@@ -874,7 +874,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                     )}
                   </div>
                   {/* 右：长缺勤 */}
-                  <div className="flex-1 px-4 py-3 min-w-0">
+                  <div className="flex-1 px-4 py-3 min-w-0 min-h-[400px]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-bold text-zinc-500">
                         连续缺勤 ≥5 天
