@@ -1,6 +1,8 @@
 /**
  * 默认数据加载器 - 从 public/database/ 读取 Excel 文件并解析
  * B2 方案：数据随部署打包，所有用户看到相同数据
+ * 
+ * 版本控制：构建时生成 version.txt，前端检查版本变化自动刷新数据
  */
 
 import * as XLSX from 'xlsx';
@@ -16,7 +18,81 @@ import {
   getRosterRawData,
   getModuleAttendanceRawData,
   getCenterHeadcountRawData,
+  clearAllData, // 修改为 clearAllData
 } from './database';
+
+// ── 版本检查相关 ─────────────────────────────────────────
+
+const VERSION_KEY = 'gpt_app_version';
+const VERSION_URL = './version.txt';
+
+/**
+ * 获取远程版本号（带缓存控制，确保获取最新）
+ */
+async function fetchRemoteVersion(): Promise<string | null> {
+  try {
+    const url = `${VERSION_URL}?t=${Date.now()}`; // 添加时间戳防止缓存
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) return null;
+    const text = await res.text();
+    const match = text.match(/version=(\d+)/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 获取本地存储的版本号
+ */
+function getLocalVersion(): string | null {
+  return localStorage.getItem(VERSION_KEY);
+}
+
+/**
+ * 保存版本号到本地
+ */
+function saveLocalVersion(version: string): void {
+  localStorage.setItem(VERSION_KEY, version);
+}
+
+/**
+ * 检查版本是否变化，如果变化则清除数据缓存
+ * @returns 是否清除了缓存（true=清除了，需要重新加载）
+ */
+async function checkAndClearCacheIfVersionChanged(): Promise<boolean> {
+  const remoteVersion = await fetchRemoteVersion();
+  if (!remoteVersion) {
+    console.log('[版本检查] 无法获取远程版本，跳过检查');
+    return false;
+  }
+
+  const localVersion = getLocalVersion();
+  
+  if (localVersion !== remoteVersion) {
+    console.log(`[版本检查] 版本变化 ${localVersion} -> ${remoteVersion}，清除缓存`);
+    
+    // 清除所有数据缓存
+    try {
+      await clearAllData();
+      console.log('[版本检查] 已清除 IndexedDB 数据');
+    } catch (err) {
+      console.warn('[版本检查] 清除 IndexedDB 失败:', err);
+    }
+    
+    // 清除 loadedFiles 记录
+    localStorage.removeItem('gpt_loaded_files');
+    console.log('[版本检查] 已清除 loaded_files 记录');
+    
+    // 保存新版本号
+    saveLocalVersion(remoteVersion);
+    
+    return true; // 清除了缓存
+  } else {
+    console.log(`[版本检查] 版本未变化 ${remoteVersion}，使用缓存`);
+    return false; // 未清除缓存
+  }
+}
 
 /**
  * Excel 文件名前缀 -> 数据类型的映射
@@ -146,6 +222,11 @@ export async function loadDefaultData(
 
     // 确保数据库已初始化
     await initDatabase();
+
+    // ── 版本检查：如果版本变化，清除缓存 ──
+    await checkAndClearCacheIfVersionChanged();
+    // 注意：checkAndClearCacheIfVersionChanged 内部已经清除了 loadedFiles，
+    // 所以下面读取时如果是新版本就是空的，如果是旧版本就是之前的值
 
     // 读取已加载的文件清单（localStorage 持久化）
     const loadedFilesKey = 'gpt_loaded_files';

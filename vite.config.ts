@@ -42,11 +42,39 @@ function databaseFileListPlugin() {
   }
 }
 
+// Vite 插件：构建时生成 version.txt（包含部署时间戳）
+function versionPlugin() {
+  return {
+    name: 'version-plugin',
+    // 构建开始时生成 version.txt
+    buildStart() {
+      generateVersion();
+    },
+    // 构建完成后也生成（确保有最新版本）
+    buildEnd() {
+      generateVersion();
+    },
+  };
+
+  function generateVersion() {
+    const versionPath = path.resolve(__dirname, 'public/version.txt');
+    const timestamp = Date.now(); // 时间戳（毫秒）
+    const versionStr = `version=${timestamp}\nbuild_time=${new Date().toISOString()}\n`;
+    
+    try {
+      fs.writeFileSync(versionPath, versionStr);
+      console.log(`[version-plugin] 已生成 version.txt: ${timestamp}`);
+    } catch (err) {
+      console.error('[version-plugin] 生成 version.txt 失败:', err);
+    }
+  }
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
     base: '/gpt-dashboard/', // GitHub Pages 子路径部署需要指定仓库名
-    plugins: [react(), tailwindcss(), databaseFileListPlugin()],
+    plugins: [react(), tailwindcss(), databaseFileListPlugin(), versionPlugin()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
