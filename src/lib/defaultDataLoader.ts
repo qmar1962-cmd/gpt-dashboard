@@ -1,6 +1,8 @@
 /**
  * 默认数据加载器 - 从 public/database/ 读取 Excel 文件并解析
  * B2 方案：数据随部署打包，所有用户看到相同数据
+ * 
+ * 增量更新：只重新加载修改时间变化的文件，其他使用缓存
  */
 
 import * as XLSX from 'xlsx';
@@ -18,10 +20,25 @@ import {
   getCenterHeadcountRawData,
 } from './database';
 
-/**
- * Excel 文件名前缀 -> 数据类型的映射
- * 文件名格式：{type}_{date}.xlsx，如 job_performance_0512.xlsx
- */
+// ── 类型定义 ─────────────────────────────────────────────────
+
+interface FileInfo {
+  mtime: string;  // 文件修改时间（ISO string）
+  size: number;   // 文件大小（bytes）
+}
+
+interface FileListData {
+  generated_at: string;
+  files: { [filename: string]: FileInfo };
+}
+
+// ── 常量 ─────────────────────────────────────────────────────
+
+const FILE_LIST_URL = './database/filelist.json';
+const FILE_LIST_CACHE_KEY = 'gpt_filelist_cache';  // 本地缓存的文件列表
+
+// ── Excel 文件名前缀 -> 数据类型的映射 ──────────────────
+
 const FILE_TYPE_MAP: Record<string, DataType> = {
   'job_performance': 'job_performance',
   'salary_performance': 'salary_performance',
@@ -32,6 +49,8 @@ const FILE_TYPE_MAP: Record<string, DataType> = {
   'module_attendance': 'module_attendance',
   'center_headcount': 'center_headcount',
 };
+
+// ── 工具函数 ───────────────────────────────────────────────
 
 /**
  * 根据文件名推断数据类型
@@ -52,7 +71,7 @@ function inferDataType(filename: string): DataType | null {
 async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataType: DataType } | null> {
   try {
     const url = `./database/${filename}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: 'no-cache' });  // 强制获取最新版本
     if (!response.ok) {
       console.warn(`[默认数据] 无法加载文件(${response.status})：${filename}`);
       return null;
@@ -81,95 +100,135 @@ async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataTy
   }
 }
 
-/**
- * 自动扫描 public/database/ 目录获取文件列表
- * 构建时 Vite 插件会生成 filelist.json
- */
-async function getDatabaseFileList(): Promise<string[]> {
-  try {
-    const res = await fetch('./database/filelist.json');
-    if (res.ok) {
-      const list = await res.json();
-      if (Array.isArray(list)) {
-        console.log(`[默认数据] 从 filelist.json 读取到 ${list.length} 个文件`);
-        return list;
-      }
-    }
-  } catch (e) {
-    console.warn('[默认数据] 读取 filelist.json 失败，尝试手动列表', e);
-  }
+// ── 核心函数：获取文件列表（增量更新用）─────────────
 
-  // filelist.json 不可用时，返回内置列表（兜底）
-  return [
-    'roster_0511.xlsx',
-    'job_performance_base.xlsx',
-    'job_performance_0512.xlsx',
-    'job_performance_0513.xlsx',
-    'job_performance_0514.xlsx',
-    'job_performance_0515.xlsx',
-    'salary_performance_base.xlsx',
-    'salary_performance_0512.xlsx',
-    'salary_performance_0513.xlsx',
-    'salary_performance_0514.xlsx',
-    'salary_performance_0515.xlsx',
-    'attendance15_base.xlsx',
-    'attendance15_0512.xlsx',
-    'attendance15_0513.xlsx',
-    'attendance15_0514.xlsx',
-    'attendance15_0515.xlsx',
-    'attendance7_base.xlsx',
-    'attendance7_0512.xlsx',
-    'attendance7_0513.xlsx',
-    'attendance7_0514.xlsx',
-    'attendance7_0515.xlsx',
-    'center_attendance_base.xlsx',
-    'center_attendance_0507.xlsx',
-    'center_attendance_0508.xlsx',
-    'center_attendance_0511.xlsx',
-    'center_attendance_0512.xlsx',
-    'center_attendance_0513.xlsx',
-    'center_attendance_0514.xlsx',
-    'center_attendance_0515.xlsx',
-  ];
+/**
+ * 获取远程 filelist.json（强制不缓存）
+ * 返回：{ filename: { mtime, size } }
+ */
+async function fetchRemoteFileList(): Promise<FileListData | null> {
+  try {
+    const url = `${FILE_LIST_URL}?t=${Date.now()}`;  // 防止缓存
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) {
+      console.warn('[默认数据] 获取 filelist.json 失败:', res.status);
+      return null;
+    }
+    const data: FileListData = await res.json();
+    return data;
+  } catch (err) {
+    console.warn('[默认数据] 获取远程 filelist.json 失败:', err);
+    return null;
+  }
 }
 
 /**
+ * 获取本地缓存的文件列表
+ */
+function getLocalFileListCache(): FileListData | null {
+  try {
+    const cached = localStorage.getItem(FILE_LIST_CACHE_KEY);
+    return cached ? JSON.parse(cached) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 保存文件列表到本地缓存
+ */
+function saveLocalFileListCache(data: FileListData): void {
+  try {
+    localStorage.setItem(FILE_LIST_CACHE_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn('[默认数据] 保存 filelist 缓存失败:', err);
+  }
+}
+
+/**
+ * 对比远程和本地文件列表，找出需要重新加载的文件
+ * @returns 需要加载的文件名列表
+ */
+function getFilesToReload(
+  remote: FileListData,
+  local: FileListData | null
+): string[] {
+  const toReload: string[] = [];
+
+  for (const [filename, remoteInfo] of Object.entries(remote.files)) {
+    if (!local) {
+      // 本地没有缓存，需要加载
+      toReload.push(filename);
+      continue;
+    }
+
+    const localInfo = local.files[filename];
+    if (!localInfo) {
+      // 本地没有这个文件，需要加载
+      toReload.push(filename);
+      continue;
+    }
+
+    // 对比 mtime 和 size
+    if (remoteInfo.mtime !== localInfo.mtime || remoteInfo.size !== localInfo.size) {
+      // 文件已变化，需要重新加载
+      toReload.push(filename);
+    }
+    // 否则跳过（使用缓存）
+  }
+
+  return toReload;
+}
+
+// ── 主函数 ─────────────────────────────────────────────────
+
+/**
  * 主函数：从 public/database/ 加载默认数据
- * 智能缓存：已加载成功的文件不会重复加载
+ * 增量更新：只重新加载修改过的文件，其他使用缓存
  * 支持进度回调（用于 UI 展示加载进度）
  */
 export async function loadDefaultData(
   onProgress?: (loaded: number, total: number, currentFile: string) => void
 ): Promise<boolean> {
   try {
-    console.log('[默认数据] 开始加载默认数据...');
+    console.log('[默认数据] 开始加载默认数据（增量更新模式）...');
 
     // 确保数据库已初始化
     await initDatabase();
 
-    // 读取已加载的文件清单（localStorage 持久化）
-    const loadedFilesKey = 'gpt_loaded_files';
-    const loadedFiles = new Set<string>(JSON.parse(localStorage.getItem(loadedFilesKey) || '[]'));
-
-    const files = await getDatabaseFileList();
-    if (files.length === 0) {
-      console.log('[默认数据] 文件列表为空');
+    // 1. 获取远程文件列表
+    const remoteFileList = await fetchRemoteFileList();
+    if (!remoteFileList) {
+      console.warn('[默认数据] 无法获取远程文件列表，使用本地缓存');
+      // 如果无法获取远程列表，返回 false（让调用方决定是否使用缓存数据）
       return false;
     }
 
-    const xlsxFiles = files.filter(f => f.match(/\.xlsx?$/i));
-    const toLoad = xlsxFiles.filter(f => !loadedFiles.has(f));
-    const skipCount = xlsxFiles.length - toLoad.length;
+    const remoteFiles = Object.keys(remoteFileList.files);
+    console.log(`[默认数据] 远程文件列表：${remoteFiles.length} 个文件`);
+
+    // 2. 获取本地缓存的文件列表
+    const localFileList = getLocalFileListCache();
+
+    // 3. 对比，找出需要重新加载的文件
+    const filesToReload = getFilesToReload(remoteFileList, localFileList);
+    const skipCount = remoteFiles.length - filesToReload.length;
 
     if (skipCount > 0) {
-      console.log(`[默认数据] 跳过 ${skipCount} 个已加载文件`);
+      console.log(`[默认数据] 跳过 ${skipCount} 个未变化文件（使用缓存）`);
+    }
+    if (filesToReload.length > 0) {
+      console.log(`[默认数据] 需要重新加载 ${filesToReload.length} 个文件：`, filesToReload);
+    } else {
+      console.log('[默认数据] 所有文件未变化，无需重新加载');
+      return false;  // 没有重新加载任何文件
     }
 
-    // ── 并行加载：所有待加载文件同时发起请求 ──
+    // 4. 并行加载需要重新加载的文件
     let successCount = 0;
     let failCount = 0;
 
-    const loadPromises = toLoad.map(async (file, idx) => {
+    const loadPromises = filesToReload.map(async (file, idx) => {
       try {
         const result = await loadAndParseFile(file);
         if (!result) {
@@ -180,13 +239,12 @@ export async function loadDefaultData(
         const { data, dataType } = result;
         await saveRawData(data, dataType);
 
-        loadedFiles.add(file);
         console.log(`[默认数据] 已加载：${file} -> ${dataType}，共 ${data.length} 条`);
         successCount++;
 
         // 进度回调
         if (onProgress) {
-          onProgress(idx + 1, toLoad.length, file);
+          onProgress(idx + 1, filesToReload.length, file);
         }
       } catch (err) {
         console.error(`[默认数据] 加载文件失败 ${file}:`, err);
@@ -196,10 +254,10 @@ export async function loadDefaultData(
 
     await Promise.all(loadPromises);
 
-    // 持久化已加载文件清单
-    localStorage.setItem(loadedFilesKey, JSON.stringify(Array.from(loadedFiles)));
+    // 5. 更新本地文件列表缓存
+    saveLocalFileListCache(remoteFileList);
 
-    console.log(`[默认数据] 加载完成：成功 ${successCount} 个，跳过 ${skipCount} 个，失败 ${failCount} 个`);
+    console.log(`[默认数据] 加载完成：成功 ${successCount} 个，失败 ${failCount} 个，跳过 ${skipCount} 个`);
     return successCount > 0;
   } catch (error) {
     console.error('[默认数据] 加载失败：', error);

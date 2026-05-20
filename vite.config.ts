@@ -37,7 +37,24 @@ function databaseFileListPlugin() {
       return;
     }
     const files = fs.readdirSync(dbDir).filter(f => /\.xlsx?$/i.test(f));
-    fs.writeFileSync(outputPath, JSON.stringify(files, null, 2));
+    
+    // 生成带时间戳和文件大小的文件列表
+    const fileListObj: { [key: string]: { mtime: string; size: number } } = {};
+    for (const file of files) {
+      const filePath = path.join(dbDir, file);
+      const stat = fs.statSync(filePath);
+      fileListObj[file] = {
+        mtime: stat.mtime.toISOString(), // 文件修改时间
+        size: stat.size, // 文件大小
+      };
+    }
+    
+    const output = {
+      generated_at: new Date().toISOString(),
+      files: fileListObj,
+    };
+    
+    fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
     console.log(`[database-file-list] 扫描到 ${files.length} 个文件，已写入 public/database/filelist.json`);
   }
 }
