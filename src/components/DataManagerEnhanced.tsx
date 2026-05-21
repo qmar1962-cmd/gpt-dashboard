@@ -485,6 +485,36 @@ function RemoteTab() {
     }
   };
 
+  // 数据类型中文映射
+  const DATA_TYPE_LABELS: Record<string, { name: string; icon: string; color: string }> = {
+    attendance15: { name: '连续15日出勤数据', icon: '📅', color: 'text-orange-700' },
+    attendance7: { name: '连续7日未出勤数据', icon: '🚫', color: 'text-purple-700' },
+    roster: { name: '在职花名册', icon: '👥', color: 'text-emerald-700' },
+    salary: { name: '薪资异常数据', icon: '💰', color: 'text-amber-700' },
+    center_attendance: { name: '日出勤明细数据', icon: '📆', color: 'text-cyan-700' },
+    job_performance: { name: '岗位效能异常数据', icon: '📊', color: 'text-red-700' },
+    module_attendance: { name: '模块考勤数据', icon: '📋', color: 'text-blue-700' },
+    headcount: { name: '人员编制数据', icon: '👤', color: 'text-indigo-700' },
+    other: { name: '其他文件', icon: '📁', color: 'text-zinc-600' },
+  };
+
+  // 文件名解析：提取日期后缀
+  function parseFileDisplayName(fileName: string): { typeLabel: string; dateLabel: string } {
+    const match = fileName.match(/^([a-z_]+)_(\d{4})\.(xlsx|xls|csv)$/);
+    if (match) {
+      const typeKey = match[1];
+      const dateStr = match[2]; // e.g. "0512"
+      const month = dateStr.substring(0, 2);
+      const day = dateStr.substring(2, 4);
+      const typeInfo = DATA_TYPE_LABELS[typeKey] || DATA_TYPE_LABELS['other'];
+      return {
+        typeLabel: typeInfo.name,
+        dateLabel: `${month}月${day}日`
+      };
+    }
+    return { typeLabel: fileName, dateLabel: '' };
+  }
+
   // 按数据类型分组文件
   const groupedFiles = React.useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -540,10 +570,16 @@ function RemoteTab() {
       </div>
 
       {/* 文件列表 */}
-      {Object.entries(groupedFiles).map(([dataType, typeFiles]) => (
+      {Object.entries(groupedFiles).map(([dataType, typeFiles]) => {
+        const typeInfo = DATA_TYPE_LABELS[dataType] || DATA_TYPE_LABELS['other'];
+        return (
         <div key={dataType} className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
           <div className="px-6 py-4 bg-zinc-50 border-b border-zinc-200">
-            <h4 className="font-black text-sm text-zinc-900">{dataType}</h4>
+            <h4 className="font-black text-sm text-zinc-900 flex items-center gap-2">
+              <span>{typeInfo.icon}</span>
+              <span>{typeInfo.name}</span>
+              <span className="text-xs font-normal text-zinc-400 ml-2">({typeFiles.length} 个文件)</span>
+            </h4>
           </div>
           <table className="w-full text-sm">
             <thead>
@@ -555,9 +591,16 @@ function RemoteTab() {
               </tr>
             </thead>
             <tbody>
-              {typeFiles.map((file: any) => (
+              {typeFiles.map((file: any) => {
+                const { typeLabel, dateLabel } = parseFileDisplayName(file.name);
+                return (
                 <tr key={file.name} className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50/50">
-                  <td className="px-6 py-4 font-mono text-sm">{file.name}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-zinc-900">{typeLabel}{dateLabel ? ` (${dateLabel})` : ''}</span>
+                      <span className="font-mono text-xs text-zinc-400 mt-0.5">{file.name}</span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-right text-zinc-600">{(file.size / 1024).toFixed(1)} KB</td>
                   <td className="px-6 py-4 text-right text-zinc-600 text-xs">{new Date(file.mtime).toLocaleString('zh-CN')}</td>
                   <td className="px-6 py-4 text-center">
@@ -575,11 +618,13 @@ function RemoteTab() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
-      ))}
+        );
+      })}
 
       {files.length === 0 && (
         <div className="text-center py-20 text-zinc-500">
