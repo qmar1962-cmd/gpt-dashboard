@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, AlertCircle, ChevronDown } from 'lucide-react';
+import { X, TrendingUp, AlertCircle, ChevronDown, Edit3, User } from 'lucide-react';
 import { Attendance7WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
-import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
+import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
 
 // ── 未出勤原因选项 ──
 const REASON_OPTIONS = [
@@ -11,55 +11,13 @@ const REASON_OPTIONS = [
   '挂编', '出差', '离职未清', '已返岗',
 ];
 
-// ── 未出勤原因持久化（按工号全局记忆，断天即失效 + Firestore 跨设备同步） ──
-
-const ABSENCE_REASON_KEY = 'absence_reasons_global';
-const FIRESTORE_DOC_ID = 'shared_absence_reasons';
+// ── 未出勤原因数据结构 ──
 
 interface AbsenceReasonRecord {
   reason: string;      // 选中的原因
   employeeId: string;  // 工号（主键）
   name: string;        // 姓名（显示用）
   date: string;        // 记录这是哪一天的异常（格式：YYYY-MM-DD）
-}
-
-/** 获取存储 key：优先用 employeeId，没有则用 name */
-function getStorageKey(employeeId: string, name: string): string {
-  return employeeId || name || 'unknown';
-}
-
-/** 加载全局原因数据（仅 localStorage） */
-function loadAbsenceReasonsFromLocal(): Record<string, AbsenceReasonRecord> {
-  try {
-    const raw = localStorage.getItem(ABSENCE_REASON_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
-}
-
-/** 加载全局原因数据：本地优先 + 异步合并 Firestore 云端数据（不再清理数据） */
-async function loadAbsenceReasons(): Promise<Record<string, AbsenceReasonRecord>> {
-  const local = loadAbsenceReasonsFromLocal();
-  if (!isCloudBaseReady()) return local;
-
-  try {
-    const cloud = await readSharedData(FIRESTORE_DOC_ID) as Record<string, AbsenceReasonRecord> | null;
-    if (cloud && typeof cloud === 'object') {
-      // 合并：本地覆盖优先，云端补充本地没有的
-      const merged: Record<string, AbsenceReasonRecord> = { ...cloud, ...local };
-      localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(merged));
-      return merged;
-    }
-  } catch { /* 降级到纯本地 */ }
-  return local;
-}
-
-/** 保存原因到 localStorage 和 Firestore（不再清理其他数据） */
-function saveAbsenceReason(
-  all: Record<string, AbsenceReasonRecord>
-): void {
-  localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(all));
-  // 异步同步到 Firestore
-  saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
 }
 
 interface Attendance7DetailModalProps {
@@ -85,96 +43,153 @@ export default function Attendance7DetailModal({
 
   // 未出勤原因状态：按「date_name」key → 原因字符串
   const [reasonMap, setReasonMap] = useState<Record<string, string>>({});
+  // 远端协作数据（按中心-日期-姓名组织）
+  const [collaborationData, setCollaborationData] = useState<Record<string, Record<string, Record<string, AbsenceReasonRecord>>>>({});
   // 当前展开的下拉框位置
   const [openDropdownFor, setOpenDropdownFor] = useState<{ date: string; name: string; employeeId: string } | null>(null);
-  // CloudBase 状态
-  const [cloudbaseReady, setCloudBaseReady] = useState(isCloudBaseReady);
+  // 未保存修改标记
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // 保存中状态
+  const [isSaving, setIsSaving] = useState(false);
+  // 考勤负责人
+  const [responsiblePerson, setResponsiblePerson] = useState('');
+  const [isEditingResponsible, setIsEditingResponsible] = useState(false);
+  const [responsibleInput, setResponsibleInput] = useState('');
 
-  // 加载未出勤原因：按工号自动匹配 + 检查日期间隔 + Firestore 合并
+  // 加载远端协作数据
   useEffect(() => {
     if (!isOpen || !weeklyData.length) return;
 
-    // 计算两个日期之间的天数差（date1 - date2）
-    const getDaysDiff = (date1: string, date2: string): number => {
-      const d1 = new Date(date1);
-      const d2 = new Date(date2);
-      const diffTime = d1.getTime() - d2.getTime();
-      return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    };
+    const loadData = async () => {
+      // 1. 加载未出勤原因
+      const reasons = await loadCollaborationData('absence_reasons.json');
+      setCollaborationData(reasons);
 
-    const matchAndSet = (allStored: Record<string, AbsenceReasonRecord>) => {
+      // 2. 按中心名和日期匹配到当前列表
+      const centerReasons = reasons[centerName] || {};
       const matched: Record<string, string> = {};
       for (const day of weeklyData) {
+        const dayReasons = centerReasons[day.date] || {};
         for (const person of day.details) {
-          if (person.employeeId || person.name) {
-            const key = getStorageKey(person.employeeId || '', person.name || '');
-            const rec = allStored[key];
-            if (rec && rec.date) {
-              // 检查日期间隔：只有间隔不超过1天，才填充原因
-              const daysDiff = getDaysDiff(day.date, rec.date);
-              if (daysDiff <= 1) {
-                matched[`${day.date}_${person.name}`] = rec.reason;
-              }
-            }
+          const rec = dayReasons[person.name];
+          if (rec) {
+            matched[`${day.date}_${person.name}`] = rec.reason;
           }
         }
       }
-      return matched;
+      setReasonMap(matched);
+
+      // 3. 加载中心元数据（负责人）
+      const meta = await loadCollaborationData('center_meta.json');
+      const centerMeta = meta[centerName] || {};
+      if (centerMeta['考勤负责人']) {
+        setResponsiblePerson(centerMeta['考勤负责人']);
+      }
     };
 
-    // 先用本地数据立即渲染
-    const localAll = loadAbsenceReasonsFromLocal();
-    const matchedLocal = matchAndSet(localAll);
-    setReasonMap(matchedLocal);
-
-    // 异步合并 Firestore 云端数据
-    loadAbsenceReasons().then(merged => {
-      const matchedCloud = matchAndSet(merged);
-      setReasonMap(matchedCloud);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, centerName, weeklyData]);
-  // 依赖 centerName：切换中心时重新加载原因数据
+    loadData();
+    setHasUnsavedChanges(false);
+  }, [isOpen, weeklyData, centerName]);
 
   // 选择原因
   const handleSelectReason = useCallback((date: string, name: string, employeeId: string, reason: string) => {
+    const newRecord: AbsenceReasonRecord = { employeeId: employeeId || '', name, reason, date };
+
+    // 更新远端协作数据结构
+    setCollaborationData(prev => {
+      const updated = { ...prev };
+      if (!updated[centerName]) updated[centerName] = {};
+      if (!updated[centerName][date]) updated[centerName][date] = {};
+      updated[centerName][date][name] = newRecord;
+      return updated;
+    });
+
+    // 更新显示状态
     setReasonMap(prev => ({
       ...prev,
       [`${date}_${name}`]: reason,
     }));
 
-    // 写入全局存储
-    if (employeeId || name) {
-      const all = loadAbsenceReasonsFromLocal();
-      const key = getStorageKey(employeeId, name);
-      all[key] = { employeeId: employeeId || '', name, reason, date };  // 新增：记录日期
-      localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(all));
-      // 异步同步到 Firestore
-      saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
-    }
-
+    setHasUnsavedChanges(true);
     setOpenDropdownFor(null);
-  }, []);
+  }, [centerName]);
 
   // 删除原因（选错了可以清除）
   const handleClearReason = useCallback((date: string, name: string, employeeId: string) => {
+    // 从远端协作数据结构删除
+    setCollaborationData(prev => {
+      const updated = { ...prev };
+      if (updated[centerName]?.[date]?.[name]) {
+        delete updated[centerName][date][name];
+      }
+      return updated;
+    });
+
+    // 更新显示状态
     setReasonMap(prev => {
       const updated = { ...prev };
       delete updated[`${date}_${name}`];
       return updated;
     });
 
-    if (employeeId || name) {
-      const all = loadAbsenceReasonsFromLocal();
-      const key = getStorageKey(employeeId, name);
-      delete all[key];
-      localStorage.setItem(ABSENCE_REASON_KEY, JSON.stringify(all));
-      // 异步同步到 Firestore
-      saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
-    }
-
+    setHasUnsavedChanges(true);
     setOpenDropdownFor(null);
-  }, []);
+  }, [centerName]);
+
+  // 保存未出勤原因到远端
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      const result = await saveCollaborationData(
+        'absence_reasons.json',
+        collaborationData,
+        `Update absence reasons for ${centerName}`
+      );
+      if (result.success) {
+        setHasUnsavedChanges(false);
+        // 同时保存中心元数据（负责人）
+        if (responsiblePerson) {
+          const meta = await loadCollaborationData('center_meta.json');
+          const updatedMeta = { ...meta };
+          if (!updatedMeta[centerName]) updatedMeta[centerName] = {};
+          updatedMeta[centerName]['考勤负责人'] = responsiblePerson;
+          updatedMeta[centerName]['updatedAt'] = new Date().toISOString();
+          await saveCollaborationData('center_meta.json', updatedMeta, `Update responsible for ${centerName}`);
+        }
+        return true;
+      } else {
+        alert(`保存失败: ${result.error}`);
+        return false;
+      }
+    } catch (error) {
+      alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [collaborationData, centerName, responsiblePerson]);
+
+  // 处理关闭弹窗（检查未保存修改）
+  const handleClose = useCallback(async () => {
+    if (hasUnsavedChanges) {
+      const confirmed = confirm('未出勤原因已修改，是否保存到远端？\n保存后其他用户刷新页面即可看到最新数据。');
+      if (confirmed) {
+        const saved = await handleSave();
+        if (saved) onClose();
+      } else {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  }, [hasUnsavedChanges, handleSave, onClose]);
+
+  // 保存考勤负责人
+  const handleSaveResponsible = useCallback(async () => {
+    setResponsiblePerson(responsibleInput);
+    setIsEditingResponsible(false);
+    setHasUnsavedChanges(true);
+  }, [responsibleInput]);
 
   // 获取每个原因对应的颜色标签样式
   const getReasonStyle = (reason: string | undefined) => {
@@ -202,7 +217,7 @@ export default function Attendance7DetailModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-            onClick={onClose}
+            onClick={handleClose}
           />
 
           {/* 弹窗主体 */}
@@ -215,10 +230,54 @@ export default function Attendance7DetailModal({
           >
             {/* 头部 */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 flex-shrink-0">
-              <div>
+              <div className="flex-1 min-w-0">
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
                 </h3>
+                {/* 考勤负责人编辑 */}
+                <div className="mt-1 flex items-center gap-2">
+                  {isEditingResponsible ? (
+                    <div className="flex items-center gap-1.5">
+                      <User size={11} className="text-zinc-400" />
+                      <input
+                        type="text"
+                        value={responsibleInput}
+                        onChange={e => setResponsibleInput(e.target.value)}
+                        placeholder="输入负责人姓名"
+                        className="text-[11px] px-2 py-0.5 border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
+                        autoFocus
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleSaveResponsible();
+                          if (e.key === 'Escape') setIsEditingResponsible(false);
+                        }}
+                      />
+                      <button
+                        onClick={handleSaveResponsible}
+                        className="text-[10px] px-1.5 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 font-bold"
+                      >
+                        保存
+                      </button>
+                      <button
+                        onClick={() => setIsEditingResponsible(false)}
+                        className="text-[10px] px-1.5 py-0.5 text-zinc-400 hover:text-zinc-600"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setResponsibleInput(responsiblePerson);
+                        setIsEditingResponsible(true);
+                      }}
+                      className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-700 transition-colors group"
+                    >
+                      <User size={11} className="text-zinc-400 group-hover:text-zinc-600" />
+                      <span>考勤负责人：{responsiblePerson || '未设置'}</span>
+                      <Edit3 size={10} className="text-zinc-300 group-hover:text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  )}
+                </div>
                 <p className="text-[11px] font-bold text-zinc-400 mt-0.5 flex items-center gap-2">
                   <TrendingUp size={11} />
                   近7天连续未出勤趋势（T-2 = 今天 - 2天）
@@ -230,8 +289,8 @@ export default function Attendance7DetailModal({
                 </p>
               </div>
               <button
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600"
+                onClick={handleClose}
+                className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600 flex-shrink-0 ml-2"
               >
                 <X size={16} />
               </button>
@@ -427,11 +486,15 @@ export default function Attendance7DetailModal({
             {/* 底部 */}
             <div className="px-6 py-3 border-t border-zinc-100 bg-zinc-50/50 flex-shrink-0">
               <p className="text-[9px] text-zinc-400 font-bold text-center">
-                仅展示连续未出勤 ≥ 7 天的人员明细 · 原因按工号记忆，断天后自动清除
+                仅展示连续未出勤 ≥ 7 天的人员明细
               </p>
-              {!isCloudBaseReady() && (
-                <p className="text-[9px] text-amber-600 font-bold text-center mt-1">
-                  ⚠️ 离线模式：原因仅保存在本地，其他用户不可见
+              {hasUnsavedChanges ? (
+                <p className="text-[9px] text-amber-600 font-bold text-center mt-1 flex items-center justify-center gap-1">
+                  <span>⚠️ 有未保存的更改，关闭弹窗时会提示保存</span>
+                </p>
+              ) : (
+                <p className="text-[9px] text-emerald-600 font-bold text-center mt-1">
+                  ✓ 已同步到远端，其他用户刷新即可看到
                 </p>
               )}
             </div>

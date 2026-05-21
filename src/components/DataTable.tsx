@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Ban, CheckCircle2, ExternalLink } from 'lucide-react';
 import { RegionalData } from '../types';
 import { cn, formatNumber } from '../lib/utils';
 import { getWeeklyEfficiencyDetail, WeeklyDetail, getWeeklySalaryDetail, SalaryWeeklyDetail, getWeeklyAttendance15Detail, Attendance15WeeklyDetail, getWeeklyAttendance7Detail, Attendance7WeeklyDetail } from '../lib/dataProcessor';
+import { loadCollaborationData } from '../lib/collaborationApi';
 import EfficiencyDetailModal from './EfficiencyDetailModal';
 import SalaryDetailModal from './SalaryDetailModal';
 import Attendance15DetailModal from './Attendance15DetailModal';
@@ -64,6 +65,20 @@ interface Attendance7ModalState {
 
 export default function DataTable({ data, onSelect, currentSelection, adminMode, exemptCenters, onToggleExempt, rawData, salaryData, attendanceData, attendance15Data, attendance7Data, rosterData }: DataTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({ 'shanghai-prov': true });
+  // 中心元数据（负责人等）
+  const [centerMeta, setCenterMeta] = useState<Record<string, Record<string, string>>>({});
+
+  // 加载中心元数据
+  useEffect(() => {
+    loadCollaborationData('center_meta.json').then(meta => {
+      setCenterMeta(meta);
+    });
+  }, []);
+
+  // 获取中心负责人（优先使用协作数据）
+  const getCenterResponsible = (centerName: string, fallback?: string) => {
+    return centerMeta[centerName]?.['考勤负责人'] || fallback || '';
+  };
   const [detailModal, setDetailModal] = useState<DetailModalState>({
     isOpen: false,
     centerName: '',
@@ -278,7 +293,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       <span className={cn(
                         "text-[9px] font-bold",
                         currentSelection?.id === center.id && !adminMode ? "opacity-80" : "opacity-30"
-                      )}>{center.responsible}</span>
+                      )}>{getCenterResponsible(center.name, center.responsible)}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-center">

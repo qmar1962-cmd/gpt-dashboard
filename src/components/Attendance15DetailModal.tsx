@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, Check, Edit3, User } from 'lucide-react';
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
-import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
+import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
 
-// ── 排休数据持久化（按工号全局记忆，15天过期 + CloudBase 跨设备同步） ──
-
-const GLOBAL_STORAGE_KEY = 'leave_plans_global';
-const FIRESTORE_DOC_ID = 'shared_leave_plans';
+// ── 排休数据结构 ──
 
 interface LeavePlanRecord {
   start: string;      // YYYY-MM-DD 排休开始
@@ -16,82 +13,6 @@ interface LeavePlanRecord {
   setDate: string;    // YYYY-MM-DD 设置日期（用于判断过期）
   name: string;       // 姓名（显示用）
   employeeId: string; // 工号（主键）
-}
-
-/** 加载全局排休数据并自动清理超过15天的记录（仅 localStorage） */
-function loadGlobalLeavePlansFromLocal(): Record<string, LeavePlanRecord> {
-  try {
-    const raw = localStorage.getItem(GLOBAL_STORAGE_KEY);
-    const all: Record<string, LeavePlanRecord> = raw ? JSON.parse(raw) : {};
-    const now = new Date();
-    let cleaned = false;
-    for (const [id, rec] of Object.entries(all)) {
-      const setDt = new Date(rec.setDate);
-      const diffDays = Math.floor((now.getTime() - setDt.getTime()) / 86400000);
-      if (diffDays > 15) {
-        delete all[id];
-        cleaned = true;
-      }
-    }
-    if (cleaned) localStorage.setItem(GLOBAL_STORAGE_KEY, JSON.stringify(all));
-    return all;
-  } catch { return {}; }
-}
-
-/** 加载全局排休数据：本地优先 + 异步合并 CloudBase 云端数据 */
-async function loadGlobalLeavePlans(): Promise<Record<string, LeavePlanRecord>> {
-  const local = loadGlobalLeavePlansFromLocal();
-  if (!isCloudBaseReady()) return local;
-
-  try {
-    const cloud = await readSharedData(FIRESTORE_DOC_ID) as Record<string, LeavePlanRecord> | null;
-    if (cloud && typeof cloud === 'object') {
-      const now = new Date();
-      const merged: Record<string, LeavePlanRecord> = {};
-
-      // 合并：按工号，保留 setDate 更新的
-      const allKeys = new Set([...Object.keys(local), ...Object.keys(cloud)]);
-      for (const id of allKeys) {
-        const l = local[id];
-        const c = cloud[id];
-        if (!l && c) {
-          // 只有云端有，检查是否过期
-          const setDt = new Date(c.setDate);
-          const diffDays = Math.floor((now.getTime() - setDt.getTime()) / 86400000);
-          if (diffDays <= 15) merged[id] = c;
-        } else if (l && !c) {
-          merged[id] = l; // 只有本地有
-        } else if (l && c) {
-          // 都有，保留更新的
-          const localTime = new Date(l.setDate).getTime();
-          const cloudTime = new Date(c.setDate).getTime();
-          merged[id] = localTime >= cloudTime ? l : c;
-        }
-      }
-
-      // 回写本地缓存
-      localStorage.setItem(GLOBAL_STORAGE_KEY, JSON.stringify(merged));
-      return merged;
-    }
-  } catch { /* 降级到纯本地 */ }
-  return local;
-}
-
-function saveGlobalLeavePlans(all: Record<string, LeavePlanRecord>) {
-  localStorage.setItem(GLOBAL_STORAGE_KEY, JSON.stringify(all));
-  // 异步写入 Firestore，不阻塞 UI
-  saveSharedData(FIRESTORE_DOC_ID, all).catch(() => {});
-}
-
-/** 按工号查找该人是否有15天内的排休记录 */
-function findActivePlan(globalPlans: Record<string, LeavePlanRecord>, employeeId: string): LeavePlanRecord | null {
-  if (!employeeId) return null;
-  const rec = globalPlans[employeeId];
-  if (!rec) return null;
-  const now = new Date();
-  const setDt = new Date(rec.setDate);
-  const diffDays = Math.floor((now.getTime() - setDt.getTime()) / 86400000);
-  return diffDays <= 15 ? rec : null;
 }
 
 // ── 日期范围选择器弹窗 ──
@@ -302,41 +223,53 @@ export default function Attendance15DetailModal({
 
   // 排休计划状态：按「日期_姓名」key → 显示用的排休记录
   const [leavePlans, setLeavePlans] = useState<Record<string, LeavePlanRecord>>({});
-  // 全局存储（按工号）
-  const [globalPlans, setGlobalPlans] = useState<Record<string, LeavePlanRecord>>({});
+  // 远端协作数据（按中心-日期-姓名组织）
+  const [collaborationData, setCollaborationData] = useState<Record<string, Record<string, Record<string, LeavePlanRecord>>>>({});
   // 当前打开的日期选择器位置
   const [pickerFor, setPickerFor] = useState<{ date: string; name: string; employeeId: string } | null>(null);
-  // CloudBase 状态
-  const [cloudbaseReady, setCloudbaseReady] = useState(isCloudBaseReady);
+  // 未保存修改标记
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // 保存中状态
+  const [isSaving, setIsSaving] = useState(false);
+  // 考勤负责人
+  const [responsiblePerson, setResponsiblePerson] = useState('');
+  const [isEditingResponsible, setIsEditingResponsible] = useState(false);
+  const [responsibleInput, setResponsibleInput] = useState('');
 
-  // 加载全局排休数据并自动匹配到当前列表中的人员
+  // 加载远端协作数据
   useEffect(() => {
     if (!isOpen || !weeklyData.length) return;
-    // 先用本地数据立即渲染，再异步合并云端数据
-    const localAll = loadGlobalLeavePlansFromLocal();
-    setGlobalPlans(localAll);
-    const matchAndSet = (all: Record<string, LeavePlanRecord>) => {
+
+    const loadData = async () => {
+      // 1. 加载排休计划
+      const plans = await loadCollaborationData('leave_plans.json');
+      setCollaborationData(plans);
+
+      // 2. 按中心名和日期匹配到当前列表
+      const centerPlans = plans[centerName] || {};
       const matched: Record<string, LeavePlanRecord> = {};
       for (const day of weeklyData) {
+        const dayPlans = centerPlans[day.date] || {};
         for (const person of day.details) {
-          if (person.employeeId) {
-            const plan = findActivePlan(all, person.employeeId);
-            if (plan) {
-              matched[`${day.date}_${person.name}`] = plan;
-            }
+          const plan = dayPlans[person.name];
+          if (plan) {
+            matched[`${day.date}_${person.name}`] = plan;
           }
         }
       }
-      return matched;
-    };
-    setLeavePlans(matchAndSet(localAll));
+      setLeavePlans(matched);
 
-    // 异步合并 Firestore 云端数据
-    loadGlobalLeavePlans().then(merged => {
-      setGlobalPlans(merged);
-      setLeavePlans(matchAndSet(merged));
-    });
-  }, [isOpen, weeklyData]);
+      // 3. 加载中心元数据（负责人）
+      const meta = await loadCollaborationData('center_meta.json');
+      const centerMeta = meta[centerName] || {};
+      if (centerMeta['考勤负责人']) {
+        setResponsiblePerson(centerMeta['考勤负责人']);
+      }
+    };
+
+    loadData();
+    setHasUnsavedChanges(false);
+  }, [isOpen, weeklyData, centerName]);
 
   // 格式化显示：4/27-4/30
   const formatPlanDisplay = (plan?: LeavePlanRecord | null) => {
@@ -350,35 +283,101 @@ export default function Attendance15DetailModal({
 
   const handleSelectDate = useCallback((date: string, name: string, employeeId: string, start: string, end: string) => {
     const todayStr = new Date().toISOString().slice(0, 10);
-    // 写入全局存储（按工号）
-    setGlobalPlans(prev => {
-      const updated = { ...prev, [employeeId]: { employeeId, name, start, end, setDate: todayStr } };
-      saveGlobalLeavePlans(updated);
+    const newPlan: LeavePlanRecord = { employeeId, name, start, end, setDate: todayStr };
+
+    // 更新远端协作数据结构
+    setCollaborationData(prev => {
+      const updated = { ...prev };
+      if (!updated[centerName]) updated[centerName] = {};
+      if (!updated[centerName][date]) updated[centerName][date] = {};
+      updated[centerName][date][name] = newPlan;
       return updated;
     });
+
     // 更新显示状态
     setLeavePlans(prev => ({
       ...prev,
-      [`${date}_${name}`]: { employeeId, name, start, end, setDate: todayStr },
+      [`${date}_${name}`]: newPlan,
     }));
+
+    setHasUnsavedChanges(true);
     setPickerFor(null);
-  }, []);
+  }, [centerName]);
 
   const handleClearPlan = useCallback((date: string, name: string, employeeId: string) => {
-    // 从全局存储删除
-    setGlobalPlans(prev => {
+    // 从远端协作数据结构删除
+    setCollaborationData(prev => {
       const updated = { ...prev };
-      delete updated[employeeId];
-      saveGlobalLeavePlans(updated);
+      if (updated[centerName]?.[date]?.[name]) {
+        delete updated[centerName][date][name];
+      }
       return updated;
     });
+
     // 更新显示状态
     setLeavePlans(prev => {
       const updated = { ...prev };
       delete updated[`${date}_${name}`];
       return updated;
     });
-  }, []);
+
+    setHasUnsavedChanges(true);
+  }, [centerName]);
+
+  // 保存排休计划到远端
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      const result = await saveCollaborationData(
+        'leave_plans.json',
+        collaborationData,
+        `Update leave plans for ${centerName}`
+      );
+      if (result.success) {
+        setHasUnsavedChanges(false);
+        // 同时保存中心元数据（负责人）
+        if (responsiblePerson) {
+          const meta = await loadCollaborationData('center_meta.json');
+          const updatedMeta = { ...meta };
+          if (!updatedMeta[centerName]) updatedMeta[centerName] = {};
+          updatedMeta[centerName]['考勤负责人'] = responsiblePerson;
+          updatedMeta[centerName]['updatedAt'] = new Date().toISOString();
+          await saveCollaborationData('center_meta.json', updatedMeta, `Update responsible for ${centerName}`);
+        }
+        return true;
+      } else {
+        alert(`保存失败: ${result.error}`);
+        return false;
+      }
+    } catch (error) {
+      alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [collaborationData, centerName, responsiblePerson]);
+
+  // 处理关闭弹窗（检查未保存修改）
+  const handleClose = useCallback(async () => {
+    if (hasUnsavedChanges) {
+      const confirmed = confirm('排休计划已修改，是否保存到远端？\n保存后其他用户刷新页面即可看到最新数据。');
+      if (confirmed) {
+        const saved = await handleSave();
+        if (saved) onClose();
+      } else {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  }, [hasUnsavedChanges, handleSave, onClose]);
+
+  // 保存考勤负责人
+  const handleSaveResponsible = useCallback(async () => {
+    setResponsiblePerson(responsibleInput);
+    setIsEditingResponsible(false);
+    setHasUnsavedChanges(true);
+  }, [responsibleInput]);
 
   // 关闭 picker 的点击外部逻辑
   useEffect(() => {
@@ -398,7 +397,7 @@ export default function Attendance15DetailModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-            onClick={onClose}
+            onClick={handleClose}
           />
 
           {/* 弹窗主体 */}
@@ -411,10 +410,54 @@ export default function Attendance15DetailModal({
           >
             {/* 头部 */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 flex-shrink-0">
-              <div>
+              <div className="flex-1 min-w-0">
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
                 </h3>
+                {/* 考勤负责人编辑 */}
+                <div className="mt-1 flex items-center gap-2">
+                  {isEditingResponsible ? (
+                    <div className="flex items-center gap-1.5">
+                      <User size={11} className="text-zinc-400" />
+                      <input
+                        type="text"
+                        value={responsibleInput}
+                        onChange={e => setResponsibleInput(e.target.value)}
+                        placeholder="输入负责人姓名"
+                        className="text-[11px] px-2 py-0.5 border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
+                        autoFocus
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleSaveResponsible();
+                          if (e.key === 'Escape') setIsEditingResponsible(false);
+                        }}
+                      />
+                      <button
+                        onClick={handleSaveResponsible}
+                        className="text-[10px] px-1.5 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 font-bold"
+                      >
+                        保存
+                      </button>
+                      <button
+                        onClick={() => setIsEditingResponsible(false)}
+                        className="text-[10px] px-1.5 py-0.5 text-zinc-400 hover:text-zinc-600"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setResponsibleInput(responsiblePerson);
+                        setIsEditingResponsible(true);
+                      }}
+                      className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-700 transition-colors group"
+                    >
+                      <User size={11} className="text-zinc-400 group-hover:text-zinc-600" />
+                      <span>考勤负责人：{responsiblePerson || '未设置'}</span>
+                      <Edit3 size={10} className="text-zinc-300 group-hover:text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  )}
+                </div>
                 <p className="text-[11px] font-bold text-zinc-400 mt-0.5 flex items-center gap-2">
                   <TrendingUp size={11} />
                   近7天连续出勤趋势（T-2 = 今天 - 2天）
@@ -426,8 +469,8 @@ export default function Attendance15DetailModal({
                 </p>
               </div>
               <button
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600"
+                onClick={handleClose}
+                className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600 flex-shrink-0 ml-2"
               >
                 <X size={16} />
               </button>
@@ -597,9 +640,13 @@ export default function Attendance15DetailModal({
               <p className="text-[9px] text-zinc-400 font-bold text-center">
                 仅展示连续出勤 ≥ 15 天的人员明细
               </p>
-              {!isCloudBaseReady() && (
-                <p className="text-[9px] text-amber-600 font-bold text-center mt-1">
-                  ⚠️ 离线模式：排休计划仅保存在本地，其他用户不可见
+              {hasUnsavedChanges ? (
+                <p className="text-[9px] text-amber-600 font-bold text-center mt-1 flex items-center justify-center gap-1">
+                  <span>⚠️ 有未保存的更改，关闭弹窗时会提示保存</span>
+                </p>
+              ) : (
+                <p className="text-[9px] text-emerald-600 font-bold text-center mt-1">
+                  ✓ 已同步到远端，其他用户刷新即可看到
                 </p>
               )}
             </div>
