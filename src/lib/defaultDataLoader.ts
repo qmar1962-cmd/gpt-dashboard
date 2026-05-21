@@ -18,6 +18,7 @@ import {
   getRosterRawData,
   getModuleAttendanceRawData,
   getCenterHeadcountRawData,
+  clearRawDataByType,
 } from './database';
 
 // ── 类型定义 ─────────────────────────────────────────────────
@@ -180,6 +181,34 @@ function getFilesToReload(
   return toReload;
 }
 
+/**
+ * 检测哪些文件被删除了（本地有但远程没有），并清除对应类型的 IndexedDB 数据
+ * 防止删除旧文件后，IndexedDB 中仍然保留旧数据导致数据重复
+ */
+async function clearDeletedFileData(
+  remote: FileListData,
+  local: FileListData | null
+): Promise<void> {
+  if (!local) return;
+
+  const deletedTypes = new Set<string>();
+
+  for (const localFile of Object.keys(local.files)) {
+    // 如果远程没有这个文件，说明被删除了
+    if (!remote.files[localFile]) {
+      const dataType = inferDataType(localFile);
+      if (dataType) {
+        deletedTypes.add(dataType);
+      }
+    }
+  }
+
+  for (const dataType of deletedTypes) {
+    console.log(`[默认数据] 检测到文件删除，清除 ${dataType} 的 IndexedDB 缓存`);
+    await clearRawDataByType(dataType);
+  }
+}
+
 // ── 主函数 ─────────────────────────────────────────────────
 
 /**
@@ -209,6 +238,10 @@ export async function loadDefaultData(
 
     // 2. 获取本地缓存的文件列表
     const localFileList = getLocalFileListCache();
+
+    // 2.5 检测被删除的文件并清除对应类型的 IndexedDB 数据
+    // 防止删除旧文件后，IndexedDB 中仍然保留旧数据导致数据重复
+    await clearDeletedFileData(remoteFileList, localFileList);
 
     // 3. 对比，找出需要重新加载的文件
     const filesToReload = getFilesToReload(remoteFileList, localFileList);
