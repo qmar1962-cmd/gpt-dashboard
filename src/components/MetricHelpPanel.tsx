@@ -358,6 +358,70 @@ export default function MetricHelpPanel() {
 
           {/* 版本历史内容 */}
           <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+            {/* V2.6.0 - 2026-05-21 */}
+            <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.6.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-21</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">班组负责人批量编辑模式：修改后暂存本地，黄色提示条提醒未保存，统一点击"保存到云端"上传</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">离开考勤界面时保存提醒：切换 Tab 或刷新/关闭页面时弹窗提醒保存未提交的修改</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">未保存修改刷新不丢失：修改负责人后未保存，刷新页面修改仍在本地</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-zinc-600">协作数据 UTF-8 编码修复：解决保存后排休计划、未出勤原因等中文内容乱码问题</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">弹窗界面美化：原生 alert/confirm 替换为 WPS 风格美观弹窗</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">口径说明更新：新增排休计划、未出勤原因、中心负责人、班组负责人的存储方式说明</span>
+                </div>
+              </div>
+            </div>
+
+            {/* V2.5.0 - 2026-05-19 */}
+            <div className="bg-blue-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">V2.5.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-19</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">排休计划协作编辑：支持为连续出勤≥15天的员工添加排休计划，存储于 GitHub 仓库</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">未出勤原因协作编辑：支持为连续未出勤≥7天的员工添加未出勤原因，存储于 GitHub 仓库</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">中心负责人编辑：支持设置中心考勤负责人，存储于 GitHub 仓库</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">班组负责人编辑：支持设置各班组负责人，存储于 GitHub 仓库</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">多人协作支持：所有协作数据通过 GitHub API 读写，所有用户共享，实时同步</span>
+                </div>
+              </div>
+            </div>
+
             {/* V2.0 - 2026-05-20 */}
             <div className="bg-blue-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">

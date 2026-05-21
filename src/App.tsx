@@ -18,7 +18,6 @@ import SummaryChart from './components/SummaryChart';
 import DataManagerEnhanced from './components/DataManagerEnhanced';
 import ReportModal from './components/ReportModal';
 import MetricHelpPanel from './components/MetricHelpPanel';
-import Changelog from './components/Changelog';
 import ConfirmModal from './components/ConfirmModal';
 import { PERFORMANCE_DATA } from './constants';
 import { cn } from './lib/utils';
@@ -1084,7 +1083,6 @@ export default function App() {
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-black uppercase tracking-tighter italic border-b-4 border-black inline-block leading-none">区域注册监控器</h2>
                   <MetricHelpPanel />
-                  <Changelog />
                 </div>
                 <div className="flex items-center gap-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                   <span>过滤器：{selection.type === 'all' ? '所有节点' : selection.label}</span>
