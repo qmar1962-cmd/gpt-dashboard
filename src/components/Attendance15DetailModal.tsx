@@ -241,8 +241,10 @@ export default function Attendance15DetailModal({
     if (!isOpen || !weeklyData.length) return;
 
     const loadData = async () => {
+      console.log('[加载] 开始加载协作数据, centerName:', centerName);
       // 1. 加载排休计划
       const plans = await loadCollaborationData('leave_plans.json');
+      console.log('[加载] leave_plans.json 加载结果:', plans);
       setCollaborationData(plans);
 
       // 2. 按中心名和日期匹配到当前列表
@@ -258,17 +260,20 @@ export default function Attendance15DetailModal({
         }
       }
       setLeavePlans(matched);
+      console.log('[加载] 匹配到的排休计划:', matched);
 
       // 3. 加载中心元数据（负责人）
       const meta = await loadCollaborationData('center_meta.json');
+      console.log('[加载] center_meta.json 加载结果:', meta);
       const centerMeta = meta[centerName] || {};
       if (centerMeta['考勤负责人']) {
         setResponsiblePerson(centerMeta['考勤负责人']);
       }
+      // 加载完成后才重置未保存标记
+      setHasUnsavedChanges(false);
     };
 
     loadData();
-    setHasUnsavedChanges(false);
   }, [isOpen, weeklyData, centerName]);
 
   // 格式化显示：4/27-4/30
@@ -328,21 +333,28 @@ export default function Attendance15DetailModal({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
+      console.log('[保存] 开始保存 leave_plans.json, collaborationData:', collaborationData);
       const result = await saveCollaborationData(
         'leave_plans.json',
         collaborationData,
         `Update leave plans for ${centerName}`
       );
+      console.log('[保存] leave_plans.json 保存结果:', result);
       if (result.success) {
         setHasUnsavedChanges(false);
         // 同时保存中心元数据（负责人）
         if (responsiblePerson) {
+          console.log('[保存] 开始保存 center_meta.json');
           const meta = await loadCollaborationData('center_meta.json');
           const updatedMeta = { ...meta };
           if (!updatedMeta[centerName]) updatedMeta[centerName] = {};
           updatedMeta[centerName]['考勤负责人'] = responsiblePerson;
           updatedMeta[centerName]['updatedAt'] = new Date().toISOString();
-          await saveCollaborationData('center_meta.json', updatedMeta, `Update responsible for ${centerName}`);
+          const metaResult = await saveCollaborationData('center_meta.json', updatedMeta, `Update responsible for ${centerName}`);
+          console.log('[保存] center_meta.json 保存结果:', metaResult);
+          if (!metaResult.success) {
+            alert(`负责人保存失败: ${metaResult.error}`);
+          }
         }
         return true;
       } else {
@@ -350,6 +362,7 @@ export default function Attendance15DetailModal({
         return false;
       }
     } catch (error) {
+      console.error('[保存] 保存失败:', error);
       alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return false;
     } finally {

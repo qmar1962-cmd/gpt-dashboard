@@ -10,7 +10,9 @@ const DATA_DIR = 'public/database';
 
 // 从环境变量获取 GitHub Token
 const getGitHubToken = () => {
-  return import.meta.env.VITE_GITHUB_TOKEN || '';
+  const token = import.meta.env.VITE_GITHUB_TOKEN || '';
+  console.log('[协作API] Token状态:', token ? `已配置(前6位:${token.slice(0,6)})` : '未配置');
+  return token;
 };
 
 // 协作数据文件缓存（避免重复读取）
@@ -137,8 +139,11 @@ export async function saveCollaborationData(
       body: JSON.stringify(putBody)
     });
 
+    console.log(`[协作API] PUT ${fileName} 响应状态:`, putResponse.status);
+
     if (!putResponse.ok) {
       const errorText = await putResponse.text();
+      console.error(`[协作API] PUT ${fileName} 失败:`, errorText);
 
       // 409 冲突：文件已被其他人修改
       if (putResponse.status === 409) {
@@ -152,6 +157,7 @@ export async function saveCollaborationData(
     }
 
     const result = await putResponse.json();
+    console.log(`[协作API] PUT ${fileName} 成功:`, result);
 
     // 4. 更新缓存
     collaborationCache[fileName] = {
