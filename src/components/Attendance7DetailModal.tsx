@@ -100,7 +100,7 @@ export default function Attendance7DetailModal({
   const handleSelectReason = useCallback((date: string, name: string, employeeId: string, reason: string) => {
     const newRecord: AbsenceReasonRecord = { employeeId: employeeId || '', name, reason, date };
 
-    // 更新远端协作数据结构
+    // 更新远端协作数据结构（只更新当前日期，保存时统一清理）
     setCollaborationData(prev => {
       const updated = { ...prev };
       if (!updated[centerName]) updated[centerName] = {};
@@ -109,19 +109,24 @@ export default function Attendance7DetailModal({
       return updated;
     });
 
-    // 更新显示状态
-    setReasonMap(prev => ({
-      ...prev,
-      [`${date}_${name}`]: reason,
-    }));
+    // 更新显示状态：同一个人所有日期都填上这个原因（覆盖）
+    setReasonMap(prev => {
+      const updated = { ...prev };
+      for (const day of weeklyData) {
+        if (day.details.some(p => p.name === name)) {
+          updated[`${day.date}_${name}`] = reason;
+        }
+      }
+      return updated;
+    });
 
     setHasUnsavedChanges(true);
     setOpenDropdownFor(null);
-  }, [centerName]);
+  }, [centerName, weeklyData]);
 
   // 删除原因（选错了可以清除）
   const handleClearReason = useCallback((date: string, name: string, employeeId: string) => {
-    // 从远端协作数据结构删除
+    // 从远端协作数据结构删除（只删当前日期）
     setCollaborationData(prev => {
       const updated = { ...prev };
       if (updated[centerName]?.[date]?.[name]) {
@@ -130,29 +135,53 @@ export default function Attendance7DetailModal({
       return updated;
     });
 
-    // 更新显示状态
+    // 更新显示状态：同一个人所有日期都清除
     setReasonMap(prev => {
       const updated = { ...prev };
-      delete updated[`${date}_${name}`];
+      for (const day of weeklyData) {
+        if (day.details.some(p => p.name === name)) {
+          delete updated[`${day.date}_${name}`];
+        }
+      }
       return updated;
     });
 
     setHasUnsavedChanges(true);
     setOpenDropdownFor(null);
-  }, [centerName]);
+  }, [centerName, weeklyData]);
 
   // 保存未出勤原因到远端
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      console.log('[保存] 开始保存 absence_reasons.json, collaborationData:', collaborationData);
+      // 清理：删掉不在当前7天异常列表里的人
+      const validNames = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
+      const cleanedData = JSON.parse(JSON.stringify(collaborationData));
+      if (cleanedData[centerName]) {
+        const centerReasons = cleanedData[centerName];
+        for (const date of Object.keys(centerReasons)) {
+          for (const personName of Object.keys(centerReasons[date])) {
+            if (!validNames.has(personName)) {
+              delete centerReasons[date][personName];
+            }
+          }
+          // 如果某个日期没人了，删掉这个日期
+          if (Object.keys(centerReasons[date]).length === 0) {
+            delete centerReasons[date];
+          }
+        }
+      }
+
+      console.log('[保存] 开始保存 absence_reasons.json, cleanedData:', cleanedData);
       const result = await saveCollaborationData(
         'absence_reasons.json',
-        collaborationData,
+        cleanedData,
         `Update absence reasons for ${centerName}`
       );
       console.log('[保存] absence_reasons.json 保存结果:', result);
       if (result.success) {
+        // 更新本地 collaborationData 状态（清理后的）
+        setCollaborationData(cleanedData);
         setHasUnsavedChanges(false);
         // 同时保存中心元数据（负责人）
         if (responsiblePerson) {
@@ -180,7 +209,7 @@ export default function Attendance7DetailModal({
     } finally {
       setIsSaving(false);
     }
-  }, [collaborationData, centerName, responsiblePerson]);
+  }, [collaborationData, centerName, responsiblePerson, weeklyData]);
 
   // 处理关闭弹窗（检查未保存修改）
   const handleClose = useCallback(async () => {

@@ -290,7 +290,7 @@ export default function Attendance15DetailModal({
     const todayStr = new Date().toISOString().slice(0, 10);
     const newPlan: LeavePlanRecord = { employeeId, name, start, end, setDate: todayStr };
 
-    // 更新远端协作数据结构
+    // 更新远端协作数据结构（只更新当前日期，保存时统一清理）
     setCollaborationData(prev => {
       const updated = { ...prev };
       if (!updated[centerName]) updated[centerName] = {};
@@ -299,18 +299,23 @@ export default function Attendance15DetailModal({
       return updated;
     });
 
-    // 更新显示状态
-    setLeavePlans(prev => ({
-      ...prev,
-      [`${date}_${name}`]: newPlan,
-    }));
+    // 更新显示状态：同一个人所有日期都填上这个排休计划（覆盖）
+    setLeavePlans(prev => {
+      const updated = { ...prev };
+      for (const day of weeklyData) {
+        if (day.details.some(p => p.name === name)) {
+          updated[`${day.date}_${name}`] = newPlan;
+        }
+      }
+      return updated;
+    });
 
     setHasUnsavedChanges(true);
     setPickerFor(null);
-  }, [centerName]);
+  }, [centerName, weeklyData]);
 
   const handleClearPlan = useCallback((date: string, name: string, employeeId: string) => {
-    // 从远端协作数据结构删除
+    // 从远端协作数据结构删除（只删当前日期）
     setCollaborationData(prev => {
       const updated = { ...prev };
       if (updated[centerName]?.[date]?.[name]) {
@@ -319,28 +324,52 @@ export default function Attendance15DetailModal({
       return updated;
     });
 
-    // 更新显示状态
+    // 更新显示状态：同一个人所有日期都清除
     setLeavePlans(prev => {
       const updated = { ...prev };
-      delete updated[`${date}_${name}`];
+      for (const day of weeklyData) {
+        if (day.details.some(p => p.name === name)) {
+          delete updated[`${day.date}_${name}`];
+        }
+      }
       return updated;
     });
 
     setHasUnsavedChanges(true);
-  }, [centerName]);
+  }, [centerName, weeklyData]);
 
   // 保存排休计划到远端
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      console.log('[保存] 开始保存 leave_plans.json, collaborationData:', collaborationData);
+      // 清理：删掉不在当前7天异常列表里的人
+      const validNames = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
+      const cleanedData = JSON.parse(JSON.stringify(collaborationData));
+      if (cleanedData[centerName]) {
+        const centerPlans = cleanedData[centerName];
+        for (const date of Object.keys(centerPlans)) {
+          for (const personName of Object.keys(centerPlans[date])) {
+            if (!validNames.has(personName)) {
+              delete centerPlans[date][personName];
+            }
+          }
+          // 如果某个日期没人了，删掉这个日期
+          if (Object.keys(centerPlans[date]).length === 0) {
+            delete centerPlans[date];
+          }
+        }
+      }
+
+      console.log('[保存] 开始保存 leave_plans.json, cleanedData:', cleanedData);
       const result = await saveCollaborationData(
         'leave_plans.json',
-        collaborationData,
+        cleanedData,
         `Update leave plans for ${centerName}`
       );
       console.log('[保存] leave_plans.json 保存结果:', result);
       if (result.success) {
+        // 更新本地 collaborationData 状态（清理后的）
+        setCollaborationData(cleanedData);
         setHasUnsavedChanges(false);
         // 同时保存中心元数据（负责人）
         if (responsiblePerson) {
@@ -368,7 +397,7 @@ export default function Attendance15DetailModal({
     } finally {
       setIsSaving(false);
     }
-  }, [collaborationData, centerName, responsiblePerson]);
+  }, [collaborationData, centerName, responsiblePerson, weeklyData]);
 
   // 处理关闭弹窗（检查未保存修改）
   const handleClose = useCallback(async () => {
