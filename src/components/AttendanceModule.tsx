@@ -279,6 +279,17 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
     setPendingLeaderOverrides(null);
   }, []);
 
+  // 同步未保存标记到 localStorage（供 App.tsx 切换 tab 时检查）
+  useEffect(() => {
+    if (pendingLeaderOverrides !== null) {
+      localStorage.setItem('unsaved_group_leaders', 'true');
+      localStorage.setItem('unsaved_group_leaders_data', JSON.stringify(pendingLeaderOverrides));
+    } else {
+      localStorage.removeItem('unsaved_group_leaders');
+      localStorage.removeItem('unsaved_group_leaders_data');
+    }
+  }, [pendingLeaderOverrides]);
+
   useEffect(() => { loadLeaderOverrides(); }, [loadLeaderOverrides]);
 
   // 监听 beforeunload：刷新/关闭标签页时提示保存

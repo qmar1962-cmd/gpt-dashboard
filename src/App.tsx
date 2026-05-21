@@ -18,12 +18,14 @@ import SummaryChart from './components/SummaryChart';
 import DataManagerEnhanced from './components/DataManagerEnhanced';
 import ReportModal from './components/ReportModal';
 import MetricHelpPanel from './components/MetricHelpPanel';
+import ConfirmModal from './components/ConfirmModal';
 import { PERFORMANCE_DATA } from './constants';
 import { cn } from './lib/utils';
 import { buildFixedHuazhongData } from './lib/dataProcessor';
 import { DataType } from './lib/types.js';
 import { initDatabase, saveRawData, getLatestRawData, getSalaryRawData, getAttendance15RawData, getAttendance7RawData, getRosterRawData, idbGetRawData } from './lib/database.js';
 import { loadDefaultData } from './lib/defaultDataLoader';
+import { saveCollaborationData } from './lib/collaborationApi';
 import { useAdminMode } from './hooks/useAdminMode';
 
 export type Selection = {
@@ -39,6 +41,9 @@ export default function App() {
   const [loadingProgress, setLoadingProgress] = useState<number | undefined>(undefined);
 
   const [viewMode, setViewMode] = useState<'dashboard' | 'data' | 'attendance'>('dashboard');
+  // 离开考勤界面时的保存确认弹窗
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingViewMode, setPendingViewMode] = useState<'dashboard' | 'data' | 'attendance'>('dashboard');
   const [selection, setSelection] = useState<Selection>({ type: 'all', id: null });
   const [customData, setCustomData] = useState<any[] | null>(null);
   const [rawDataState, setRawDataState] = useState<any[] | null>(null);
@@ -96,6 +101,19 @@ export default function App() {
   const t2Month = String(t2Date.getUTCMonth() + 1).padStart(2, '0');
   const t2Day = String(t2Date.getUTCDate()).padStart(2, '0');
   const formattedT2Date = `${t2Year}年${t2Month}月${t2Day}日`;
+
+  // 安全切换 viewMode：离开考勤界面时检查是否有未保存的负责人修改
+  const safeSetViewMode = (next: 'dashboard' | 'data' | 'attendance') => {
+    if (viewMode === 'attendance' && next !== 'attendance') {
+      // 从考勤界面离开，检查是否有未保存的负责人修改
+      if (localStorage.getItem('unsaved_group_leaders') === 'true') {
+        setPendingViewMode(next);
+        setShowLeaveConfirm(true);
+        return;
+      }
+    }
+    setViewMode(next);
+  };
 
   // 页面初始化时从数据库加载最新数据
   useEffect(() => {
@@ -923,7 +941,7 @@ export default function App() {
             <Settings size={18} />
           </button>
           <button
-            onClick={() => setViewMode('dashboard')}
+            onClick={() => safeSetViewMode('dashboard')}
             className={`p-3 rounded-lg transition-all flex items-center justify-center ${
               viewMode === 'dashboard' 
                 ? 'bg-red-600 text-white shadow-lg scale-110' 
@@ -935,7 +953,7 @@ export default function App() {
           </button>
           {/* 【新增】中心考勤导航按钮 */}
           <button
-            onClick={() => setViewMode('attendance')}
+            onClick={() => safeSetViewMode('attendance')}
             className={`p-3 rounded-lg transition-all flex items-center justify-center ${
               viewMode === 'attendance'
                 ? 'bg-red-600 text-white shadow-lg scale-110'
@@ -947,7 +965,7 @@ export default function App() {
           </button>
           {isAdminLogin && (
             <button
-              onClick={() => setViewMode('data')}
+              onClick={() => safeSetViewMode('data')}
               className={`relative p-3 rounded-lg transition-all flex items-center justify-center ${
                 viewMode === 'data'
                   ? 'bg-red-600 text-white shadow-lg scale-110'
@@ -1231,6 +1249,37 @@ export default function App() {
       />
     </div>
   )}
+
+      {/* 离开考勤界面确认弹窗 */}
+      <ConfirmModal
+        isOpen={showLeaveConfirm}
+        title="有未保存的负责人修改"
+        message="中心考勤界面有未保存的负责人修改，离开前是否保存到云端？"
+        confirmText="保存并离开"
+        cancelText="不保存，直接离开"
+        onConfirm={async () => {
+          setShowLeaveConfirm(false);
+          const dataStr = localStorage.getItem('unsaved_group_leaders_data');
+          if (dataStr) {
+            try {
+              const data = JSON.parse(dataStr);
+              await saveCollaborationData('group_leaders.json', data, 'Update group leaders');
+              localStorage.setItem('gpt_dashboard_group_leaders', dataStr);
+            } catch (e) {
+              console.error('[App] 保存负责人到云端失败:', e);
+            }
+          }
+          localStorage.removeItem('unsaved_group_leaders');
+          localStorage.removeItem('unsaved_group_leaders_data');
+          setViewMode(pendingViewMode);
+        }}
+        onCancel={() => {
+          setShowLeaveConfirm(false);
+          localStorage.removeItem('unsaved_group_leaders');
+          localStorage.removeItem('unsaved_group_leaders_data');
+          setViewMode(pendingViewMode);
+        }}
+      />
   </>
 );
 }
