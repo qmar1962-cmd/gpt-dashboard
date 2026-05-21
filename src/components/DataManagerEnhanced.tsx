@@ -1,24 +1,26 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  Database, 
-  Upload, 
-  AlertCircle, 
-  CheckCircle, 
+import {
+  Database,
+  Upload,
+  AlertCircle,
+  CheckCircle,
   BarChart3,
   Trash2,
-  TrendingUp
+  TrendingUp,
+  Globe
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import DataUploaderEnhanced from './DataUploaderEnhanced';
 import { DataType, CenterData } from '../types/data';
 import { parseDataByTemplate, extractDateFromData } from '../lib/dataParser';
 import { saveDailyData, cleanupExpiredData, getStorageStats, getAllDates, getDataByDate, clearRawDataByType, getRawDataStats, clearAllData } from '../lib/database';
+import * as githubApi from '../lib/githubApi';
 
 interface DataManagerProps {
   onDataLoaded: (data: any[], fileName: string, dataType: DataType, date: string) => void;
 }
 
-type TabType = 'upload' | 'overview';
+type TabType = 'upload' | 'overview' | 'remote';
 
 export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) {
   const [activeTab, setActiveTab] = useState<TabType>('upload');
@@ -41,21 +43,21 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
   }, [refreshStats]);
 
   const handleFileProcessed = useCallback(async (
-    rawData: any[], 
-    fileName: string, 
+    rawData: any[],
+    fileName: string,
     dataType: DataType,
     date: string
   ) => {
     try {
       // 解析数据
       const parsedData = parseDataByTemplate(rawData, dataType, date);
-      
+
       // 保存到数据库（聚合数据，轻量）
       await saveDailyData(date, dataType, parsedData);
-      
+
       // 通知父组件（App.tsx 会调用 saveRawData 存原始数据到 IndexedDB）
       onDataLoaded(rawData, fileName, dataType, date);
-      
+
       // 刷新统计
       await refreshStats();
     } catch (error) {
@@ -151,13 +153,25 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
             <Database size={14} />
             数据概览
           </button>
+          <button
+            onClick={() => setActiveTab('remote')}
+            className={cn(
+              "px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all flex items-center gap-2",
+              activeTab === 'remote'
+                ? "border-red-600 text-red-600 bg-red-50"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50"
+            )}
+          >
+            <Globe size={14} />
+            远端数据管理
+          </button>
         </div>
       </div>
 
       {/* 内容区域 */}
       <div className="p-8">
         {activeTab === 'upload' && (
-          <DataUploaderEnhanced 
+          <DataUploaderEnhanced
             onFileProcessed={handleFileProcessed}
             onError={handleError}
           />
@@ -165,6 +179,10 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
 
         {activeTab === 'overview' && (
           <OverviewTab onCleaned={() => setUploadCount(0)} />
+        )}
+
+        {activeTab === 'remote' && (
+          <RemoteTab />
         )}
       </div>
     </div>
@@ -394,6 +412,184 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
   );
 }
 
+// 远端数据管理 Tab
+function RemoteTab() {
+  const [files, setFiles] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [uploading, setUploading] = React.useState(false);
+  const [deleting, setDeleting] = React.useState<string | null>(null);
+
+  const loadRemoteFiles = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await githubApi.listRemoteFiles();
+      if (result.success) {
+        setFiles(result.files || []);
+      } else {
+        throw new Error(result.error || '加载远端文件失败');
+      }
+    } catch (error) {
+      console.error('[远端数据] 加载失败:', error);
+      alert(`加载远端文件失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadRemoteFiles();
+  }, [loadRemoteFiles]);
+
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const base64Content = await githubApi.fileToBase64(file);
+      const message = `Upload ${file.name} via Dashboard`;
+      const result = await githubApi.uploadRemoteFile(file.name, base64Content, message);
+      if (result.success) {
+        alert(`文件 ${file.name} 上传成功！`);
+        await loadRemoteFiles();
+      } else {
+        throw new Error(result.error || '上传失败');
+      }
+    } catch (error) {
+      console.error('[远端数据] 上传失败:', error);
+      alert(`上传失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setUploading(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleDelete = async (fileName: string) => {
+    if (!confirm(`确定要删除远端文件「${fileName}」吗？\n此操作不可恢复，且会触发网站重新部署。`)) return;
+
+    setDeleting(fileName);
+    try {
+      const message = `Delete ${fileName} via Dashboard`;
+      const result = await githubApi.deleteRemoteFile(fileName, message);
+      if (result.success) {
+        alert(`文件 ${fileName} 删除成功！`);
+        await loadRemoteFiles();
+      } else {
+        throw new Error(result.error || '删除失败');
+      }
+    } catch (error) {
+      console.error('[远端数据] 删除失败:', error);
+      alert(`删除失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // 按数据类型分组文件
+  const groupedFiles = React.useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    files.forEach(file => {
+      // 从文件名提取数据类型前缀（如 attendance15, salary_performance 等）
+      const match = file.name.match(/^([a-z_]+)_/);
+      const dataType = match ? match[1] : 'other';
+      if (!groups[dataType]) groups[dataType] = [];
+      groups[dataType].push(file);
+    });
+    return groups;
+  }, [files]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <div className="w-8 h-8 border-2 border-zinc-300 border-t-red-600 rounded-full animate-spin-faster mx-auto mb-4" />
+        <p className="text-zinc-600">加载远端文件中...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* 操作栏 */}
+      <div className="bg-white p-5 rounded-xl border border-zinc-200 flex items-center justify-between">
+        <div>
+          <h3 className="font-black text-lg text-zinc-900">远端数据文件管理</h3>
+          <p className="text-xs text-zinc-500 mt-1">管理 GitHub 仓库中的 public/database/ 数据文件</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={loadRemoteFiles}
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors"
+          >
+            <Globe size={14} />
+            刷新
+          </button>
+          <label
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-red-700 transition-colors cursor-pointer"
+          >
+            <Upload size={14} />
+            {uploading ? '上传中...' : '上传文件'}
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleUpload}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
+        </div>
+      </div>
+
+      {/* 文件列表 */}
+      {Object.entries(groupedFiles).map(([dataType, typeFiles]) => (
+        <div key={dataType} className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 bg-zinc-50 border-b border-zinc-200">
+            <h4 className="font-black text-sm text-zinc-900">{dataType}</h4>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-zinc-100">
+                <th className="text-left px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">文件名</th>
+                <th className="text-right px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">大小</th>
+                <th className="text-right px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">修改时间</th>
+                <th className="text-center px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {typeFiles.map((file: any) => (
+                <tr key={file.name} className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50/50">
+                  <td className="px-6 py-4 font-mono text-sm">{file.name}</td>
+                  <td className="px-6 py-4 text-right text-zinc-600">{(file.size / 1024).toFixed(1)} KB</td>
+                  <td className="px-6 py-4 text-right text-zinc-600 text-xs">{new Date(file.mtime).toLocaleString('zh-CN')}</td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => handleDelete(file.name)}
+                      disabled={deleting !== null}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ml-auto text-red-600 bg-red-50 hover:bg-red-100"
+                    >
+                      {deleting === file.name ? (
+                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 size={12} />
+                      )}
+                      删除
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
+
+      {files.length === 0 && (
+        <div className="text-center py-20 text-zinc-500">
+          暂无远端数据文件
+        </div>
+      )}
+    </div>
+  );
+}
+
 // 数据类型配置
 const DATA_TYPE_CONFIG: { key: string; label: string; icon: string; color: string; bgColor: string; desc: string }[] = [
   { key: 'salary_performance', label: '薪资异常 (salary_performance)', icon: '💰', color: 'text-amber-700', bgColor: 'bg-amber-50', desc: '工资偏高人员明细，用于绩效异常弹窗和覆盖率计算' },
@@ -403,5 +599,3 @@ const DATA_TYPE_CONFIG: { key: string; label: string; icon: string; color: strin
   { key: 'center_daily_attendance', label: '日出勤明细 (center_attendance)', icon: '📆', color: 'text-cyan-700', bgColor: 'bg-cyan-50', desc: '个人当天是否出勤数据，用于考勤汇总统计' },
   { key: 'job_performance', label: '岗位效能异常 (job_performance)', icon: '📊', color: 'text-red-700', bgColor: 'bg-red-50', desc: '岗位效能异常数据，用于效能异常弹窗展示' },
 ];
-
-
