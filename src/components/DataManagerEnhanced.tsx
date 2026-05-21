@@ -491,6 +491,7 @@ function RemoteTab() {
     attendance7: { name: '连续7日未出勤数据', icon: '🚫', color: 'text-purple-700' },
     roster: { name: '在职花名册', icon: '👥', color: 'text-emerald-700' },
     salary: { name: '薪资异常数据', icon: '💰', color: 'text-amber-700' },
+    salary_performance: { name: '薪资绩效数据', icon: '💵', color: 'text-amber-800' },
     center_attendance: { name: '日出勤明细数据', icon: '📆', color: 'text-cyan-700' },
     job_performance: { name: '岗位效能异常数据', icon: '📊', color: 'text-red-700' },
     module_attendance: { name: '模块考勤数据', icon: '📋', color: 'text-blue-700' },
