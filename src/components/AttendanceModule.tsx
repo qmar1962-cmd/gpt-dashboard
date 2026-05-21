@@ -189,6 +189,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   const [warningAbsentPage, setWarningAbsentPage] = useState(1);
   const [workCopyState, setWorkCopyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [absentCopyState, setAbsentCopyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [summaryCopyState, setSummaryCopyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [textCopyState, setTextCopyState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   // 小组负责人手动编辑
@@ -771,6 +772,144 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
               }
             };
 
+            // 汇总通报图导出
+            const handleExportSummaryImage = async (): Promise<void> => {
+              setSummaryCopyState('loading');
+              try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) throw new Error('无法创建 Canvas');
+                const dpr = window.devicePixelRatio || 1;
+                const width = 900;
+                const rowHeight = 48;
+                const headerHeight = 44;
+                const titleHeight = 80;
+                const centers = centersList || [center];
+                const height = titleHeight + headerHeight + rowHeight * centers.length + 32;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                ctx.scale(dpr, dpr);
+
+                // 背景
+                ctx.fillStyle = '#f9fafb';
+                ctx.fillRect(0, 0, width, height);
+
+                // 标题
+                ctx.fillStyle = '#18181b';
+                ctx.font = 'bold 22px sans-serif';
+                ctx.fillText('GPT每日通报 · 考勤预警汇总', 32, 40);
+                ctx.fillStyle = '#a1a1aa';
+                ctx.font = '12px sans-serif';
+                ctx.fillText(`导出时间：${new Date().toLocaleString('zh-CN')}`, 32, 64);
+
+                // 表头背景
+                let currentY = titleHeight;
+                ctx.fillStyle = '#f4f4f5';
+                ctx.fillRect(24, currentY, width - 48, headerHeight);
+                ctx.fillStyle = '#71717a';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText('中心名称', 44, currentY + 28);
+                ctx.fillText('连续出勤≥10天', 280, currentY + 28);
+                ctx.fillText('连续缺勤≥5天', 480, currentY + 28);
+                ctx.fillText('状态', 680, currentY + 28);
+                currentY += headerHeight;
+
+                // 统计数据
+                const sortedDates = calendarActiveDates instanceof Set ? Array.from(calendarActiveDates).sort() : [];
+                const latestDate = sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null;
+                const latestIndex = latestDate ? sortedDates.indexOf(latestDate) : -1;
+
+                for (let idx = 0; idx < centers.length; idx++) {
+                  const c = centers[idx];
+                  const centerRows = rosterData.filter(r => (r as any).rosterCenter === c);
+                  let workCount = 0;
+                  let absentCount = 0;
+                  if (latestIndex >= 0 && centerRows.length > 0) {
+                    centerRows.forEach(row => {
+                      const empAtt = calendarDataSource[row.empId] || {};
+                      let workStreak = 0;
+                      let absentStreak = 0;
+                      for (let i = latestIndex; i >= 0; i--) {
+                        if (empAtt[sortedDates[i]] === true) workStreak++;
+                        else break;
+                      }
+                      for (let i = latestIndex; i >= 0; i--) {
+                        if (empAtt[sortedDates[i]] !== true) absentStreak++;
+                        else break;
+                      }
+                      if (workStreak >= 10) workCount++;
+                      if (absentStreak >= 5) absentCount++;
+                    });
+                  }
+                  const hasWarning = workCount > 0 || absentCount > 0;
+                  const y = currentY + idx * rowHeight;
+
+                  // 行背景（斑马纹）
+                  if (idx % 2 === 0) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(24, y, width - 48, rowHeight);
+                  }
+
+                  // 中心名称
+                  ctx.fillStyle = '#18181b';
+                  ctx.font = 'bold 14px sans-serif';
+                  ctx.fillText(c, 44, y + 30);
+
+                  // 连续出勤人数
+                  ctx.fillStyle = workCount > 0 ? '#dc2626' : '#16a34a';
+                  ctx.font = workCount > 0 ? 'bold 14px sans-serif' : '14px sans-serif';
+                  ctx.fillText(`${workCount} 人`, 280, y + 30);
+
+                  // 连续缺勤人数
+                  ctx.fillStyle = absentCount > 0 ? '#dc2626' : '#16a34a';
+                  ctx.font = absentCount > 0 ? 'bold 14px sans-serif' : '14px sans-serif';
+                  ctx.fillText(`${absentCount} 人`, 480, y + 30);
+
+                  // 状态
+                  if (hasWarning) {
+                    ctx.fillStyle = '#fef2f2';
+                    ctx.fillRect(670, y + 10, 80, 28);
+                    ctx.strokeStyle = '#fecaca';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(670, y + 10, 80, 28);
+                    ctx.fillStyle = '#dc2626';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText('⚠ 预警', 690, y + 29);
+                  } else {
+                    ctx.fillStyle = '#f0fdf4';
+                    ctx.fillRect(670, y + 10, 80, 28);
+                    ctx.strokeStyle = '#bbf7d0';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(670, y + 10, 80, 28);
+                    ctx.fillStyle = '#16a34a';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillText('✓ 正常', 690, y + 29);
+                  }
+                }
+
+                canvas.toBlob(async (blob) => {
+                  if (!blob) { setSummaryCopyState('error'); return; }
+                  try {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    setSummaryCopyState('success');
+                    setTimeout(() => setSummaryCopyState('idle'), 2000);
+                  } catch {
+                    const url = canvas.toDataURL('image/png');
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `考勤预警汇总_${new Date().toISOString().slice(0, 10)}.png`;
+                    a.click();
+                    setSummaryCopyState('success');
+                    setTimeout(() => setSummaryCopyState('idle'), 2000);
+                  }
+                }, 'image/png');
+              } catch (e) {
+                console.error('[汇总通报图导出] 失败:', e);
+                setSummaryCopyState('error');
+                setTimeout(() => setSummaryCopyState('idle'), 2000);
+              }
+            };
+
             return (
               <div className="mb-5 bg-white rounded-xl border border-zinc-100 overflow-hidden">
                 <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
@@ -789,6 +928,17 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                         }`}
                       >
                         {textCopyState === 'loading' ? '复制中...' : textCopyState === 'success' ? <><CheckCircle2 size={11} className="mr-0.5"/>已复制</> : <><Copy size={11} className="mr-0.5"/>导出通报</>}
+                      </button>
+                    <button
+                        onClick={() => handleExportSummaryImage()}
+                        disabled={summaryCopyState === 'loading'}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all border border-zinc-200 hover:scale-[1.02] active:scale-[0.98] ${
+                          summaryCopyState === 'loading' ? 'text-zinc-400 cursor-wait'
+                          : summaryCopyState === 'success' ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                          : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100 hover:border-zinc-300'
+                        }`}
+                      >
+                        {summaryCopyState === 'loading' ? '生成中...' : summaryCopyState === 'success' ? <><CheckCircle2 size={11} className="mr-0.5"/>已复制</> : <><Copy size={11} className="mr-0.5"/>生成通报图</>}
                       </button>
                   </div>
                 </div>
