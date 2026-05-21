@@ -10,7 +10,6 @@ import { idbGetRawData } from '../lib/database';
 import { LoadingSpinner } from './LoadingOverlay';
 import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
-import ConfirmModal from './ConfirmModal';
 
 // ── 类型定义 ─────────────────────────────────────────────
 interface AttendanceRow {
@@ -200,7 +199,6 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   // 未保存到远端的负责人修改
   const [pendingLeaderOverrides, setPendingLeaderOverrides] = useState<{ [key: string]: string } | null>(null);
   // 保存确认弹窗
-  const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
   const [saveConfirmAction, setSaveConfirmAction] = useState<'save' | 'discard' | null>(null);
 
   // ════ 负责人相关逻辑（GitHub API 协作存储）════
@@ -258,21 +256,10 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
     }
   }, [pendingLeaderOverrides]);
 
-  // 点击"保存到云端"：弹出确认弹窗
-  const handleSaveClick = useCallback(() => {
-    setShowSaveConfirmModal(true);
-  }, []);
-
-  // 弹窗确认：执行保存
-  const handleSaveConfirm = useCallback(async () => {
-    setShowSaveConfirmModal(false);
+  // 点击"保存到云端"：直接保存
+  const handleSaveClick = useCallback(async () => {
     await doSaveLeadersToCloud();
   }, [doSaveLeadersToCloud]);
-
-  // 弹窗取消：关闭弹窗
-  const handleSaveCancel = useCallback(() => {
-    setShowSaveConfirmModal(false);
-  }, []);
 
   // 丢弃负责人修改（恢复为云端版本）
   const handleDiscardLeaderChanges = useCallback(() => {
@@ -1304,16 +1291,6 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
         />
       )}
 
-      {/* 保存确认弹窗 */}
-      <ConfirmModal
-        isOpen={showSaveConfirmModal}
-        title="保存负责人修改"
-        message="有未保存的负责人修改，是否保存到云端？保存后所有用户都能看到最新负责人信息。"
-        confirmText="保存到云端"
-        cancelText="暂不保存"
-        onConfirm={handleSaveConfirm}
-        onCancel={handleSaveCancel}
-      />
     </div>
   );
 }
