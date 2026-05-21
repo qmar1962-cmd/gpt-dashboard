@@ -196,10 +196,14 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   const [groupLeaderOverrides, setGroupLeaderOverrides] = useState<{ [key: string]: string }>({});
   const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
   const [editingLeaderValue, setEditingLeaderValue] = useState('');
-  // 未保存到远端的负责人修改
-  const [pendingLeaderOverrides, setPendingLeaderOverrides] = useState<{ [key: string]: string } | null>(null);
-  // 保存确认弹窗
-  const [saveConfirmAction, setSaveConfirmAction] = useState<'save' | 'discard' | null>(null);
+  // 未保存到远端的负责人修改（从 localStorage 恢复未保存的修改）
+  const [pendingLeaderOverrides, setPendingLeaderOverrides] = useState<{ [key: string]: string } | null>(() => {
+    try {
+      const saved = localStorage.getItem('unsaved_group_leaders_data');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  });
 
   // ════ 负责人相关逻辑（GitHub API 协作存储）════
   const loadLeaderOverrides = useCallback(async () => {
@@ -304,8 +308,12 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
 
   const getGroupLeader = useCallback((centerName: string, groupName: string): string => {
     const key = `${centerName}|||${groupName}`;
+    // 优先读未保存的修改，再读已保存的
+    if (pendingLeaderOverrides && pendingLeaderOverrides[key] !== undefined) {
+      return pendingLeaderOverrides[key];
+    }
     return groupLeaderOverrides[key] || '';
-  }, [groupLeaderOverrides]);
+  }, [pendingLeaderOverrides, groupLeaderOverrides]);
 
   const handleStartEdit = useCallback((centerName: string, groupName: string, currentVal: string) => {
     const key = `${centerName}|||${groupName}`;
@@ -1157,7 +1165,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                               />
                             </div>
                           ) : getGroupLeader(center, g.group) ? (
-                            <span className="flex items-center gap-1"><span className="text-zinc-700 font-medium truncate max-w-[60px]" title={getGroupLeader(center, g.group)}>{getGroupLeader(center, g.group)}</span>{groupLeaderOverrides[`${center}|||${g.group}`] && <span className="text-[8px] text-blue-400 font-normal shrink-0" title="手动编辑">✎</span>}</span>
+                            <span className="flex items-center gap-1"><span className="text-zinc-700 font-medium truncate max-w-[60px]" title={getGroupLeader(center, g.group)}>{getGroupLeader(center, g.group)}</span>{((pendingLeaderOverrides && pendingLeaderOverrides[`${center}|||${g.group}`]) || groupLeaderOverrides[`${center}|||${g.group}`]) && <span className="text-[8px] text-blue-400 font-normal shrink-0" title="手动编辑">✎</span>}</span>
                           ) : (
                             <span className="text-zinc-300 text-[9px] italic cursor-pointer hover:text-zinc-400 transition-colors" title="点击设置负责人">— 点击填写 —</span>
                           )}
