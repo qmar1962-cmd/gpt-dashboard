@@ -500,7 +500,7 @@ function RemoteTab() {
 
   // 文件名解析：提取日期后缀
   function parseFileDisplayName(fileName: string): { typeLabel: string; dateLabel: string } {
-    const match = fileName.match(/^([a-z_]+)_(\d{4})\.(xlsx|xls|csv)$/);
+    const match = fileName.match(/^([a-z0-9_]+)_(\d{4})\.(xlsx|xls|csv)$/);
     if (match) {
       const typeKey = match[1];
       const dateStr = match[2]; // e.g. "0512"
@@ -520,7 +520,7 @@ function RemoteTab() {
     const groups: Record<string, any[]> = {};
     files.forEach(file => {
       // 从文件名提取数据类型前缀（如 attendance15, salary_performance 等）
-      const match = file.name.match(/^([a-z_]+)_/);
+      const match = file.name.match(/^([a-z0-9_]+)_/);
       const dataType = match ? match[1] : 'other';
       if (!groups[dataType]) groups[dataType] = [];
       groups[dataType].push(file);
