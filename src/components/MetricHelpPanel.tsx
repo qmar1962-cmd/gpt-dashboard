@@ -367,6 +367,18 @@ export default function MetricHelpPanel() {
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">未出勤原因自动继承：选原因时同一个人所有日期自动填（覆盖），清除时也同步清除</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">排休计划自动继承：选排休日期时同一个人所有日期自动填（覆盖），清除时也同步清除</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">保存时自动清理：保存未出勤原因/排休计划时，自动删掉不在当前7天异常列表的人</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
                   <span className="text-zinc-600">班组负责人批量编辑模式：修改后暂存本地，黄色提示条提醒未保存，统一点击"保存到云端"上传</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
