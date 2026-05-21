@@ -772,7 +772,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
               }
             };
 
-            // 汇总通报图导出
+            // 汇总通报图导出（看板风格）
             const handleExportSummaryImage = async (): Promise<void> => {
               setSummaryCopyState('loading');
               try {
@@ -781,46 +781,16 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                 if (!ctx) throw new Error('无法创建 Canvas');
                 const dpr = window.devicePixelRatio || 1;
                 const width = 900;
-                const rowHeight = 48;
-                const headerHeight = 44;
-                const titleHeight = 80;
+                const rowHeight = 68;
+                const titleHeight = 96;
                 const centers = centersList || [center];
-                const height = titleHeight + headerHeight + rowHeight * centers.length + 32;
-                canvas.width = width * dpr;
-                canvas.height = height * dpr;
-                ctx.scale(dpr, dpr);
-
-                // 背景
-                ctx.fillStyle = '#f9fafb';
-                ctx.fillRect(0, 0, width, height);
-
-                // 标题
-                ctx.fillStyle = '#18181b';
-                ctx.font = 'bold 22px sans-serif';
-                ctx.fillText('GPT每日通报 · 考勤预警汇总', 32, 40);
-                ctx.fillStyle = '#a1a1aa';
-                ctx.font = '12px sans-serif';
-                ctx.fillText(`导出时间：${new Date().toLocaleString('zh-CN')}`, 32, 64);
-
-                // 表头背景
-                let currentY = titleHeight;
-                ctx.fillStyle = '#f4f4f5';
-                ctx.fillRect(24, currentY, width - 48, headerHeight);
-                ctx.fillStyle = '#71717a';
-                ctx.font = 'bold 12px sans-serif';
-                ctx.fillText('中心名称', 44, currentY + 28);
-                ctx.fillText('连续出勤≥10天', 280, currentY + 28);
-                ctx.fillText('连续缺勤≥5天', 480, currentY + 28);
-                ctx.fillText('状态', 680, currentY + 28);
-                currentY += headerHeight;
 
                 // 统计数据
                 const sortedDates = calendarActiveDates instanceof Set ? Array.from(calendarActiveDates).sort() : [];
                 const latestDate = sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null;
                 const latestIndex = latestDate ? sortedDates.indexOf(latestDate) : -1;
 
-                for (let idx = 0; idx < centers.length; idx++) {
-                  const c = centers[idx];
+                const centerStats = centers.map(c => {
                   const centerRows = rosterData.filter(r => (r as any).rosterCenter === c);
                   let workCount = 0;
                   let absentCount = 0;
@@ -841,51 +811,131 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                       if (absentStreak >= 5) absentCount++;
                     });
                   }
-                  const hasWarning = workCount > 0 || absentCount > 0;
+                  return { center: c, workCount, absentCount, total: centerRows.length };
+                });
+
+                // 按异常人数排序
+                centerStats.sort((a, b) => (b.workCount + b.absentCount) - (a.workCount + a.absentCount));
+
+                const height = titleHeight + rowHeight * centers.length + 40;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                ctx.scale(dpr, dpr);
+
+                // 白色背景
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+
+                // 顶部装饰条
+                ctx.fillStyle = '#18181b';
+                ctx.fillRect(0, 0, width, 4);
+
+                // 标题区
+                ctx.fillStyle = '#18181b';
+                ctx.font = 'bold 24px sans-serif';
+                ctx.fillText('GPT每日通报 · 考勤预警汇总', 32, 44);
+                ctx.fillStyle = '#a1a1aa';
+                ctx.font = '12px sans-serif';
+                ctx.fillText(`中区绩效指标与数据复盘  |  ${new Date().toLocaleDateString('zh-CN')}`, 32, 72);
+
+                // 表头
+                let currentY = titleHeight;
+                ctx.fillStyle = '#f9fafb';
+                ctx.fillRect(24, currentY, width - 48, 36);
+                ctx.fillStyle = '#71717a';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText('分区/负责人', 44, currentY + 23);
+                ctx.fillText('连续出勤 ≥10天', 280, currentY + 23);
+                ctx.fillText('连续缺勤 ≥5天', 520, currentY + 23);
+                ctx.fillText('状态', 740, currentY + 23);
+                currentY += 36;
+
+                // 分割线
+                ctx.strokeStyle = '#f4f4f5';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(24, currentY);
+                ctx.lineTo(width - 24, currentY);
+                ctx.stroke();
+
+                for (let idx = 0; idx < centerStats.length; idx++) {
+                  const stat = centerStats[idx];
+                  const hasWarning = stat.workCount > 0 || stat.absentCount > 0;
                   const y = currentY + idx * rowHeight;
 
-                  // 行背景（斑马纹）
-                  if (idx % 2 === 0) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(24, y, width - 48, rowHeight);
-                  }
+                  // 左侧排名/序号
+                  ctx.fillStyle = '#f4f4f5';
+                  ctx.font = 'bold 14px sans-serif';
+                  const rankText = `#${idx + 1}`;
+                  const rankWidth = ctx.measureText(rankText).width;
+                  ctx.fillText(rankText, 44, y + 38);
+
+                  // 左侧色条（有预警用红色，正常用绿色）
+                  ctx.fillStyle = hasWarning ? '#dc2626' : '#22c55e';
+                  ctx.fillRect(24, y + 16, 3, 36);
 
                   // 中心名称
                   ctx.fillStyle = '#18181b';
-                  ctx.font = 'bold 14px sans-serif';
-                  ctx.fillText(c, 44, y + 30);
+                  ctx.font = 'bold 15px sans-serif';
+                  ctx.fillText(stat.center, 60, y + 32);
 
-                  // 连续出勤人数
-                  ctx.fillStyle = workCount > 0 ? '#dc2626' : '#16a34a';
-                  ctx.font = workCount > 0 ? 'bold 14px sans-serif' : '14px sans-serif';
-                  ctx.fillText(`${workCount} 人`, 280, y + 30);
+                  // 总人数
+                  ctx.fillStyle = '#a1a1aa';
+                  ctx.font = '11px sans-serif';
+                  ctx.fillText(`${stat.total}人`, 60, y + 50);
 
-                  // 连续缺勤人数
-                  ctx.fillStyle = absentCount > 0 ? '#dc2626' : '#16a34a';
-                  ctx.font = absentCount > 0 ? 'bold 14px sans-serif' : '14px sans-serif';
-                  ctx.fillText(`${absentCount} 人`, 480, y + 30);
+                  // 连续出勤 - 大数字
+                  ctx.fillStyle = stat.workCount > 0 ? '#dc2626' : '#16a34a';
+                  ctx.font = 'bold 22px sans-serif';
+                  ctx.fillText(String(stat.workCount), 320, y + 40);
+                  // 连续出勤 - 标签
+                  ctx.fillStyle = '#a1a1aa';
+                  ctx.font = '10px sans-serif';
+                  ctx.fillText('人', 350, y + 40);
 
-                  // 状态
+                  // 连续缺勤 - 大数字
+                  ctx.fillStyle = stat.absentCount > 0 ? '#dc2626' : '#16a34a';
+                  ctx.font = 'bold 22px sans-serif';
+                  ctx.fillText(String(stat.absentCount), 560, y + 40);
+                  // 连续缺勤 - 标签
+                  ctx.fillStyle = '#a1a1aa';
+                  ctx.font = '10px sans-serif';
+                  ctx.fillText('人', 590, y + 40);
+
+                  // 状态标签
                   if (hasWarning) {
+                    // 红色标签背景
                     ctx.fillStyle = '#fef2f2';
-                    ctx.fillRect(670, y + 10, 80, 28);
-                    ctx.strokeStyle = '#fecaca';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(670, y + 10, 80, 28);
+                    ctx.beginPath();
+                    ctx.roundRect(720, y + 16, 80, 32, 4);
+                    ctx.fill();
                     ctx.fillStyle = '#dc2626';
-                    ctx.font = 'bold 12px sans-serif';
-                    ctx.fillText('⚠ 预警', 690, y + 29);
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.fillText('⚠ 预警', 738, y + 37);
                   } else {
+                    // 绿色标签背景
                     ctx.fillStyle = '#f0fdf4';
-                    ctx.fillRect(670, y + 10, 80, 28);
-                    ctx.strokeStyle = '#bbf7d0';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(670, y + 10, 80, 28);
+                    ctx.beginPath();
+                    ctx.roundRect(720, y + 16, 80, 32, 4);
+                    ctx.fill();
                     ctx.fillStyle = '#16a34a';
-                    ctx.font = 'bold 12px sans-serif';
-                    ctx.fillText('✓ 正常', 690, y + 29);
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.fillText('✓ 正常', 738, y + 37);
                   }
+
+                  // 底部分割线
+                  ctx.strokeStyle = '#f4f4f5';
+                  ctx.lineWidth = 1;
+                  ctx.beginPath();
+                  ctx.moveTo(24, y + rowHeight);
+                  ctx.lineTo(width - 24, y + rowHeight);
+                  ctx.stroke();
                 }
+
+                // 底部信息
+                ctx.fillStyle = '#a1a1aa';
+                ctx.font = '11px sans-serif';
+                ctx.fillText(`导出时间：${new Date().toLocaleString('zh-CN')}  |  共 ${centers.length} 个中心`, 32, height - 16);
 
                 canvas.toBlob(async (blob) => {
                   if (!blob) { setSummaryCopyState('error'); return; }
