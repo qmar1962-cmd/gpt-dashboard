@@ -53,7 +53,14 @@ export async function loadCollaborationData(fileName: string): Promise<any> {
     }
 
     const fileData = await response.json();
-    const content = JSON.parse(atob(fileData.content.replace(/\s/g, '')));
+    // 正确解码 base64 UTF-8 内容（修复中文乱码问题）
+    const base64 = fileData.content.replace(/\s/g, '');
+    const binaryStr = atob(base64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+    const content = JSON.parse(new TextDecoder('utf-8').decode(bytes));
 
     // 更新缓存
     collaborationCache[fileName] = {
