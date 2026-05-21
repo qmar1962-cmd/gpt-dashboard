@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, X, Table2, ArrowRight, Hash, FileSpreadsheet, CalendarDays, AlertCircle, Upload, GitBranch, RefreshCw, Clock, Book } from 'lucide-react';
+import { HelpCircle, X, Table2, ArrowRight, Hash, FileSpreadsheet, CalendarDays, AlertCircle, Upload, GitBranch, RefreshCw, Clock, Book, Building2, Users } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // ── 章节定义 ──
@@ -240,7 +240,7 @@ const ATTENDANCE_SPEC = {
     { name: '小组出勤率 (近10天)', formula: '组内成员近10天总出勤天 / (组内人数 * 10) * 100%', note: '用于长期出勤/缺勤预警卡片展示' },
     { name: '长期出勤预警', formula: '扫描近10天的日出勤明细，连续 N 天都有记录(true) 的人\n阈值: 连续 >=10天 触发黄色预警' },
     { name: '长期缺勤预警', formula: '扫描近10天的日出勤明细，连续 N 天都无记录(false) 的人\n阈值: 连续 >=5天 触发红色预警' },
-    { name: '小组负责人', formula: '来源：花名册中 [组别] 对应的 [操作组长/主管人员姓名]\n手动覆盖优先级最高（localStorage 持久化），花名册重新上传后手动修改仍保留' },
+    { name: '小组负责人', formula: '来源：花名册中 [组别] 对应的 [操作组长/主管人员姓名]\n手动覆盖优先级最高，存储于 GitHub 仓库 group_leaders.json，多人协作编辑，一人修改全员可见' },
   ],
   summaryTableCols: ['应出勤','实际出勤','出勤天数','缺勤天数','旷工扣款','带薪假','事假','病假','旷工天数','迟到(分)','早退(分)','法定计薪天','报表出勤','系统差异'],
   summaryTableSpec: [
@@ -261,7 +261,7 @@ const ATTENDANCE_SPEC = {
   ],
   leavePlanSpec: {
     trigger: '连续出勤 ≥ 15天的人员',
-    storage: '按工号存储在 localStorage（key: leave_plans_global），15天自动过期',
+    storage: '存储于 GitHub 仓库 leave_plans.json，多人协作编辑，一人修改全员可见；本地 localStorage 作为缓存',
     autoMatch: '花名册重新上传后，按工号自动匹配已有排休计划',
     fields: [
       { col: '排休开始', desc: '选择排休开始日期' },
@@ -272,8 +272,20 @@ const ATTENDANCE_SPEC = {
   absenceReasonSpec: {
     trigger: '连续未出勤 ≥ 7天的人员',
     options: '工伤 / 事假 / 病假 / 纠纷 / 挂编 / 出差 / 离职未清 / 已返岗',
-    storage: '按工号存储在 localStorage（key: absence_reasons_global），断天自动失效',
+    storage: '存储于 GitHub 仓库 absence_reasons.json，多人协作编辑，一人修改全员可见；本地 localStorage 作为缓存',
     autoClean: '不在当前视图中的工号记录自动删除（断天 = 该人不再是连续未出勤≥7天）',
+  },
+  centerMetaSpec: {
+    storage: '存储于 GitHub 仓库 center_meta.json，多人协作编辑，一人修改全员可见',
+    fields: [
+      { col: '考勤负责人', desc: '中心级考勤负责人姓名，在弹窗标题栏和中心卡片中显示' },
+    ],
+  },
+  groupLeadersSpec: {
+    storage: '存储于 GitHub 仓库 group_leaders.json，多人协作编辑，一人修改全员可见；修改后需点击"保存到云端"',
+    fields: [
+      { col: '班组负责人', desc: '班组级负责人姓名，在出勤日历表格中显示；点击单元格可编辑' },
+    ],
   },
 };
 
@@ -677,6 +689,38 @@ function AttendanceSection() {
           <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">原因选项</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.options}</span></div>
           <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.storage}</span></div>
           <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">自动清理</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.autoClean}</span></div>
+        </div>
+      </div>
+
+      {/* 中心元数据口径 */}
+      <div className="bg-teal-50/40 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-teal-600 uppercase tracking-wider"><Building2 size={10} /> 中心考勤负责人（中心卡片/弹窗标题）</div>
+        <div className="space-y-1 text-[9px]">
+          <div className="flex gap-1"><span className="font-bold text-teal-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.centerMetaSpec.storage}</span></div>
+        </div>
+        <div className="grid grid-cols-1 gap-0.5 mt-1">
+          {ATTENDANCE_SPEC.centerMetaSpec.fields.map((f: { col: string; desc: string }) => (
+            <div key={f.col} className="flex items-start gap-1 text-[9px]">
+              <span className="font-mono font-bold text-zinc-600">{f.col}</span>
+              <span className="text-zinc-400">{f.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 班组负责人口径 */}
+      <div className="bg-sky-50/40 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-sky-600 uppercase tracking-wider"><Users size={10} /> 班组负责人（出勤日历表格）</div>
+        <div className="space-y-1 text-[9px]">
+          <div className="flex gap-1"><span className="font-bold text-sky-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.groupLeadersSpec.storage}</span></div>
+        </div>
+        <div className="grid grid-cols-1 gap-0.5 mt-1">
+          {ATTENDANCE_SPEC.groupLeadersSpec.fields.map((f: { col: string; desc: string }) => (
+            <div key={f.col} className="flex items-start gap-1 text-[9px]">
+              <span className="font-mono font-bold text-zinc-600">{f.col}</span>
+              <span className="text-zinc-400">{f.desc}</span>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import { idbGetRawData } from '../lib/database';
 import { LoadingSpinner } from './LoadingOverlay';
 import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
+import ConfirmModal from './ConfirmModal';
 
 // ── 类型定义 ─────────────────────────────────────────────
 interface AttendanceRow {
@@ -196,6 +197,11 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   const [groupLeaderOverrides, setGroupLeaderOverrides] = useState<{ [key: string]: string }>({});
   const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
   const [editingLeaderValue, setEditingLeaderValue] = useState('');
+  // 未保存到远端的负责人修改
+  const [pendingLeaderOverrides, setPendingLeaderOverrides] = useState<{ [key: string]: string } | null>(null);
+  // 保存确认弹窗
+  const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
+  const [saveConfirmAction, setSaveConfirmAction] = useState<'save' | 'discard' | null>(null);
 
   // ════ 负责人相关逻辑（GitHub API 协作存储）════
   const loadLeaderOverrides = useCallback(async () => {
@@ -229,18 +235,74 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
       // 1. 本地缓存
       localStorage.setItem(GROUP_LEADERS_STORAGE_KEY, JSON.stringify(overrides));
       setGroupLeaderOverrides(overrides);
-
-      // 2. 同步到 GitHub API
-      const result = await saveCollaborationData('group_leaders.json', overrides, 'Update group leaders');
-      if (!result.success) {
-        console.error('[AttendanceModule] 保存负责人到远端失败:', result.error);
-      }
     } catch (e) {
-      console.error('[AttendanceModule] 保存负责人失败:', e);
+      console.error('[AttendanceModule] 保存负责人到本地失败:', e);
     }
   }, []);
 
+  // 保存负责人修改到云端（内部函数，不弹窗）
+  const doSaveLeadersToCloud = useCallback(async () => {
+    if (pendingLeaderOverrides === null) return false;
+    try {
+      const result = await saveCollaborationData('group_leaders.json', pendingLeaderOverrides, 'Update group leaders');
+      if (result.success) {
+        localStorage.setItem(GROUP_LEADERS_STORAGE_KEY, JSON.stringify(pendingLeaderOverrides));
+        setGroupLeaderOverrides(pendingLeaderOverrides);
+        setPendingLeaderOverrides(null);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }, [pendingLeaderOverrides]);
+
+  // 点击"保存到云端"：弹出确认弹窗
+  const handleSaveClick = useCallback(() => {
+    setShowSaveConfirmModal(true);
+  }, []);
+
+  // 弹窗确认：执行保存
+  const handleSaveConfirm = useCallback(async () => {
+    setShowSaveConfirmModal(false);
+    await doSaveLeadersToCloud();
+  }, [doSaveLeadersToCloud]);
+
+  // 弹窗取消：关闭弹窗
+  const handleSaveCancel = useCallback(() => {
+    setShowSaveConfirmModal(false);
+  }, []);
+
+  // 丢弃负责人修改（恢复为云端版本）
+  const handleDiscardLeaderChanges = useCallback(() => {
+    setPendingLeaderOverrides(null);
+  }, []);
+
   useEffect(() => { loadLeaderOverrides(); }, [loadLeaderOverrides]);
+
+  // 监听 beforeunload：刷新/关闭标签页时提示保存
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (pendingLeaderOverrides !== null) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [pendingLeaderOverrides]);
+
+  // 暴露给父组件：检查是否有未保存修改（用于 tab 切换时拦截）
+  const checkUnsavedLeaderChanges = useCallback((): 'unsaved' | 'none' => {
+    return pendingLeaderOverrides !== null ? 'unsaved' : 'none';
+  }, [pendingLeaderOverrides]);
+
+  // 暴露给父组件：保存负责人到云端（用于 tab 切换时调用）
+  const saveLeadersAndConfirm = useCallback(async (): Promise<boolean> => {
+    if (pendingLeaderOverrides === null) return true;
+    return await handleSaveLeadersToCloud() || false;
+  }, [pendingLeaderOverrides, handleSaveLeadersToCloud]);
 
   const getGroupLeader = useCallback((centerName: string, groupName: string): string => {
     const key = `${centerName}|||${groupName}`;
@@ -255,11 +317,11 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
 
   const handleConfirmEdit = useCallback((centerName: string, groupName: string) => {
     const key = `${centerName}|||${groupName}`;
-    const newOverrides = { ...groupLeaderOverrides, [key]: editingLeaderValue.trim() };
-    saveLeaderOverrides(newOverrides);
+    const newOverrides = { ...(pendingLeaderOverrides || groupLeaderOverrides), [key]: editingLeaderValue.trim() };
+    setPendingLeaderOverrides(newOverrides);
     setEditingGroupKey(null);
     setEditingLeaderValue('');
-  }, [groupLeaderOverrides, editingLeaderValue, saveLeaderOverrides]);
+  }, [pendingLeaderOverrides, groupLeaderOverrides, editingLeaderValue]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingGroupKey(null);
@@ -998,6 +1060,17 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
               )}
             </div>
 
+            {/* 未保存提示条 */}
+            {pendingLeaderOverrides !== null && (
+              <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 flex items-center justify-between">
+                <span className="text-[11px] text-amber-700 font-medium">有未保存的负责人修改</span>
+                <div className="flex gap-2">
+                  <button onClick={handleDiscardLeaderChanges} className="text-[11px] text-amber-600 hover:text-amber-800 underline underline-offset-2">丢弃</button>
+                  <button onClick={handleSaveClick} className="text-[11px] bg-amber-500 text-white px-3 py-1 rounded hover:bg-amber-600 transition-colors">保存到云端</button>
+                </div>
+              </div>
+            )}
+
             {/* 汇总统计视图 */}
             {tab === 'summary' && (() => {
               // 按二级部门+组别聚合
@@ -1219,6 +1292,17 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
           attendanceData={Object.keys(dailyData).length > 0 ? dailyData : undefined}
         />
       )}
+
+      {/* 保存确认弹窗 */}
+      <ConfirmModal
+        isOpen={showSaveConfirmModal}
+        title="保存负责人修改"
+        message="有未保存的负责人修改，是否保存到云端？保存后所有用户都能看到最新负责人信息。"
+        confirmText="保存到云端"
+        cancelText="暂不保存"
+        onConfirm={handleSaveConfirm}
+        onCancel={handleSaveCancel}
+      />
     </div>
   );
 }
