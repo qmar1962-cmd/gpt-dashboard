@@ -391,6 +391,10 @@ export default function MetricHelpPanel() {
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-zinc-600">保存时重建数据结构：根据reasonMap/leavePlans重建collaborationData，确保同一个人所有日期都存进去（修复自动继承后未保存的问题）</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
                   <span className="text-zinc-600">协作数据 UTF-8 编码修复：解决保存后排休计划、未出勤原因等中文内容乱码问题</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">

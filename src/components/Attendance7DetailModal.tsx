@@ -154,34 +154,50 @@ export default function Attendance7DetailModal({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
-      // 清理：删掉不在当前7天异常列表里的人
+      // 第一步：根据 reasonMap 重建 collaborationData[centerName]（确保同一个人所有日期都存进去）
+      const rebuiltData = JSON.parse(JSON.stringify(collaborationData));
+      if (!rebuiltData[centerName]) rebuiltData[centerName] = {};
+      // 遍历 reasonMap，重建 centerName 下的数据结构
+      for (const [key, reason] of Object.entries(reasonMap)) {
+        // key 格式: YYYY-MM-DD_name（名字无下划线，用第一个下划线分割）
+        const underscoreIdx = key.indexOf('_');
+        const date = key.substring(0, underscoreIdx);
+        const name = key.substring(underscoreIdx + 1);
+        if (!rebuiltData[centerName][date]) rebuiltData[centerName][date] = {};
+        // 从 weeklyData 里找到这个人的 employeeId
+        let employeeId = '';
+        for (const day of weeklyData) {
+          const person = day.details.find(p => p.name === name);
+          if (person) { employeeId = person.employeeId || ''; break; }
+        }
+        rebuiltData[centerName][date][name] = { employeeId, name, reason, date };
+      }
+
+      // 第二步：清理不在当前7天异常列表里的人
       const validNames = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
-      const cleanedData = JSON.parse(JSON.stringify(collaborationData));
-      if (cleanedData[centerName]) {
-        const centerReasons = cleanedData[centerName];
+      if (rebuiltData[centerName]) {
+        const centerReasons = rebuiltData[centerName];
         for (const date of Object.keys(centerReasons)) {
           for (const personName of Object.keys(centerReasons[date])) {
             if (!validNames.has(personName)) {
               delete centerReasons[date][personName];
             }
           }
-          // 如果某个日期没人了，删掉这个日期
           if (Object.keys(centerReasons[date]).length === 0) {
             delete centerReasons[date];
           }
         }
       }
 
-      console.log('[保存] 开始保存 absence_reasons.json, cleanedData:', cleanedData);
+      console.log('[保存] 开始保存 absence_reasons.json, rebuiltData:', rebuiltData);
       const result = await saveCollaborationData(
         'absence_reasons.json',
-        cleanedData,
+        rebuiltData,
         `Update absence reasons for ${centerName}`
       );
       console.log('[保存] absence_reasons.json 保存结果:', result);
       if (result.success) {
-        // 更新本地 collaborationData 状态（清理后的）
-        setCollaborationData(cleanedData);
+        setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);
         // 同时保存中心元数据（负责人）
         if (responsiblePerson) {
@@ -209,7 +225,7 @@ export default function Attendance7DetailModal({
     } finally {
       setIsSaving(false);
     }
-  }, [collaborationData, centerName, responsiblePerson, weeklyData]);
+  }, [collaborationData, centerName, responsiblePerson, weeklyData, reasonMap]);
 
   // 处理关闭弹窗（检查未保存修改）
   const handleClose = useCallback(async () => {
