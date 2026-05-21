@@ -301,8 +301,8 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   // 暴露给父组件：保存负责人到云端（用于 tab 切换时调用）
   const saveLeadersAndConfirm = useCallback(async (): Promise<boolean> => {
     if (pendingLeaderOverrides === null) return true;
-    return await handleSaveLeadersToCloud() || false;
-  }, [pendingLeaderOverrides, handleSaveLeadersToCloud]);
+    return await doSaveLeadersToCloud() || false;
+  }, [pendingLeaderOverrides, doSaveLeadersToCloud]);
 
   const getGroupLeader = useCallback((centerName: string, groupName: string): string => {
     const key = `${centerName}|||${groupName}`;
