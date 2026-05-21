@@ -9,6 +9,7 @@ import AttendanceSummaryDetailModal from './AttendanceSummaryDetailModal';
 import { idbGetRawData } from '../lib/database';
 import { LoadingSpinner } from './LoadingOverlay';
 import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
+import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
 
 // ── 类型定义 ─────────────────────────────────────────────
 interface AttendanceRow {
@@ -196,8 +197,9 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
   const [editingLeaderValue, setEditingLeaderValue] = useState('');
 
-  // ════ 负责人相关逻辑 ════
-  const loadLeaderOverrides = useCallback(() => {
+  // ════ 负责人相关逻辑（GitHub API 协作存储）════
+  const loadLeaderOverrides = useCallback(async () => {
+    // 1. 先加载本地缓存（快速显示）
     try {
       const raw = localStorage.getItem(GROUP_LEADERS_STORAGE_KEY);
       if (raw) {
@@ -208,27 +210,31 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
       }
     } catch { /* ignore */ }
 
-    // 异步合并 Firestore 云端数据
-    if (isCloudBaseReady()) {
-      readSharedData(GROUP_LEADERS_FIRESTORE_DOC).then(cloud => {
-        if (cloud && typeof cloud === 'object') {
-          const localRaw = localStorage.getItem(GROUP_LEADERS_STORAGE_KEY);
-          const local: Record<string, string> = localRaw ? JSON.parse(localRaw) : {};
-          // 合并：本地覆盖优先（用户刚编辑的更权威），云端补充本地没有的
-          const merged = { ...(cloud as Record<string, string>), ...local };
-          localStorage.setItem(GROUP_LEADERS_STORAGE_KEY, JSON.stringify(merged));
-          setGroupLeaderOverrides(merged);
-        }
-      }).catch(() => {});
+    // 2. 从 GitHub API 加载远端协作数据
+    try {
+      const remote = await loadCollaborationData('group_leaders.json');
+      if (remote && typeof remote === 'object' && Object.keys(remote).length > 0) {
+        // 合并：远端数据覆盖本地（远端是权威来源）
+        const merged = { ...groupLeaderOverrides, ...remote };
+        setGroupLeaderOverrides(merged);
+        localStorage.setItem(GROUP_LEADERS_STORAGE_KEY, JSON.stringify(merged));
+      }
+    } catch (e) {
+      console.error('[AttendanceModule] 加载远端负责人失败:', e);
     }
   }, []);
 
-  const saveLeaderOverrides = useCallback((overrides: { [key: string]: string }) => {
+  const saveLeaderOverrides = useCallback(async (overrides: { [key: string]: string }) => {
     try {
+      // 1. 本地缓存
       localStorage.setItem(GROUP_LEADERS_STORAGE_KEY, JSON.stringify(overrides));
       setGroupLeaderOverrides(overrides);
-      // 异步同步到 Firestore
-      saveSharedData(GROUP_LEADERS_FIRESTORE_DOC, overrides).catch(() => {});
+
+      // 2. 同步到 GitHub API
+      const result = await saveCollaborationData('group_leaders.json', overrides, 'Update group leaders');
+      if (!result.success) {
+        console.error('[AttendanceModule] 保存负责人到远端失败:', result.error);
+      }
     } catch (e) {
       console.error('[AttendanceModule] 保存负责人失败:', e);
     }
