@@ -431,9 +431,9 @@ export function renderReportAsText(report: FullReport): string {
       } else if (center.att7Count > 0) {
         actionTodo = `长期未出勤≥7天${center.att7Count}人，请核实原因并填写至网页`;
       } else if (center.salaryCount > 0 && parseFloat(center.salaryCoverage) > 3) {
-        actionTodo = `绩效异常${center.salaryCount}人（覆盖率${center.salaryCoverage}），请明确异常人员名单并制定改进计划`;
+        actionTodo = `绩效异常${center.salaryCoverage}（${center.salaryCount}人），请明确异常人员名单并制定改进计划`;
       } else if (center.att15Count > 0 && parseFloat(center.att15Rate) > 3) {
-        actionTodo = `连续出勤≥15天${center.att15Count}人（触发率${center.att15Rate}），请合理安排调休并将计划填写至网页`;
+        actionTodo = `连续出勤≥15天${center.att15Rate}（${center.att15Count}人），请合理安排调休并将计划填写至网页`;
       }
       if (actionTodo) {
         lines.push(`  【待办】${actionTodo}。`);
@@ -456,7 +456,7 @@ export function renderReportAsText(report: FullReport): string {
 
       // 绩效异常
       if (center.salaryCount > 0) {
-        parts.push(`  • 绩效异常：${center.salaryCount} 人（覆盖率 ${center.salaryCoverage}，算薪基数 ${center.salaryBase}）`);
+        parts.push(`  • 绩效异常：${center.salaryCoverage}（${center.salaryCount} 人，算薪基数 ${center.salaryBase}）`);
       } else {
         parts.push(`  • 绩效异常：无（覆盖率 ${center.salaryCoverage}）`);
       }
@@ -464,7 +464,7 @@ export function renderReportAsText(report: FullReport): string {
       // 连续出勤
       if (center.att15Count > 0) {
         const extra = center.att15Over30 ? `，其中 >30 天 ${center.att15Over30} 人` : '';
-        parts.push(`  • 连续出勤≥15天：${center.att15Count} 人（触发率 ${center.att15Rate}，新增 ${center.att15New}${extra}）`);
+        parts.push(`  • 连续出勤≥15天：${center.att15Rate}（${center.att15Count} 人，新增 ${center.att15New}${extra}）`);
       } else {
         parts.push(`  • 连续出勤≥15天：无（触发率 ${center.att15Rate}）`);
       }
@@ -538,9 +538,9 @@ export function renderReportAsTextCompact(report: FullReport): string {
       } else if (center.att7Count > 0) {
         actionTodo = `长期未出勤≥7天${center.att7Count}人，请核实原因并填写至网页`;
       } else if (center.salaryCount > 0 && parseFloat(center.salaryCoverage) > 3) {
-        actionTodo = `绩效异常${center.salaryCount}人（覆盖率${center.salaryCoverage}），请明确异常人员名单并制定改进计划`;
+        actionTodo = `绩效异常${center.salaryCoverage}（${center.salaryCount}人），请明确异常人员名单并制定改进计划`;
       } else if (center.att15Count > 0 && parseFloat(center.att15Rate) > 3) {
-        actionTodo = `连续出勤≥15天${center.att15Count}人（触发率${center.att15Rate}），请合理安排调休并将计划填写至网页`;
+        actionTodo = `连续出勤≥15天${center.att15Rate}（${center.att15Count}人），请合理安排调休并将计划填写至网页`;
       }
       if (actionTodo) {
         lines.push(`待办：${actionTodo}。`);
@@ -560,14 +560,14 @@ export function renderReportAsTextCompact(report: FullReport): string {
 
       // 绩效异常（只保留数字）
       if (center.salaryCount > 0) {
-        lines.push(`绩效异常：${center.salaryCount}人(覆盖率${center.salaryCoverage}%)`);
+        lines.push(`绩效异常：${center.salaryCoverage}(${center.salaryCount}人)`);
       } else {
         lines.push(`绩效异常：无`);
       }
 
       // 连续出勤（只保留数字）
       if (center.att15Count > 0) {
-        lines.push(`连续出勤≥15天：${center.att15Count}人(触发率${center.att15Rate}%，新增${center.att15New})`);
+        lines.push(`连续出勤≥15天：${center.att15Rate}(${center.att15Count}人，新增${center.att15New})`);
       } else {
         lines.push(`连续出勤≥15天：无`);
       }

@@ -204,12 +204,28 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       ctx.textBaseline = 'alphabetic';
       ctx.fillText(`由 GPT 数据通报系统自动生成 · ${report.generatedAt}`, canvasWidth - 24, canvasHeight - 12);
 
-      // 下载
-      const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `GPT总览表_${report.dateStr}.png`;
-      a.click();
+      // 复制到剪贴板
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          alert('生成图片失败，请重试');
+          return;
+        }
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          alert('图片已复制到剪贴板，可直接粘贴到微信');
+        } catch (err) {
+          console.error('复制图片失败:', err);
+          // 降级方案：下载
+          const url = canvas.toDataURL('image/png');
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `GPT总览表_${report.dateStr}.png`;
+          a.click();
+          alert('复制失败，已改为下载图片');
+        }
+      }, 'image/png');
     } catch (e) {
       console.error('生成总览图失败:', e);
       alert('生成总览图失败，请重试');
@@ -308,7 +324,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-[11px] font-black uppercase tracking-wide rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
               <Image size={13} />
-              {imgGenerating ? '生成中...' : '总览图'}
+              {imgGenerating ? '生成中...' : '复制图片'}
             </button>
           </div>
         </div>
