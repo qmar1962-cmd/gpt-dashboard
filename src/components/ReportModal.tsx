@@ -3,7 +3,6 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { X, Copy, Check, Download, FileText, Image } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import { generateReport, renderReportAsText, type FullReport } from '../lib/reportGenerator';
 
 interface ReportModalProps {
@@ -25,7 +24,6 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
   const [textContent, setTextContent] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [imgGenerating, setImgGenerating] = useState(false);
-  const [isCompactMode, setIsCompactMode] = useState(false);
   const overviewTableRef = useRef<HTMLDivElement>(null);
 
   // 打开弹窗时重新生成报告（基于 params）
@@ -34,7 +32,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
     try {
       setError(null);
       const rep = generateReport(params);
-      const text = isCompactMode ? renderReportAsTextCompact(rep) : renderReportAsText(rep);
+      const text = renderReportAsText(rep);
       setReport(rep);
       setTextContent(text);
     } catch (e: any) {
@@ -43,7 +41,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       setReport(null);
       setTextContent('');
     }
-  }, [isOpen, params, isCompactMode]);
+  }, [isOpen, params]);
 
   if (!isOpen) return null;
 
@@ -79,82 +77,134 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
     );
   }
 
-  // 生成总览表图片
-  const generateOverviewTableHTML = (report: FullReport): string => {
-    const rows = report.overviewTable || [];
-    let html = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; background: #ffffff;">
-        <h2 style="font-size: 18px; font-weight: 900; margin: 0 0 16px 0; color: #18181b;">GPT 数据总览 — ${report.reportDate}</h2>
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-          <thead>
-            <tr style="background: #f4f4f5; border-bottom: 2px solid #d4d4d8;">
-              <th style="padding: 8px 12px; text-align: left; font-weight: 800; color: #52525b;">中心</th>
-              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">得分</th>
-              <th style="padding: 8px 12px; text-align: center; font-weight: 800; color: #52525b;" colspan="2">管幅（综/组）</th>
-              <th style="padding: 8px 12px; text-align: center; font-weight: 800; color: #52525b;" colspan="2">超目标（综/组）</th>
-              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">效能异常</th>
-              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">绩效异常</th>
-              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">连续出勤</th>
-              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">长期未出勤</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
-    for (const row of rows) {
-      const scoreColor = row.score >= 80 ? '#16a34a' : row.score >= 50 ? '#ca8a04' : '#dc2626';
-      const scoreBg = row.score >= 80 ? '#f0fdf4' : row.score >= 50 ? '#fefce8' : '#fef2f2';
-      html += `
-            <tr style="border-bottom: 1px solid #e4e4e7;">
-              <td style="padding: 8px 12px; font-weight: 700; color: #18181b;">${row.centerName}</td>
-              <td style="padding: 8px 12px; text-align: right; font-weight: 900; font-family: monospace; color: ${scoreColor}; background: ${scoreBg};">${row.score}</td>
-              <td style="padding: 8px 12px; text-align: right; font-family: monospace;">${row.compositeScope.toFixed(1)}</td>
-              <td style="padding: 8px 12px; text-align: right; font-family: monospace;">${row.leaderScope.toFixed(1)}</td>
-              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.compOverTarget > 0 ? '#dc2626' : '#16a34a'};">${row.compOverTarget > 0 ? '+' : ''}${row.compOverTarget.toFixed(1)}</td>
-              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.leadOverTarget > 0 ? '#dc2626' : '#16a34a'};">${row.leadOverTarget > 0 ? '+' : ''}${row.leadOverTarget.toFixed(1)}</td>
-              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.jobAbnormal > 0 ? '#dc2626' : '#16a34a'};">${row.jobAbnormal}</td>
-              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.salaryCount > 0 ? '#dc2626' : '#16a34a'};">${row.salaryCount}</td>
-              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.att15Count > 0 ? '#d97706' : '#16a34a'};">${row.att15Count}</td>
-              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.att7Count > 0 ? '#d97706' : '#16a34a'};">${row.att7Count}</td>
-            </tr>
-      `;
-    }
-    html += `
-          </tbody>
-        </table>
-        <div style="margin-top: 12px; font-size: 11px; color: #a1a1aa; text-align: right;">由 GPT 数据通报系统自动生成 · ${report.generatedAt}</div>
-      </div>
-    `;
-    return html;
-  };
-
+  // 用纯 Canvas API 生成总览表图片（精致报告风）
   const handleGenerateOverviewImage = async () => {
     if (!report || imgGenerating) return;
     setImgGenerating(true);
     try {
-      const tableHTML = generateOverviewTableHTML(report);
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = tableHTML;
-      tempDiv.style.position = 'fixed';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '0';
-      document.body.appendChild(tempDiv);
-      
-      const canvas = await html2canvas(tempDiv, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        onclone: (clonedDoc) => {
-          // 替换所有 oklch 颜色为 rgb（html2canvas 不支持 oklch）
-          const allEls = clonedDoc.querySelectorAll('*');
-          allEls.forEach(el => {
-            const style = (el as HTMLElement).style;
-            if (style.color && style.color.includes('oklch')) style.color = '#18181b';
-            if (style.backgroundColor && style.backgroundColor.includes('oklch')) style.backgroundColor = '#ffffff';
-            if (style.borderColor && style.borderColor.includes('oklch')) style.borderColor = '#d4d4d8';
-          });
+      const rows = report.overviewTable || [];
+      const headers = ['中心', '得分', '管幅(综)', '管幅(组)', '超目标(综)', '超目标(组)', '效能异常', '绩效异常', '连续出勤', '长期未出勤'];
+
+      // Canvas 尺寸
+      const colWidths = [90, 60, 72, 72, 82, 82, 72, 72, 72, 72];
+      const tableWidth = colWidths.reduce((a, b) => a + b, 0);
+      const rowHeight = 34;
+      const headerHeight = 42;
+      const titleHeight = 64;
+      const footerHeight = 32;
+      const tableHeight = headerHeight + rows.length * rowHeight;
+      const canvasWidth = tableWidth + 48;
+      const canvasHeight = titleHeight + tableHeight + footerHeight + 24;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasWidth * 2;
+      canvas.height = canvasHeight * 2;
+      const ctx = canvas.getContext('2d')!;
+      ctx.scale(2, 2);
+
+      // 背景
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // 标题
+      ctx.fillStyle = '#18181b';
+      ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillText(`GPT 数据总览 — ${report.reportDate}`, 24, 40);
+
+      // 表头背景
+      ctx.fillStyle = '#f4f4f5';
+      ctx.fillRect(24, titleHeight, tableWidth, headerHeight);
+      ctx.strokeStyle = '#d4d4d8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(24, titleHeight + headerHeight);
+      ctx.lineTo(24 + tableWidth, titleHeight + headerHeight);
+      ctx.stroke();
+
+      // 表头文字
+      ctx.fillStyle = '#52525b';
+      ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textBaseline = 'middle';
+      let xPos = 24;
+      for (let i = 0; i < headers.length; i++) {
+        ctx.textAlign = i === 0 ? 'left' : 'center';
+        const textX = i === 0 ? xPos + 10 : xPos + colWidths[i] / 2;
+        ctx.fillText(headers[i], textX, titleHeight + headerHeight / 2);
+        xPos += colWidths[i];
+      }
+
+      // 数据行
+      for (let r = 0; r < rows.length; r++) {
+        const row = rows[r];
+        const y = titleHeight + headerHeight + r * rowHeight;
+
+        // 行背景（斑马纹）
+        if (r % 2 === 0) {
+          ctx.fillStyle = '#fafafa';
+          ctx.fillRect(24, y, tableWidth, rowHeight);
         }
-      });
-      
-      document.body.removeChild(tempDiv);
+
+        // 底边线
+        ctx.strokeStyle = '#e4e4e7';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(24, y + rowHeight);
+        ctx.lineTo(24 + tableWidth, y + rowHeight);
+        ctx.stroke();
+
+        // 得分背景色
+        const scoreBg = row.score >= 80 ? '#f0fdf4' : row.score >= 50 ? '#fefce8' : '#fef2f2';
+        ctx.fillStyle = scoreBg;
+        const scoreXStart = 24 + colWidths[0];
+        ctx.fillRect(scoreXStart, y, colWidths[1], rowHeight);
+
+        // 数据
+        const cells = [
+          row.centerName,
+          String(row.score),
+          row.compositeScope.toFixed(1),
+          row.leaderScope.toFixed(1),
+          (row.compOverTarget > 0 ? '+' : '') + row.compOverTarget.toFixed(1),
+          (row.leadOverTarget > 0 ? '+' : '') + row.leadOverTarget.toFixed(1),
+          String(row.jobAbnormal),
+          String(row.salaryCount),
+          String(row.att15Count),
+          String(row.att7Count),
+        ];
+
+        const colors = [
+          '#18181b',
+          row.score >= 80 ? '#16a34a' : row.score >= 50 ? '#ca8a04' : '#dc2626',
+          '#18181b',
+          '#18181b',
+          row.compOverTarget > 0 ? '#dc2626' : '#16a34a',
+          row.leadOverTarget > 0 ? '#dc2626' : '#16a34a',
+          row.jobAbnormal > 0 ? '#dc2626' : '#16a34a',
+          row.salaryCount > 0 ? '#dc2626' : '#16a34a',
+          row.att15Count > 0 ? '#d97706' : '#16a34a',
+          row.att7Count > 0 ? '#d97706' : '#16a34a',
+        ];
+
+        xPos = 24;
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        for (let i = 0; i < cells.length; i++) {
+          ctx.fillStyle = colors[i];
+          ctx.textAlign = i === 0 ? 'left' : 'right';
+          const textX = i === 0 ? xPos + 10 : xPos + colWidths[i] - 10;
+          ctx.textBaseline = 'middle';
+          ctx.fillText(cells[i], textX, y + rowHeight / 2);
+          xPos += colWidths[i];
+        }
+      }
+
+      // 底部时间戳
+      ctx.fillStyle = '#a1a1aa';
+      ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(`由 GPT 数据通报系统自动生成 · ${report.generatedAt}`, canvasWidth - 24, canvasHeight - 12);
+
+      // 下载
       const url = canvas.toDataURL('image/png');
       const a = document.createElement('a');
       a.href = url;
@@ -259,12 +309,6 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
             >
               <Image size={13} />
               {imgGenerating ? '生成中...' : '总览图'}
-            </button>
-            <button
-              onClick={() => setIsCompactMode(!isCompactMode)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-[11px] font-black uppercase tracking-wide rounded hover:bg-green-700 transition-colors"
-            >
-              {isCompactMode ? '完整版' : '微信版'}
             </button>
           </div>
         </div>
