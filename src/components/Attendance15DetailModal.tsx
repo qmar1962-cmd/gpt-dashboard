@@ -259,6 +259,29 @@ export default function Attendance15DetailModal({
           }
         }
       }
+
+      // 3. 自动继承：对当前7天窗口内每个缺失排休计划的条目，检查历史数据并继承最近一次排休计划
+      const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
+      for (const personName of allPeopleInWindow) {
+        // 先找到此人最近一次历史排休计划（无论当前窗口有没有）
+        let mostRecentDate = '';
+        let mostRecentPlan: LeavePlanRecord | null = null;
+        for (const [histDate, histPeople] of Object.entries(centerPlans)) {
+          if (histPeople[personName] && histDate > mostRecentDate) {
+            mostRecentDate = histDate;
+            mostRecentPlan = histPeople[personName];
+          }
+        }
+        // 如果找到历史排休计划，填充当前窗口内所有缺失的日期
+        if (mostRecentPlan) {
+          for (const d of weeklyData) {
+            if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
+              matched[`${d.date}_${personName}`] = mostRecentPlan;
+            }
+          }
+        }
+      }
+
       setLeavePlans(matched);
       console.log('[加载] 匹配到的排休计划:', matched);
 
@@ -355,11 +378,15 @@ export default function Attendance15DetailModal({
         rebuiltData[centerName][date][name] = plan;
       }
 
-      // 第二步：清理不在当前7天异常列表里的人
+      // 第二步：清理当前7天窗口内不在异常列表里的人（不碰历史数据）
       const validNames = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
+      const currentDates = new Set(weeklyData.map(d => d.date));
       if (rebuiltData[centerName]) {
         const centerPlans = rebuiltData[centerName];
         for (const date of Object.keys(centerPlans)) {
+          // 只清理当前窗口的日期，不碰历史数据
+          if (!currentDates.has(date)) continue;
+          
           for (const personName of Object.keys(centerPlans[date])) {
             if (!validNames.has(personName)) {
               delete centerPlans[date][personName];

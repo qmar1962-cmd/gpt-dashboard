@@ -79,6 +79,29 @@ export default function Attendance7DetailModal({
           }
         }
       }
+
+      // 3. 自动继承：对当前7天窗口内每个缺失原因的条目，检查历史数据并继承最近一次原因
+      const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
+      for (const personName of allPeopleInWindow) {
+        // 先找到此人最近一次历史原因（无论当前窗口有没有）
+        let mostRecentDate = '';
+        let mostRecentReason = '';
+        for (const [histDate, histPeople] of Object.entries(centerReasons)) {
+          if (histPeople[personName] && histDate > mostRecentDate) {
+            mostRecentDate = histDate;
+            mostRecentReason = histPeople[personName].reason;
+          }
+        }
+        // 如果找到历史原因，填充当前窗口内所有缺失的日期
+        if (mostRecentReason) {
+          for (const d of weeklyData) {
+            if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
+              matched[`${d.date}_${personName}`] = mostRecentReason;
+            }
+          }
+        }
+      }
+
       setReasonMap(matched);
       console.log('[加载] 匹配到的原因:', matched);
 
@@ -173,11 +196,15 @@ export default function Attendance7DetailModal({
         rebuiltData[centerName][date][name] = { employeeId, name, reason, date };
       }
 
-      // 第二步：清理不在当前7天异常列表里的人
+      // 第二步：清理当前7天窗口内不在异常列表里的人（不碰历史数据）
       const validNames = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
+      const currentDates = new Set(weeklyData.map(d => d.date));
       if (rebuiltData[centerName]) {
         const centerReasons = rebuiltData[centerName];
         for (const date of Object.keys(centerReasons)) {
+          // 只清理当前窗口的日期，不碰历史数据
+          if (!currentDates.has(date)) continue;
+          
           for (const personName of Object.keys(centerReasons[date])) {
             if (!validNames.has(personName)) {
               delete centerReasons[date][personName];
