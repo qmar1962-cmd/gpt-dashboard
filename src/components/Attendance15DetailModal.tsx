@@ -261,7 +261,9 @@ export default function Attendance15DetailModal({
       }
 
       // 3. 自动继承：对当前7天窗口内每个缺失排休计划的条目，检查历史数据并继承最近一次排休计划
+      //    但只继承"连续异常"的情况（历史最近日期与当前窗口第一天差距≤3天），不继承"中断后重新异常"
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
+      const currentWindowStart = weeklyData.length > 0 ? weeklyData[0].date : '';
       for (const personName of allPeopleInWindow) {
         // 先找到此人最近一次历史排休计划（无论当前窗口有没有）
         let mostRecentDate = '';
@@ -272,11 +274,17 @@ export default function Attendance15DetailModal({
             mostRecentPlan = histPeople[personName];
           }
         }
-        // 如果找到历史排休计划，填充当前窗口内所有缺失的日期
-        if (mostRecentPlan) {
-          for (const d of weeklyData) {
-            if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
-              matched[`${d.date}_${personName}`] = mostRecentPlan;
+        // 如果找到历史排休计划，且历史最近日期与当前窗口第一天差距≤3天（连续异常），才填充
+        if (mostRecentPlan && currentWindowStart) {
+          const gapDays = Math.abs(
+            (new Date(currentWindowStart).getTime() - new Date(mostRecentDate).getTime()) / (1000 * 60 * 60 * 24)
+          );
+          if (gapDays <= 3) {
+            // 继承到当前窗口内此人的所有缺失日期
+            for (const d of weeklyData) {
+              if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
+                matched[`${d.date}_${personName}`] = mostRecentPlan;
+              }
             }
           }
         }
