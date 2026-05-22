@@ -27,6 +27,8 @@ const DATA_SOURCES = [
   { id: 'salary_performance', name: '薪资绩效异常', rows: '每人一条（姓名+岗位+日期）', dedup: '姓名 + 岗位 + 数据日期' },
   { id: 'attendance_15days', name: '连续15日出勤', rows: '连续出勤≥15天的员工', dedup: '工号 + 数据日期' },
   { id: 'attendance_7days', name: '连续7日未出勤', rows: '连续未出勤≥7天的员工', dedup: '工号 + 数据日期' },
+  { id: 'work_hours_high', name: '日工时高（>12.5h）', rows: '出勤工时>12.5h的员工', dedup: '工号 + 数据日期' },
+  { id: 'work_hours_low', name: '日工时低（≤8h）', rows: '出勤工时≤8h的员工', dedup: '工号 + 数据日期' },
   { id: 'employee_roster', name: '中心在职花名册', rows: '全部在职人员（含非操作部门）', dedup: '工号' },
   { id: 'center_daily_attendance', name: '中心日出勤明细', rows: '每人每天一条（有记录=出勤）', dedup: '工号 + 数据日期' },
 ];
@@ -38,6 +40,8 @@ const OPERATION_SPEC = {
     { type: '薪资绩效异常', pattern: 'salary_performance_YYYYMMDD.xlsx', example: 'salary_performance_20260514.xlsx' },
     { type: '连续15日出勤', pattern: 'attendance15_YYYYMMDD.xlsx', example: 'attendance15_20260514.xlsx' },
     { type: '连续7日未出勤', pattern: 'attendance7_YYYYMMDD.xlsx', example: 'attendance7_20260514.xlsx' },
+    { type: '日工时高（>12.5h）', pattern: 'work_hours_high_YYYYMMDD.xlsx', example: 'work_hours_high_20260514.xlsx' },
+    { type: '日工时低（≤8h）', pattern: 'work_hours_low_YYYYMMDD.xlsx', example: 'work_hours_low_20260514.xlsx' },
     { type: '中心在职花名册', pattern: 'roster_YYYYMMDD.xlsx', example: 'roster_20260514.xlsx' },
     { type: '中心日出勤明细', pattern: 'center_attendance_YYYYMMDD.xlsx', example: 'center_attendance_20260514.xlsx' },
   ],
@@ -51,7 +55,8 @@ const OPERATION_SPEC = {
   updateFreq: [
     { item: '岗位效能异常 / 薪资绩效异常', freq: '每日', note: 'T-2 数据，每天更新' },
     { item: '连续15日出勤 / 连续7日未出勤', freq: '每日', note: 'T-2 数据，每天更新' },
-    { item: '中心日出勤明细', freq: '每日', note: '用于考勤模块，可按需上传多天数据' },
+    { item: '日工时高 / 日工时低', freq: '每日', note: 'T-2 数据，每天更新，基于中心日出勤明细计算' },
+    { item: '中心日出勤明细', freq: '每日', note: '用于考勤模块和工时统计，可按需上传多天数据' },
     { item: '中心在职花名册', freq: '每周或按需', note: '人员变动时更新，影响管幅和覆盖率分母' },
   ],
   codeUpdate: [
@@ -67,7 +72,7 @@ const OPERATION_SPEC = {
 // ── 汇总指标 ──
 const AGGREGATION_SPEC = {
   items: [
-    { name: '中心绩效得分', formula: '效能得分 + 薪资得分 + 连续出勤得分 + 长期未出勤得分（四项之和，满分100）' },
+    { name: '中心绩效得分', formula: '效能得分 + 薪资得分 + 连续出勤得分 + 长期未出勤得分 + 日工时高得分 + 日工时低得分（六项之和，满分100）' },
     { name: '省区绩效得分', formula: '下属参与考核中心得分的算术平均值（取整）' },
     { name: '全区平均分', formula: '各省区总分的算术平均值（取整）' },
     { name: '省区排名', formula: '按省区总分降序排列' },
@@ -655,7 +660,7 @@ function OverviewSection() {
 
       {/* 数据源总览 */}
       <div className="space-y-1.5">
-        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">数据源总览（6种上传类型）</div>
+        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">数据源总览（8种上传类型）</div>
         <div className="grid gap-1">
           {DATA_SOURCES.map(ds => (
             <div key={ds.id} className="bg-zinc-50 rounded-md px-3 py-2 flex items-center gap-3">
