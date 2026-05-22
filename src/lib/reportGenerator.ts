@@ -82,6 +82,7 @@ export interface FullReport {
   provinces: ProvinceReport[];
   summary: string;          // 一段话总结
   overviewTable: OverviewTableRow[];  // 各中心总览表数据
+  prevTotalJobAbnormal: number; // 前一天效能异常总数（用于环比）
 }
 
 /**
@@ -245,6 +246,9 @@ export function generateReport(params: {
   // 生成总结段落
   const summary = generateSummary(provinces);
 
+  // 计算前一天效能异常总数（用于环比）
+  const prevTotalJobAbnormal = provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + (c.jobPrevCount || 0), 0), 0);
+
   return {
     reportDate,
     dateStr,
@@ -254,6 +258,7 @@ export function generateReport(params: {
     provinces,
     summary,
     overviewTable,
+    prevTotalJobAbnormal,
   };
 }
 
@@ -501,7 +506,7 @@ export function renderReportAsTextCompact(report: FullReport): string {
   const bottomProvince = report.provinces[report.provinces.length - 1];
   lines.push('【执行摘要】');
   lines.push(`${topProvince.province}${topProvince.totalScore}分第一(负责人：${topProvince.responsible}) | ${bottomProvince.province}${bottomProvince.totalScore}分末位需重点关注(负责人：${bottomProvince.responsible})`);
-  lines.push(`效能异常${totalJobAbnormal}个，整体${totalJobAbnormal > 0 ? '上升' : '平稳'}。`);
+  lines.push(`效能异常${totalJobAbnormal}个，整体${totalJobAbnormal > report.prevTotalJobAbnormal ? '上升' : '平稳'}。`);
   lines.push('');
 
   // 行动建议
