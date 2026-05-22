@@ -25,6 +25,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
   const [textContent, setTextContent] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [imgGenerating, setImgGenerating] = useState(false);
+  const [isCompactMode, setIsCompactMode] = useState(false);
   const overviewTableRef = useRef<HTMLDivElement>(null);
 
   // 打开弹窗时重新生成报告（基于 params）
@@ -33,7 +34,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
     try {
       setError(null);
       const rep = generateReport(params);
-      const text = renderReportAsText(rep);
+      const text = isCompactMode ? renderReportAsTextCompact(rep) : renderReportAsText(rep);
       setReport(rep);
       setTextContent(text);
     } catch (e: any) {
@@ -42,7 +43,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       setReport(null);
       setTextContent('');
     }
-  }, [isOpen, params]);
+  }, [isOpen, params, isCompactMode]);
 
   if (!isOpen) return null;
 
@@ -137,7 +138,22 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       tempDiv.style.left = '-9999px';
       tempDiv.style.top = '0';
       document.body.appendChild(tempDiv);
-      const canvas = await html2canvas(tempDiv, { backgroundColor: '#ffffff', scale: 2 });
+      
+      const canvas = await html2canvas(tempDiv, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        onclone: (clonedDoc) => {
+          // 替换所有 oklch 颜色为 rgb（html2canvas 不支持 oklch）
+          const allEls = clonedDoc.querySelectorAll('*');
+          allEls.forEach(el => {
+            const style = (el as HTMLElement).style;
+            if (style.color && style.color.includes('oklch')) style.color = '#18181b';
+            if (style.backgroundColor && style.backgroundColor.includes('oklch')) style.backgroundColor = '#ffffff';
+            if (style.borderColor && style.borderColor.includes('oklch')) style.borderColor = '#d4d4d8';
+          });
+        }
+      });
+      
       document.body.removeChild(tempDiv);
       const url = canvas.toDataURL('image/png');
       const a = document.createElement('a');
@@ -243,6 +259,12 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
             >
               <Image size={13} />
               {imgGenerating ? '生成中...' : '总览图'}
+            </button>
+            <button
+              onClick={() => setIsCompactMode(!isCompactMode)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-[11px] font-black uppercase tracking-wide rounded hover:bg-green-700 transition-colors"
+            >
+              {isCompactMode ? '完整版' : '微信版'}
             </button>
           </div>
         </div>

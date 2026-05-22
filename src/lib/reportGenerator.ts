@@ -419,14 +419,19 @@ export function renderReportAsText(report: FullReport): string {
       const scoreColor = center.score >= 80 ? '✅' : center.score >= 50 ? '⚠️' : '❌';
       lines.push(`  ${scoreColor} ${center.centerName}（${center.responsible}）— 得分 ${center.score}  ${scoreTag}`);
 
-      // 【待办】提示
-      const actions: string[] = [];
-      if (center.jobAbnormalCount > 0) actions.push(`效能异常${center.jobAbnormalCount}个，请关注岗位效能偏离情况`);
-      if (center.salaryCount > 0 && parseFloat(center.salaryCoverage) > 3) actions.push(`绩效异常${center.salaryCount}人（覆盖率${center.salaryCoverage}），请明确异常人员名单并制定改进计划`);
-      if (center.att15Count > 0 && parseFloat(center.att15Rate) > 3) actions.push(`连续出勤≥15天${center.att15Count}人（触发率${center.att15Rate}），请合理安排调休并将计划填写至网页`);
-      if (center.att7Count > 0) actions.push(`长期未出勤≥7天${center.att7Count}人，请核实原因并填写至网页`);
-      if (actions.length > 0) {
-        lines.push(`  【待办】${actions.join('；')}。`);
+      // 【待办】提示（只显示最紧急1项）
+      let actionTodo = '';
+      if (center.jobAbnormalCount > 0) {
+        actionTodo = `效能异常${center.jobAbnormalCount}个，请关注岗位效能偏离情况`;
+      } else if (center.att7Count > 0) {
+        actionTodo = `长期未出勤≥7天${center.att7Count}人，请核实原因并填写至网页`;
+      } else if (center.salaryCount > 0 && parseFloat(center.salaryCoverage) > 3) {
+        actionTodo = `绩效异常${center.salaryCount}人（覆盖率${center.salaryCoverage}），请明确异常人员名单并制定改进计划`;
+      } else if (center.att15Count > 0 && parseFloat(center.att15Rate) > 3) {
+        actionTodo = `连续出勤≥15天${center.att15Count}人（触发率${center.att15Rate}），请合理安排调休并将计划填写至网页`;
+      }
+      if (actionTodo) {
+        lines.push(`  【待办】${actionTodo}。`);
         lines.push('');
       }
 
@@ -474,6 +479,106 @@ export function renderReportAsText(report: FullReport): string {
   lines.push('─'.repeat(36));
   lines.push(`  由 GPT 数据通报系统自动生成 · ${report.generatedAt}`);
   lines.push('');
+
+  return lines.join('\n');
+}
+
+// 微信精简版通报（删除分隔线、压缩空行、保留核心信息）
+export function renderReportAsTextCompact(report: FullReport): string {
+  const lines: string[] = [];
+
+  // 标题
+  lines.push(`GPT数据通报 — ${report.reportDate}`);
+  const totalJobAbnormal = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.jobAbnormalCount, 0), 0);
+  const totalSalary = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.salaryCount, 0), 0);
+  const totalAtt15 = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.att15Count, 0), 0);
+  const totalAtt7 = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.att7Count, 0), 0);
+  lines.push(`全区均分：${report.overallScore}分 | 效能异常：${totalJobAbnormal}个 | 绩效异常：${totalSalary}人 | 连续出勤：${totalAtt15}人 | 长期未出勤：${totalAtt7}人`);
+  lines.push('');
+
+  // 执行摘要
+  const topProvince = report.provinces[0];
+  const bottomProvince = report.provinces[report.provinces.length - 1];
+  lines.push('【执行摘要】');
+  lines.push(`${topProvince.province}${topProvince.totalScore}分第一(负责人：${topProvince.responsible}) | ${bottomProvince.province}${bottomProvince.totalScore}分末位需重点关注(负责人：${bottomProvince.responsible})`);
+  lines.push(`效能异常${totalJobAbnormal}个，整体${totalJobAbnormal > 0 ? '上升' : '平稳'}。`);
+  lines.push('');
+
+  // 行动建议
+  lines.push('【行动建议】');
+  lines.push(`1. 请${bottomProvince.responsible}(${bottomProvince.province})牵头分析低分原因，24小时内提交整改计划`);
+  if (totalJobAbnormal > 0) {
+    lines.push(`2. 效能异常${totalJobAbnormal}个，建议各中心负责人今日复盘异常岗位`);
+  }
+  if (totalAtt15 > 0) {
+    lines.push(`3. 连续出勤≥15天${totalAtt15}人，建议合理安排轮休`);
+  }
+  if (totalAtt7 > 0) {
+    lines.push(`4. 长期未出勤≥7天${totalAtt7}人，请跟进确认人员状态`);
+  }
+  lines.push('');
+
+  // 各中心数据
+  for (const prov of report.provinces) {
+    lines.push(`【${prov.province} | 负责人：${prov.responsible} | 得分：${prov.totalScore}】`);
+
+    for (const center of prov.centers) {
+      const scoreTag = center.score >= 80 ? '正常' : center.score >= 50 ? '警告' : '异常';
+      lines.push(`${center.centerName}(负责人：${center.responsible}) — ${center.score}分 ${scoreTag}`);
+
+      // 【待办】只显示最紧急1项
+      let actionTodo = '';
+      if (center.jobAbnormalCount > 0) {
+        actionTodo = `效能异常${center.jobAbnormalCount}个，请关注岗位效能偏离情况`;
+      } else if (center.att7Count > 0) {
+        actionTodo = `长期未出勤≥7天${center.att7Count}人，请核实原因并填写至网页`;
+      } else if (center.salaryCount > 0 && parseFloat(center.salaryCoverage) > 3) {
+        actionTodo = `绩效异常${center.salaryCount}人（覆盖率${center.salaryCoverage}），请明确异常人员名单并制定改进计划`;
+      } else if (center.att15Count > 0 && parseFloat(center.att15Rate) > 3) {
+        actionTodo = `连续出勤≥15天${center.att15Count}人（触发率${center.att15Rate}），请合理安排调休并将计划填写至网页`;
+      }
+      if (actionTodo) {
+        lines.push(`待办：${actionTodo}。`);
+      }
+
+      // 效能异常
+      if (center.jobAbnormalCount > 0) {
+        lines.push(`效能异常：${center.jobAbnormalCount}个(前一天${center.jobPrevCount})`);
+        if (center.jobDetails?.length) {
+          center.jobDetails.forEach(d => {
+            lines.push(`  - ${d.jobName}：偏离+${d.deviation}%(实际${d.actualValue}/目标${d.targetValue})`);
+          });
+        }
+      } else {
+        lines.push(`效能异常：无(正常)`);
+      }
+
+      // 绩效异常（只保留数字）
+      if (center.salaryCount > 0) {
+        lines.push(`绩效异常：${center.salaryCount}人(覆盖率${center.salaryCoverage}%)`);
+      } else {
+        lines.push(`绩效异常：无`);
+      }
+
+      // 连续出勤（只保留数字）
+      if (center.att15Count > 0) {
+        lines.push(`连续出勤≥15天：${center.att15Count}人(触发率${center.att15Rate}%，新增${center.att15New})`);
+      } else {
+        lines.push(`连续出勤≥15天：无`);
+      }
+
+      // 长期未出勤（只保留数字）
+      if (center.att7Count > 0) {
+        lines.push(`长期未出勤≥7天：${center.att7Count}人(新增${center.att7New})`);
+      } else {
+        lines.push(`长期未出勤≥7天：无`);
+      }
+
+      lines.push('');
+    }
+  }
+
+  lines.push(`【由GPT数据通报系统自动生成 · ${report.generatedAt}】`);
 
   return lines.join('\n');
 }
