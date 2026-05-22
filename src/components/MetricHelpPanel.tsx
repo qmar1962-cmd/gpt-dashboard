@@ -396,6 +396,28 @@ export default function MetricHelpPanel() {
               </div>
             </div>
 
+            {/* V2.7.2 - 2026-05-22 */}
+            <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.7.2</span>
+                <span className="text-[9px] text-zinc-400">2026-05-22</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">自动继承逻辑：只继承"连续异常"情况（历史最近日期与当前窗口第一天差距≤3天），不继承"中断后重新异常"</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">保存逻辑修复：保存时只清理当前窗口数据，不删除历史数据（防止历史原因/排休计划丢失）</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-zinc-600">自动继承bug：之前只检查"此人是否有任何原因"，导致新日期缺失原因不填充，现改为对每个日期单独检查</span>
+                </div>
+              </div>
+            </div>
+
             {/* V2.6.0 - 2026-05-21 */}
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
