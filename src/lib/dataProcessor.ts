@@ -712,3 +712,157 @@ export function getWeeklyAttendance7Detail(
 
   return days;
 }
+
+// ── 日工时高（出勤工时>12.5h）───────────────────────────────────
+
+export interface WorkHoursHighWeeklyDetail {
+  date: string;
+  dateLabel: string;
+  abnormalCount: number;
+  details: {
+    name: string;
+    jobName: string;
+    workHours: number;
+    overHoursDays: number;
+    employeeId: string;
+  }[];
+}
+
+/**
+ * 提取指定中心近一周的日工时高明细
+ * 以现实日期 T-2（今天 - 2天）为基准，展示前7天（含T-2当天）
+ */
+export function getWorkHoursHighDetail(
+  workHoursHighData: any[],
+  centerName: string,
+  provinceName: string
+): WorkHoursHighWeeklyDetail[] {
+  if (!workHoursHighData || workHoursHighData.length === 0) return [];
+
+  const normalized = workHoursHighData.map(row => ({
+    ...row,
+    _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
+  }));
+
+  const now = new Date();
+  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
+  const t2 = new Date(beijingMs);
+
+  const days: WorkHoursHighWeeklyDetail[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(t2);
+    d.setUTCDate(t2.getUTCDate() - i);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    const rows = normalized.filter(row => {
+      const rowProvince = row.省区 || row.省区名称 || '';
+      const rowCenter = row.中心 || row.中心名称 || '';
+      const centerMatch = rowCenter.includes(centerName) || centerName.includes(rowCenter);
+      const normRowProv = rowProvince.replace(/区$/, '');
+      const normProv = provinceName.replace(/区$/, '');
+      const provinceMatch = rowProvince.includes(provinceName) || provinceName.includes(rowProvince) || normRowProv === normProv;
+      return provinceMatch && centerMatch && row._dateStr === dateStr;
+    });
+
+    const details = rows.map(row => ({
+      name: row.姓名 || '',
+      jobName: row.岗位 || '',
+      workHours: parseFloat(row.出勤工时 || 0) || 0,
+      overHoursDays: parseInt(row['超过12.5h天数'] || 0) || 0,
+      employeeId: String(row.工号 || row['员工编号'] || '').trim(),
+    }));
+
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
+    const dateLabel = `${month}/${day}`;
+
+    days.push({
+      date: dateStr,
+      dateLabel,
+      abnormalCount: rows.length,
+      details,
+    });
+  }
+
+  return days;
+}
+
+// ── 日工时低（出勤工时≤8h）────────────────────────────────────
+
+export interface WorkHoursLowWeeklyDetail {
+  date: string;
+  dateLabel: string;
+  abnormalCount: number;
+  details: {
+    name: string;
+    jobName: string;
+    workHours: number;
+    underHoursDays: number;
+    employeeId: string;
+  }[];
+}
+
+/**
+ * 提取指定中心近一周的日工时低明细
+ * 以现实日期 T-2（今天 - 2天）为基准，展示前7天（含T-2当天）
+ */
+export function getWorkHoursLowDetail(
+  workHoursLowData: any[],
+  centerName: string,
+  provinceName: string
+): WorkHoursLowWeeklyDetail[] {
+  if (!workHoursLowData || workHoursLowData.length === 0) return [];
+
+  const normalized = workHoursLowData.map(row => ({
+    ...row,
+    _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
+  }));
+
+  const now = new Date();
+  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
+  const t2 = new Date(beijingMs);
+
+  const days: WorkHoursLowWeeklyDetail[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(t2);
+    d.setUTCDate(t2.getUTCDate() - i);
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+
+    const rows = normalized.filter(row => {
+      const rowProvince = row.省区 || row.省区名称 || '';
+      const rowCenter = row.中心 || row.中心名称 || '';
+      const centerMatch = rowCenter.includes(centerName) || centerName.includes(rowCenter);
+      const normRowProv = rowProvince.replace(/区$/, '');
+      const normProv = provinceName.replace(/区$/, '');
+      const provinceMatch = rowProvince.includes(provinceName) || provinceName.includes(rowProvince) || normRowProv === normProv;
+      return provinceMatch && centerMatch && row._dateStr === dateStr;
+    });
+
+    const details = rows.map(row => ({
+      name: row.姓名 || '',
+      jobName: row.岗位 || '',
+      workHours: parseFloat(row.出勤工时 || 0) || 0,
+      underHoursDays: parseInt(row['低于8h天数'] || 0) || 0,
+      employeeId: String(row.工号 || row['员工编号'] || '').trim(),
+    }));
+
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
+    const dateLabel = `${month}/${day}`;
+
+    days.push({
+      date: dateStr,
+      dateLabel,
+      abnormalCount: rows.length,
+      details,
+    });
+  }
+
+  return days;
+}

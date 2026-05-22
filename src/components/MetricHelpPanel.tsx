@@ -116,6 +116,18 @@ const DETAIL_FIELDS = {
     { col: '连续未出勤天数', desc: '从最近日期倒推，连续无出勤记录的天数' },
     { col: '工号', desc: '用于未出勤原因全局匹配' },
   ],
+  workHoursHigh: [
+    { col: '姓名', desc: '日工时>12.5h人员' },
+    { col: '岗位', desc: '人员岗位' },
+    { col: '出勤工时', desc: '当日出勤工时' },
+    { col: '超过12.5h天数', desc: '统计周期内超过12.5h的天数' },
+  ],
+  workHoursLow: [
+    { col: '姓名', desc: '日工时≤8h人员' },
+    { col: '岗位', desc: '人员岗位' },
+    { col: '出勤工时', desc: '当日出勤工时' },
+    { col: '低于8h天数', desc: '统计周期内低于8h的天数' },
+  ],
 };
 
 const METRIC_SPECS = [
@@ -141,7 +153,7 @@ const METRIC_SPECS = [
   {
     id: 'salary',
     name: '绩效异常',
-    weight: 25,
+    weight: 15,
     color: 'text-amber-600 bg-amber-50 border-amber-200',
     sourceTable: '薪资异常数据表 (salary_performance)',
     keyColumns: [
@@ -150,7 +162,7 @@ const METRIC_SPECS = [
       { col: '岗位', desc: '人员岗位' },
       { col: '数据日期', desc: '统计日期' },
     ],
-    formula: '覆盖率 = T-2 薪资异常人数 / 在职人数 * 100%\n得分: <=3% 得 25 分; >3% 每多 1% 扣 5 分\n分母 = 花名册中 [二级部门] 含 [中心操作] 的人员总数',
+    formula: '覆盖率 = T-2 薪资异常人数 / 在职人数 * 100%\n得分: <=3% 得 15 分; >3% 每多 1% 扣 3 分\n分母 = 花名册中 [二级部门] 含 [中心操作] 的人员总数',
     denominator: '花名册在职人数 (employee_roster) -> 过滤 二级部门 包含"中心操作"',
     notes: '分母统一使用花名册在职人数，非出勤人数*1.12',
     detailFields: DETAIL_FIELDS.salary,
@@ -187,6 +199,40 @@ const METRIC_SPECS = [
     formula: '每出现 1 人扣 2 分 (累计计分)，最低 0 分\nmax(0, 25 - 未出勤人数 * 2)',
     notes: '仅统计连续未出勤天数 >=7 天的记录',
     detailFields: DETAIL_FIELDS.att7,
+  },
+  {
+    id: 'workHoursHigh',
+    name: '日工时高',
+    weight: 5,
+    color: 'text-rose-600 bg-rose-50 border-rose-200',
+    sourceTable: '日工时高表 (work_hours_high)',
+    keyColumns: [
+      { col: '中心 / 中心名称', desc: '子中心名称' },
+      { col: '工号', desc: '员工工号' },
+      { col: '姓名', desc: '员工姓名' },
+      { col: '出勤工时', desc: '当日出勤工时' },
+      { col: '数据日期', desc: '统计日期' },
+    ],
+    formula: '触发占比 = 日工时>12.5h人数 / 在职人数 * 100%\n得分: <=10% 得 5 分; >10% 每多 1% 扣 1 分（四舍五入）\n最低 0 分',
+    notes: '仅统计当日出勤工时 >12.5h 的记录',
+    detailFields: DETAIL_FIELDS.workHoursHigh,
+  },
+  {
+    id: 'workHoursLow',
+    name: '日工时低',
+    weight: 5,
+    color: 'text-cyan-600 bg-cyan-50 border-cyan-200',
+    sourceTable: '日工时低表 (work_hours_low)',
+    keyColumns: [
+      { col: '中心 / 中心名称', desc: '子中心名称' },
+      { col: '工号', desc: '员工工号' },
+      { col: '姓名', desc: '员工姓名' },
+      { col: '出勤工时', desc: '当日出勤工时' },
+      { col: '数据日期', desc: '统计日期' },
+    ],
+    formula: '每出现 1 人扣 1 分，满分 5 分，最低 0 分\nmax(0, 5 - 异常人数)',
+    notes: '仅统计当日出勤工时 ≤8h 的记录',
+    detailFields: DETAIL_FIELDS.workHoursLow,
   },
 ];
 
@@ -358,6 +404,48 @@ export default function MetricHelpPanel() {
 
           {/* 版本历史内容 */}
           <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+            {/* V2.8.0 - 2026-05-22 */}
+            <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.8.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-22</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">日工时高考核维度：出勤工时&gt;12.5h，日均触发占比超10%每增加1%扣1分，满分5分封顶0分</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">日工时低考核维度：出勤工时≤8h，每出现1人扣1分，满分5分封顶0分</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">日工时低原因字段：支持选择原因（倒班、临时事假、脱岗、其他），支持继承逻辑</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">薪资异常权重调整：从25分调整为15分（总分保持100分不变）</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">数据通报全面支持日工时高/低：报告文案、统计条、各中心详情、总览图片均新增日工时维度</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">各维度明细支持日工时高/低：中心卡片网格从4列扩展为6列，支持点击查看明细</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">计分规则解析同步更新：新增日工时高/低规则说明，薪资异常改为15分</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-zinc-600">省区维度显示0分Bug：日工时高触发人数为0时（满分5分）被误判为无数据，导致维度显示0分</span>
+                </div>
+              </div>
+            </div>
+
             {/* V2.7.0 - 2026-05-22 */}
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">

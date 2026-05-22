@@ -23,7 +23,7 @@ import { PERFORMANCE_DATA } from './constants';
 import { cn } from './lib/utils';
 import { buildFixedHuazhongData } from './lib/dataProcessor';
 import { DataType } from './lib/types.js';
-import { initDatabase, saveRawData, getLatestRawData, getSalaryRawData, getAttendance15RawData, getAttendance7RawData, getRosterRawData, idbGetRawData } from './lib/database.js';
+import { initDatabase, saveRawData, getLatestRawData, getSalaryRawData, getAttendance15RawData, getAttendance7RawData, getRosterRawData, getWorkHoursHighRawData, getWorkHoursLowRawData, idbGetRawData } from './lib/database.js';
 import { loadDefaultData } from './lib/defaultDataLoader';
 import { saveCollaborationData } from './lib/collaborationApi';
 import { useAdminMode } from './hooks/useAdminMode';
@@ -52,6 +52,8 @@ export default function App() {
   const [attendance15DataState, setAttendance15DataState] = useState<any[] | null>(null);
   const [attendance7DataState, setAttendance7DataState] = useState<any[] | null>(null);
   const [rosterDataState, setRosterDataState] = useState<any[] | null>(null);
+  const [workHoursHighDataState, setWorkHoursHighDataState] = useState<any[] | null>(null);
+  const [workHoursLowDataState, setWorkHoursLowDataState] = useState<any[] | null>(null);
   const [dataFileName, setDataFileName] = useState<string>('');
   const [dataDate, setDataDate] = useState<string>('');
   
@@ -161,6 +163,18 @@ export default function App() {
           setRosterDataState(rosterStored.rawData);
         }
         
+        // 加载日工时高数据
+        const whHighStored = await getWorkHoursHighRawData();
+        if (whHighStored && whHighStored.rawData && whHighStored.rawData.length > 0) {
+          setWorkHoursHighDataState(whHighStored.rawData);
+        }
+        
+        // 加载日工时低数据
+        const whLowStored = await getWorkHoursLowRawData();
+        if (whLowStored && whLowStored.rawData && whLowStored.rawData.length > 0) {
+          setWorkHoursLowDataState(whLowStored.rawData);
+        }
+        
         // 优先：用原始数据重新计算（确保 T-2/T-3 基于今天日期）
         const rawStored = await getLatestRawData();
         if (rawStored && rawStored.rawData && rawStored.rawData.length > 0) {
@@ -208,6 +222,12 @@ export default function App() {
             
             const rosterStored2 = await getRosterRawData();
             if (rosterStored2?.rawData?.length) setRosterDataState(rosterStored2.rawData);
+            
+            const whHighStored2 = await getWorkHoursHighRawData();
+            if (whHighStored2?.rawData?.length) setWorkHoursHighDataState(whHighStored2.rawData);
+            
+            const whLowStored2 = await getWorkHoursLowRawData();
+            if (whLowStored2?.rawData?.length) setWorkHoursLowDataState(whLowStored2.rawData);
             
             const rawStored2 = await getLatestRawData();
             if (rawStored2?.rawData?.length) {
@@ -383,6 +403,42 @@ export default function App() {
       setCustomData(transformedData);
       setRawDataState(merged);
       await saveRawData(merged, newDataType as string);
+    } else if (newDataType === 'work_hours_high') {
+      // 日工时高：合并去重（按 工号+数据日期 去重）
+      const storedHigh = await idbGetRawData('work_hours_high');
+      const existing = storedHigh?.rawData || [];
+      const seen = new Set(existing.map(row => {
+        const d = row['数据日期'] || row.日期 || row.date || '';
+        return `${row.工号}_${d}`;
+      }));
+      const newRows = data.filter(row => {
+        const d = row['数据日期'] || row.日期 || row.date || '';
+        const key = `${row.工号}_${d}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const merged = [...existing, ...newRows];
+      setWorkHoursHighDataState(merged);
+      await saveRawData(merged, newDataType as string);
+    } else if (newDataType === 'work_hours_low') {
+      // 日工时低：合并去重（按 工号+数据日期 去重）
+      const storedLow = await idbGetRawData('work_hours_low');
+      const existing = storedLow?.rawData || [];
+      const seen = new Set(existing.map(row => {
+        const d = row['数据日期'] || row.日期 || row.date || '';
+        return `${row.工号}_${d}`;
+      }));
+      const newRows = data.filter(row => {
+        const d = row['数据日期'] || row.日期 || row.date || '';
+        const key = `${row.工号}_${d}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const merged = [...existing, ...newRows];
+      setWorkHoursLowDataState(merged);
+      await saveRawData(merged, newDataType as string);
     } else {
       const transformedData = buildFixedHuazhongData(data, newDataType, date);
       setCustomData(transformedData);
@@ -410,7 +466,9 @@ export default function App() {
     const hasAtt15 = attendance15DataState && attendance15DataState.length > 0;
     const hasAtt7 = attendance7DataState && attendance7DataState.length > 0;
     const hasRoster = rosterDataState && rosterDataState.length > 0;
-    if (!hasJob && !hasSalary && !hasAtt15 && !hasAtt7 && !hasRoster) {
+    const hasWorkHoursHigh = workHoursHighDataState && workHoursHighDataState.length > 0;
+    const hasWorkHoursLow = workHoursLowDataState && workHoursLowDataState.length > 0;
+    if (!hasJob && !hasSalary && !hasAtt15 && !hasAtt7 && !hasRoster && !hasWorkHoursHigh && !hasWorkHoursLow) {
       return displayData;
     }
 
@@ -513,6 +571,30 @@ export default function App() {
         const dateStr = normalizeDate(row['数据日期'] || row.date || row.日期);
         const key = `${center}_${province}_${dateStr}`;
         attendance7ByCenterDate.set(key, (attendance7ByCenterDate.get(key) || 0) + 1);
+      });
+    }
+
+    // 预处理日工时高数据：按 中心+省区+日期 聚合人数
+    const workHoursHighByCenterDate = new Map<string, number>();
+    if (workHoursHighDataState && workHoursHighDataState.length > 0) {
+      workHoursHighDataState.forEach(row => {
+        const center = row.中心 || row.中心名称 || '';
+        const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
+        const dateStr = normalizeDate(row['数据日期'] || row.date || row.日期);
+        const key = `${center}_${province}_${dateStr}`;
+        workHoursHighByCenterDate.set(key, (workHoursHighByCenterDate.get(key) || 0) + 1);
+      });
+    }
+
+    // 预处理日工时低数据：按 中心+省区+日期 聚合人数
+    const workHoursLowByCenterDate = new Map<string, number>();
+    if (workHoursLowDataState && workHoursLowDataState.length > 0) {
+      workHoursLowDataState.forEach(row => {
+        const center = row.中心 || row.中心名称 || '';
+        const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
+        const dateStr = normalizeDate(row['数据日期'] || row.date || row.日期);
+        const key = `${center}_${province}_${dateStr}`;
+        workHoursLowByCenterDate.set(key, (workHoursLowByCenterDate.get(key) || 0) + 1);
       });
     }
 
@@ -667,14 +749,14 @@ export default function App() {
         const salaryRosterStats = findRosterStats(center.name, province.province);
         const t2SalaryBase = salaryRosterStats ? salaryRosterStats.total : 0;
 
-        // 覆盖率 & 得分
+        // 覆盖率 & 得分（满分15分）
         const coverageRate = t2SalaryBase > 0 
           ? ((t2SalaryCount / t2SalaryBase) * 100).toFixed(1) + '%'
           : '0%';
         const rateNum = t2SalaryBase > 0 ? (t2SalaryCount / t2SalaryBase) * 100 : 0;
-        const salaryScore = rateNum <= 3 ? 25 : Math.max(0, 25 - Math.round((rateNum - 3) * 5));
+        const salaryScore = rateNum <= 3 ? 15 : Math.max(0, 15 - Math.round((rateNum - 3) * 3));
 
-        // 薪资异常：有全局数据时始终计算得分（覆盖率为0即无异常，得满分25）
+        // 薪资异常：有全局数据时始终计算得分（覆盖率为0即无异常，得满分15）
         if (salaryDataState && salaryDataState.length > 0) {
           enrichedCenter.metrics.salary = salaryScore;
           enrichedCenter.prevSalaryCount = t3SalaryCount;
@@ -726,6 +808,40 @@ export default function App() {
           enrichedCenter.t2Att7Count = t2Att7Count;
         }
 
+        // === 日工时高计算 ===
+        const t2WhHighCount = findCount(workHoursHighByCenterDate, center.name, province.province, t2DateStr);
+        const t3WhHighCount = findCount(workHoursHighByCenterDate, center.name, province.province, t3DateStr);
+        const whHighNew = t2WhHighCount - t3WhHighCount;
+        // 触发占比 = 日工时高人数 / 花名册总人数
+        const whHighRate = t2SalaryBase > 0
+          ? ((t2WhHighCount / t2SalaryBase) * 100).toFixed(1) + '%'
+          : '0%';
+        const whHighRateNum = t2SalaryBase > 0 ? (t2WhHighCount / t2SalaryBase) * 100 : 0;
+        // 得分：占比 > 10% 每多1%扣1分，满分5分，最低0分
+        const whHighScore = whHighRateNum <= 10 ? 5 : Math.max(0, 5 - Math.round(whHighRateNum - 10));
+
+        if (workHoursHighDataState && workHoursHighDataState.length > 0) {
+          enrichedCenter.metrics.workHoursHigh = whHighScore;
+          enrichedCenter.whHighCount = t2WhHighCount;
+          enrichedCenter.whHighRate = whHighRate;
+          enrichedCenter.whHighNew = whHighNew;
+          enrichedCenter.t2WhHighCount = t2WhHighCount;
+        }
+
+        // === 日工时低计算 ===
+        const t2WhLowCount = findCount(workHoursLowByCenterDate, center.name, province.province, t2DateStr);
+        const t3WhLowCount = findCount(workHoursLowByCenterDate, center.name, province.province, t3DateStr);
+        const whLowNew = t2WhLowCount - t3WhLowCount;
+        // 得分：每出现1人扣1分，满分5分，最低0分
+        const whLowScore = Math.max(0, 5 - t2WhLowCount);
+
+        if (workHoursLowDataState && workHoursLowDataState.length > 0) {
+          enrichedCenter.metrics.workHoursLow = whLowScore;
+          enrichedCenter.whLowCount = t2WhLowCount;
+          enrichedCenter.whLowNew = whLowNew;
+          enrichedCenter.t2WhLowCount = t2WhLowCount;
+        }
+
         // === 管幅计算（基于花名册）===
         const rosterStats = findRosterStats(center.name, province.province);
         if (rosterStats) {
@@ -741,12 +857,14 @@ export default function App() {
           enrichedCenter.leadOverTarget = parseFloat((workers / 35 - rosterStats.leaders).toFixed(1));
         }
 
-        // === 重新计算中心绩效得分 = 四项之和 ===
+        // === 重新计算中心绩效得分 = 六项之和 ===
         const jobScoreFinal = enrichedCenter.metrics?.job ?? center.metrics?.job ?? 0;
         const salaryScoreFinal = enrichedCenter.metrics?.salary ?? center.metrics?.salary ?? 0;
         const att15ScoreFinal = enrichedCenter.metrics?.att15 ?? center.metrics?.att15 ?? 0;
         const att7ScoreFinal = enrichedCenter.metrics?.att7 ?? center.metrics?.att7 ?? 0;
-        enrichedCenter.score = jobScoreFinal + salaryScoreFinal + att15ScoreFinal + att7ScoreFinal;
+        const whHighScoreFinal = enrichedCenter.metrics?.workHoursHigh ?? 0;
+        const whLowScoreFinal = enrichedCenter.metrics?.workHoursLow ?? 0;
+        enrichedCenter.score = jobScoreFinal + salaryScoreFinal + att15ScoreFinal + att7ScoreFinal + whHighScoreFinal + whLowScoreFinal;
 
         return enrichedCenter;
       });
@@ -763,7 +881,7 @@ export default function App() {
         enrichedProvince.dimensions.salary = {
           name: '绩效异常',
           score: avgSalaryScore,
-          weight: 25,
+          weight: 15,
           metrics: [
             { label: '覆盖率', value: provinceCoverage },
             { label: '算薪', value: totalSalaryBase },
@@ -819,6 +937,48 @@ export default function App() {
         };
       } else {
         delete enrichedProvince.dimensions.attendance7;
+      }
+
+      // 省区维度：日工时高
+      const hasRealWhHighData = enrichedProvince.subCenters.some((c: any) => c.metrics?.workHoursHigh !== undefined);
+      if (enrichedProvince.subCenters.length > 0 && hasRealWhHighData) {
+        const totalWhHighScore = enrichedProvince.subCenters.reduce((sum: number, c: any) => sum + (c.metrics?.workHoursHigh || 0), 0);
+        const avgWhHighScore = Math.round(totalWhHighScore / enrichedProvince.subCenters.length);
+        const totalWhHighCount = enrichedProvince.subCenters.reduce((s: number, c: any) => s + (c.whHighCount || 0), 0);
+        const totalWhHighNew = enrichedProvince.subCenters.reduce((s: number, c: any) => s + (c.whHighNew || 0), 0);
+
+        enrichedProvince.dimensions.workHoursHigh = {
+          name: '日工时高',
+          score: avgWhHighScore,
+          weight: 5,
+          metrics: [
+            { label: '触发人数', value: totalWhHighCount },
+            { label: '新增', value: totalWhHighNew },
+          ]
+        };
+      } else {
+        delete enrichedProvince.dimensions.workHoursHigh;
+      }
+
+      // 省区维度：日工时低
+      const hasRealWhLowData = enrichedProvince.subCenters.some((c: any) => c.metrics?.workHoursLow !== undefined);
+      if (enrichedProvince.subCenters.length > 0 && hasRealWhLowData) {
+        const totalWhLowScore = enrichedProvince.subCenters.reduce((sum: number, c: any) => sum + (c.metrics?.workHoursLow || 0), 0);
+        const avgWhLowScore = Math.round(totalWhLowScore / enrichedProvince.subCenters.length);
+        const totalWhLowCount = enrichedProvince.subCenters.reduce((s: number, c: any) => s + (c.whLowCount || 0), 0);
+        const totalWhLowNew = enrichedProvince.subCenters.reduce((s: number, c: any) => s + (c.whLowNew || 0), 0);
+
+        enrichedProvince.dimensions.workHoursLow = {
+          name: '日工时低',
+          score: avgWhLowScore,
+          weight: 5,
+          metrics: [
+            { label: '异常人数', value: totalWhLowCount },
+            { label: '新增', value: totalWhLowNew },
+          ]
+        };
+      } else {
+        delete enrichedProvince.dimensions.workHoursLow;
       }
 
       // 省区维度：效能异常
@@ -1119,6 +1279,8 @@ export default function App() {
                 attendance15Data={attendance15DataState || undefined}
                 attendance7Data={attendance7DataState || undefined}
                 rosterData={rosterDataState || undefined}
+                workHoursHighData={workHoursHighDataState || undefined}
+                workHoursLowData={workHoursLowDataState || undefined}
               />
             </div>
           </div>
@@ -1245,6 +1407,8 @@ export default function App() {
           salaryData: salaryDataState || undefined,
           attendance15Data: attendance15DataState || undefined,
           attendance7Data: attendance7DataState || undefined,
+          workHoursHighData: workHoursHighDataState || undefined,
+          workHoursLowData: workHoursLowDataState || undefined,
         }}
       />
     </div>

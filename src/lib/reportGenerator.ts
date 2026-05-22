@@ -53,6 +53,26 @@ export interface CenterReportItem {
     jobName: string;
     continuousDays: number;
   }>;
+
+  /** 日工时高（>12.5h） */
+  workHoursHighCount: number;
+  workHoursHighPrevCount: number;  // 前一天日工时高人数
+  workHoursHighRate: string;        // 触发占比
+  workHoursHighDetails?: Array<{
+    name: string;
+    jobName: string;
+    workHours: number;
+    overHoursDays: number;
+  }>;
+
+  /** 日工时低（≤8h） */
+  workHoursLowCount: number;
+  workHoursLowPrevCount: number;  // 前一天日工时低人数
+  workHoursLowDetails?: Array<{
+    name: string;
+    jobName: string;
+    workHours: number;
+  }>;
 }
 
 export interface ProvinceReport {
@@ -77,6 +97,9 @@ export interface OverviewTableRow {
   att15Rate: string;        // 连续出勤触发率
   att7Count: number;        // 长期未出勤≥7天人数
   att7Rate: string;         // 长期未出勤触发率
+  workHoursHighCount: number; // 日工时高人数
+  workHoursHighRate: string;  // 日工时高触发占比
+  workHoursLowCount: number;  // 日工时低人数
 }
 
 export interface FullReport {
@@ -114,8 +137,10 @@ export function generateReport(params: {
   salaryData?: any[];               // 薪资异常原始数据（仅用于明细）
   attendance15Data?: any[];         // 连续15日出勤原始数据（仅用于明细）
   attendance7Data?: any[];          // 连续7日未出勤原始数据（仅用于明细）
+  workHoursHighData?: any[];        // 日工时高原始数据（仅用于明细）
+  workHoursLowData?: any[];         // 日工时低原始数据（仅用于明细）
 }): FullReport {
-  const { filteredData, rawData, salaryData, attendance15Data, attendance7Data } = params;
+  const { filteredData, rawData, salaryData, attendance15Data, attendance7Data, workHoursHighData, workHoursLowData } = params;
 
   // T-2 日期
   const today = new Date();
@@ -151,6 +176,17 @@ export function generateReport(params: {
 
         att7Count: center.att7Count || 0,
         att7New: center.att7New || 0,
+
+        // 日工时高
+        workHoursHighCount: 0,
+        workHoursHighPrevCount: center.whHighPrevCount || 0,
+        workHoursHighRate: center.workHoursHighRate || '0%',
+        workHoursHighDetails: [],
+
+        // 日工时低
+        workHoursLowCount: 0,
+        workHoursLowPrevCount: center.whLowPrevCount || 0,
+        workHoursLowDetails: [],
       };
 
       // 提取效能异常明细（T-2 当天的）
@@ -223,8 +259,46 @@ export function generateReport(params: {
         }));
       }
 
+      // 提取日工时高明细（T-2 当天的）
+      if (workHoursHighData && workHoursHighData.length > 0) {
+        const t2WhHighRows = workHoursHighData.filter(row => {
+          const rp = row.省区 || row.省区名称 || '';
+          const rc = row.中心 || row.中心名称 || '';
+          const rd = normalizeDate(row['数据日期'] || row.date || row.日期);
+          const cMatch = rc.includes(center.name) || center.name.includes(rc);
+          const pMatch = rp.includes(prov.province) || prov.province.includes(rp);
+          return pMatch && cMatch && rd === dateStr;
+        });
+        item.workHoursHighCount = t2WhHighRows.length;
+        item.workHoursHighDetails = t2WhHighRows.map(r => ({
+          name: r.姓名 || '',
+          jobName: r.岗位 || '',
+          workHours: parseFloat(r['出勤工时'] || r.workHours || 0),
+          overHoursDays: parseInt(r['连续超时天数'] || r.overHoursDays || 0),
+        }));
+      }
+
+      // 提取日工时低明细（T-2 当天的）
+      if (workHoursLowData && workHoursLowData.length > 0) {
+        const t2WhLowRows = workHoursLowData.filter(row => {
+          const rp = row.省区 || row.省区名称 || '';
+          const rc = row.中心 || row.中心名称 || '';
+          const rd = normalizeDate(row['数据日期'] || row.date || row.日期);
+          const cMatch = rc.includes(center.name) || center.name.includes(rc);
+          const pMatch = rp.includes(prov.province) || prov.province.includes(rp);
+          return pMatch && cMatch && rd === dateStr;
+        });
+        item.workHoursLowCount = t2WhLowRows.length;
+        item.workHoursLowDetails = t2WhLowRows.map(r => ({
+          name: r.姓名 || '',
+          jobName: r.岗位 || '',
+          workHours: parseFloat(r['出勤工时'] || r.workHours || 0),
+        }));
+      }
+
       // 填充总览表数据
       const att7Rate = center.rosterTotal > 0 ? ((center.att7Count || 0) / center.rosterTotal * 100).toFixed(1) + '%' : '0%';
+      const whHighRate = center.workHoursHighRate || '0%';
       overviewTable.push({
         centerName: center.name,
         score: center.score || 0,
@@ -239,6 +313,9 @@ export function generateReport(params: {
         att15Rate: center.att15Rate || '0%',
         att7Count: center.att7Count || 0,
         att7Rate: att7Rate,
+        workHoursHighCount: center.t2WhHighCount || 0,
+        workHoursHighRate: whHighRate,
+        workHoursLowCount: center.t2WhLowCount || 0,
       });
 
       return item;
@@ -332,11 +409,13 @@ function generateSummary(provinces: ProvinceReport[]): string {
   lines.push('');
 
   // ── 各维度异常汇总 ──
-  let totalSalary = 0, totalAtt15 = 0, totalAtt7 = 0;
+  let totalSalary = 0, totalAtt15 = 0, totalAtt7 = 0, totalWhHigh = 0, totalWhLow = 0;
   provinces.forEach(p => p.centers.forEach(c => {
     totalSalary += c.salaryCount;
     totalAtt15 += c.att15Count;
     totalAtt7 += c.att7Count;
+    totalWhHigh += c.workHoursHighCount;
+    totalWhLow += c.workHoursLowCount;
   }));
 
   const issues: string[] = [];
@@ -344,6 +423,8 @@ function generateSummary(provinces: ProvinceReport[]): string {
   if (totalSalary > 0) issues.push(`绩效异常 ${totalSalary} 人`);
   if (totalAtt15 > 0) issues.push(`连续出勤≥15天 ${totalAtt15} 人`);
   if (totalAtt7 > 0) issues.push(`长期未出勤≥7天 ${totalAtt7} 人`);
+  if (totalWhHigh > 0) issues.push(`日工时高>12.5h ${totalWhHigh} 人`);
+  if (totalWhLow > 0) issues.push(`日工时低≤8h ${totalWhLow} 人`);
 
   lines.push('【异常汇总】');
   if (issues.length > 0) {
@@ -368,6 +449,12 @@ function generateSummary(provinces: ProvinceReport[]): string {
   }
   if (totalAtt7 > 0) {
     suggestions.push(`长期未出勤≥7天人员共 ${totalAtt7} 人，请跟进确认人员状态`);
+  }
+  if (totalWhHigh > 0) {
+    suggestions.push(`日工时高>12.5h人员共 ${totalWhHigh} 人，请关注加班情况，合理安排工作量`);
+  }
+  if (totalWhLow > 0) {
+    suggestions.push(`日工时低≤8h人员共 ${totalWhLow} 人，请核实原因并填写至网页`);
   }
   if (suggestions.length === 0) {
     suggestions.push('整体运营平稳，请继续保持，重点关注数据波动。');
@@ -403,9 +490,11 @@ export function renderReportAsText(report: FullReport): string {
   const totalSalary = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.salaryCount, 0), 0);
   const totalAtt15 = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.att15Count, 0), 0);
   const totalAtt7 = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.att7Count, 0), 0);
+  const totalWhHigh = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.workHoursHighCount, 0), 0);
+  const totalWhLow = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.workHoursLowCount, 0), 0);
   
   lines.push(`GPT数据通报 — ${report.reportDate}`);
-  lines.push(`全区均分：${report.overallScore}分 | 效能异常：${totalJob}个 | 绩效异常：${totalSalary}人 | 连续出勤：${totalAtt15}人 | 长期未出勤：${totalAtt7}人`);
+  lines.push(`全区均分：${report.overallScore}分 | 效能异常：${totalJob}个 | 绩效异常：${totalSalary}人 | 连续出勤：${totalAtt15}人 | 长期未出勤：${totalAtt7}人 | 日工时高：${totalWhHigh}人 | 日工时低：${totalWhLow}人`);
   lines.push('');
 
   // ── 执行摘要（核心结论前置）──
@@ -459,6 +548,16 @@ export function renderReportAsText(report: FullReport): string {
         abnormalItems.push(`未出勤：${center.att7Count}人`);
       }
       
+      // 日工时高
+      if (center.workHoursHighCount > 0) {
+        abnormalItems.push(`日工时高：${center.workHoursHighRate}(${center.workHoursHighCount}人)`);
+      }
+      
+      // 日工时低
+      if (center.workHoursLowCount > 0) {
+        abnormalItems.push(`日工时低：${center.workHoursLowCount}人`);
+      }
+      
       if (abnormalItems.length > 0) {
         lines.push(`  ${abnormalItems.join(' | ')}`);
       } else {
@@ -485,7 +584,9 @@ export function renderReportAsTextCompact(report: FullReport): string {
   const totalSalary = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.salaryCount, 0), 0);
   const totalAtt15 = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.att15Count, 0), 0);
   const totalAtt7 = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.att7Count, 0), 0);
-  lines.push(`全区均分：${report.overallScore}分 | 效能异常：${totalJobAbnormal}个 | 绩效异常：${totalSalary}人 | 连续出勤：${totalAtt15}人 | 长期未出勤：${totalAtt7}人`);
+  const totalWhHigh = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.workHoursHighCount, 0), 0);
+  const totalWhLow = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.workHoursLowCount, 0), 0);
+  lines.push(`全区均分：${report.overallScore}分 | 效能异常：${totalJobAbnormal}个 | 绩效异常：${totalSalary}人 | 连续出勤：${totalAtt15}人 | 长期未出勤：${totalAtt7}人 | 日工时高：${totalWhHigh}人 | 日工时低：${totalWhLow}人`);
   lines.push('');
 
   // 执行摘要
@@ -507,6 +608,12 @@ export function renderReportAsTextCompact(report: FullReport): string {
   }
   if (totalAtt7 > 0) {
     lines.push(`4. 长期未出勤≥7天${totalAtt7}人，请跟进确认人员状态`);
+  }
+  if (totalWhHigh > 0) {
+    lines.push(`5. 日工时高>12.5h${totalWhHigh}人，请关注加班情况`);
+  }
+  if (totalWhLow > 0) {
+    lines.push(`6. 日工时低≤8h${totalWhLow}人，请核实原因并填写至网页`);
   }
   lines.push('');
 
@@ -565,7 +672,21 @@ export function renderReportAsTextCompact(report: FullReport): string {
       } else {
         lines.push(`长期未出勤≥7天：无`);
       }
-
+      
+      // 日工时高
+      if (center.workHoursHighCount > 0) {
+        lines.push(`日工时高>12.5h：${center.workHoursHighRate}(${center.workHoursHighCount}人)`);
+      } else {
+        lines.push(`日工时高>12.5h：无`);
+      }
+      
+      // 日工时低
+      if (center.workHoursLowCount > 0) {
+        lines.push(`日工时低≤8h：${center.workHoursLowCount}人`);
+      } else {
+        lines.push(`日工时低≤8h：无`);
+      }
+      
       lines.push('');
     }
   }

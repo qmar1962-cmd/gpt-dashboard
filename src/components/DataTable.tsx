@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Ban, CheckCircle2, ExternalLink } from 'lucide-react';
 import { RegionalData } from '../types';
 import { cn, formatNumber } from '../lib/utils';
-import { getWeeklyEfficiencyDetail, WeeklyDetail, getWeeklySalaryDetail, SalaryWeeklyDetail, getWeeklyAttendance15Detail, Attendance15WeeklyDetail, getWeeklyAttendance7Detail, Attendance7WeeklyDetail } from '../lib/dataProcessor';
+import { getWeeklyEfficiencyDetail, WeeklyDetail, getWeeklySalaryDetail, SalaryWeeklyDetail, getWeeklyAttendance15Detail, Attendance15WeeklyDetail, getWeeklyAttendance7Detail, Attendance7WeeklyDetail, getWorkHoursHighDetail, WorkHoursHighWeeklyDetail, getWorkHoursLowDetail, WorkHoursLowWeeklyDetail } from '../lib/dataProcessor';
 import { loadCollaborationData } from '../lib/collaborationApi';
 import EfficiencyDetailModal from './EfficiencyDetailModal';
 import SalaryDetailModal from './SalaryDetailModal';
 import Attendance15DetailModal from './Attendance15DetailModal';
 import Attendance7DetailModal from './Attendance7DetailModal';
+import WorkHoursHighDetailModal from './WorkHoursHighDetailModal';
+import WorkHoursLowDetailModal from './WorkHoursLowDetailModal';
 
 import { Selection } from '../App';
 
@@ -25,6 +27,8 @@ interface DataTableProps {
   attendance15Data?: any[];
   attendance7Data?: any[];
   rosterData?: any[];
+  workHoursHighData?: any[];
+  workHoursLowData?: any[];
 }
 
 interface DetailModalState {
@@ -63,7 +67,7 @@ interface Attendance7ModalState {
   prevCount: number;
 }
 
-export default function DataTable({ data, onSelect, currentSelection, adminMode, exemptCenters, onToggleExempt, rawData, salaryData, attendanceData, attendance15Data, attendance7Data, rosterData }: DataTableProps) {
+export default function DataTable({ data, onSelect, currentSelection, adminMode, exemptCenters, onToggleExempt, rawData, salaryData, attendanceData, attendance15Data, attendance7Data, rosterData, workHoursHighData, workHoursLowData }: DataTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({ 'shanghai-prov': true });
   // 中心元数据（负责人等）
   const [centerMeta, setCenterMeta] = useState<Record<string, Record<string, string>>>({});
@@ -104,6 +108,22 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     prevCount: 0,
   });
   const [attendance7Modal, setAttendance7Modal] = useState<Attendance7ModalState>({
+    isOpen: false,
+    centerName: '',
+    provinceName: '',
+    weeklyData: [],
+    currentCount: 0,
+    prevCount: 0,
+  });
+  const [workHoursHighModal, setWorkHoursHighModal] = useState<any>({
+    isOpen: false,
+    centerName: '',
+    provinceName: '',
+    weeklyData: [],
+    currentCount: 0,
+    prevCount: 0,
+  });
+  const [workHoursLowModal, setWorkHoursLowModal] = useState<any>({
     isOpen: false,
     centerName: '',
     provinceName: '',
@@ -236,11 +256,13 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                 })()}
               </div>
 
-              <div className="grid grid-cols-[repeat(4,1fr)] gap-2 pl-4 border-l border-zinc-100 min-w-0">
+              <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-zinc-100 min-w-0">
                 <DimensionCell label="效能异常" score={item.dimensions?.job?.score ?? 0} metrics={item.dimensions?.job?.metrics ?? []} />
                 <DimensionCell label="绩效异常" score={item.dimensions?.salary?.score ?? 0} metrics={item.dimensions?.salary?.metrics ?? []} />
                 <DimensionCell label="连续出勤" score={item.dimensions?.attendance15?.score ?? 0} metrics={item.dimensions?.attendance15?.metrics ?? []} />
                 <DimensionCell label="长期未出勤" score={item.dimensions?.attendance7?.score ?? 0} metrics={item.dimensions?.attendance7?.metrics ?? []} />
+                <DimensionCell label="日工时高" score={item.dimensions?.workHoursHigh?.score ?? 0} metrics={item.dimensions?.workHoursHigh?.metrics ?? []} />
+                <DimensionCell label="日工时低" score={item.dimensions?.workHoursLow?.score ?? 0} metrics={item.dimensions?.workHoursLow?.metrics ?? []} />
               </div>
             </motion.div>
 
@@ -347,7 +369,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       <span className="text-xs font-bold text-zinc-300">—</span>
                     )}
                   </div>
-                  <div className="grid grid-cols-[repeat(4,1fr)] gap-2 pl-4 border-l border-zinc-100 min-w-0">
+                  <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-zinc-100 min-w-0">
                     <div
                       className={cn(
                         "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
@@ -524,6 +546,94 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                         </div>
                       </div>
                     </div>
+                    <div
+                      className={cn(
+                        "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        workHoursHighData && workHoursHighData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                      )}
+                      title={workHoursHighData && workHoursHighData.length > 0 ? "" : "请上传日工时高数据以查看详情"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (workHoursHighData && workHoursHighData.length > 0) {
+                          const weekly = getWorkHoursHighDetail(workHoursHighData, center.name, item.province);
+                          setWorkHoursHighModal({
+                            isOpen: true,
+                            centerName: center.name,
+                            provinceName: item.province,
+                            weeklyData: weekly,
+                            currentCount: center.whHighCount || 0,
+                            prevCount: (center.whHighCount || 0) - (center.whHighNew || 0),
+                          });
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight flex items-center gap-1">
+                          日工时高
+                          {workHoursHighData && workHoursHighData.length > 0 && (
+                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
+                          )}
+                        </span>
+                        <span className={cn(
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-zinc-50 text-zinc-900 transition-colors",
+                          workHoursHighData && workHoursHighData.length > 0 && "group-hover:bg-zinc-100"
+                        )}>{center.metrics?.workHoursHigh ?? 0}</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
+                          <span className="opacity-40 truncate">触发人数</span>
+                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whHighCount || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
+                          <span className="opacity-40 truncate">新增</span>
+                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whHighNew || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        workHoursLowData && workHoursLowData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                      )}
+                      title={workHoursLowData && workHoursLowData.length > 0 ? "" : "请上传日工时低数据以查看详情"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (workHoursLowData && workHoursLowData.length > 0) {
+                          const weekly = getWorkHoursLowDetail(workHoursLowData, center.name, item.province);
+                          setWorkHoursLowModal({
+                            isOpen: true,
+                            centerName: center.name,
+                            provinceName: item.province,
+                            weeklyData: weekly,
+                            currentCount: center.whLowCount || 0,
+                            prevCount: (center.whLowCount || 0) - (center.whLowNew || 0),
+                          });
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight flex items-center gap-1">
+                          日工时低
+                          {workHoursLowData && workHoursLowData.length > 0 && (
+                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
+                          )}
+                        </span>
+                        <span className={cn(
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-zinc-50 text-zinc-900 transition-colors",
+                          workHoursLowData && workHoursLowData.length > 0 && "group-hover:bg-zinc-100"
+                        )}>{center.metrics?.workHoursLow ?? 0}</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
+                          <span className="opacity-40 truncate">异常人数</span>
+                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whLowCount || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
+                          <span className="opacity-40 truncate">新增</span>
+                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whLowNew || 0}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
                 );
@@ -577,6 +687,28 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
         prevCount={attendance7Modal.prevCount}
       />
 
+      {/* 日工时高详情弹窗 */}
+      <WorkHoursHighDetailModal
+        isOpen={workHoursHighModal.isOpen}
+        onClose={() => setWorkHoursHighModal(prev => ({ ...prev, isOpen: false }))}
+        centerName={workHoursHighModal.centerName}
+        provinceName={workHoursHighModal.provinceName}
+        weeklyData={workHoursHighModal.weeklyData}
+        currentCount={workHoursHighModal.currentCount}
+        prevCount={workHoursHighModal.prevCount}
+      />
+
+      {/* 日工时低详情弹窗 */}
+      <WorkHoursLowDetailModal
+        isOpen={workHoursLowModal.isOpen}
+        onClose={() => setWorkHoursLowModal(prev => ({ ...prev, isOpen: false }))}
+        centerName={workHoursLowModal.centerName}
+        provinceName={workHoursLowModal.provinceName}
+        weeklyData={workHoursLowModal.weeklyData}
+        currentCount={workHoursLowModal.currentCount}
+        prevCount={workHoursLowModal.prevCount}
+      />
+
       {/* Scoring Rules Footer */}
       <div className="p-8 bg-zinc-50 border-t border-zinc-200 mt-4">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">计分规则解析</h3>
@@ -588,7 +720,11 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
             </div>
             <div className="rule-item">
               <span className="text-[9px] font-bold block opacity-50 uppercase">个人薪资异常占比</span>
-              <p className="text-[11px] font-medium leading-relaxed">个人薪资模块考核：覆盖率 ≤ 3% 得 25 分；覆盖率 &gt; 3%，每增加 1% 扣 5 分，最低 0 分。</p>
+              <p className="text-[11px] font-medium leading-relaxed">个人薪资模块考核：覆盖率 ≤ 3% 得 15 分；覆盖率 &gt; 3%，每增加 1% 扣 3 分，最低 0 分。</p>
+            </div>
+            <div className="rule-item">
+              <span className="text-[9px] font-bold block opacity-50 uppercase">日工时高（&gt;12.5h）</span>
+              <p className="text-[11px] font-medium leading-relaxed">日均触发占比 ≤ 10% 得 5 分；占比 &gt; 10%，每增加 1% 扣 1 分（四舍五入），最低 0 分。</p>
             </div>
           </div>
           <div className="space-y-3">
@@ -599,6 +735,10 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
             <div className="rule-item">
               <span className="text-[9px] font-bold block opacity-50 uppercase">连未出勤7天异常</span>
               <p className="text-[11px] font-medium leading-relaxed">过程中出现1人扣2分，累计计分（不含病假、伤残、跨组织架构等特殊情况）。</p>
+            </div>
+            <div className="rule-item">
+              <span className="text-[9px] font-bold block opacity-50 uppercase">日工时低（≤8h）</span>
+              <p className="text-[11px] font-medium leading-relaxed">每出现1人扣1分，满分5分，最低0分。</p>
             </div>
           </div>
         </div>

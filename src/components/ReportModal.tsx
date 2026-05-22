@@ -15,6 +15,8 @@ interface ReportModalProps {
     attendanceData?: any[];
     attendance15Data?: any[];
     attendance7Data?: any[];
+    workHoursHighData?: any[];
+    workHoursLowData?: any[];
   };
 }
 
@@ -83,10 +85,10 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
     setImgGenerating(true);
     try {
       const rows = report.overviewTable || [];
-      const headers = ['中心', '得分', '管幅', '超目标', '效能异常', '绩效异常', '连续出勤', '长期未出勤'];
+      const headers = ['中心', '得分', '管幅', '超目标', '效能异常', '绩效异常', '连续出勤', '长期未出勤', '日工时高', '日工时低'];
 
-      // Canvas 尺寸（8列，管幅/超目标每列显示两行）
-      const colWidths = [100, 70, 110, 110, 80, 80, 80, 100];
+      // Canvas 尺寸（10列，管幅/超目标每列显示两行）
+      const colWidths = [80, 55, 90, 90, 65, 65, 65, 75, 75, 75];
       const tableWidth = colWidths.reduce((a, b) => a + b, 0);
       const rowHeight = 48;  // 增加行高以容纳两行文字
       const headerHeight = 42;
@@ -268,6 +270,18 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         ctx.font = parseFloat(row.att7Rate) > 3 ? 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif' : '12px -apple-system, BlinkMacSystemFont, sans-serif';
         drawCell(String(row.att7Count), xPos, colWidths[7], parseFloat(row.att7Rate) > 3 ? '#dc2626' : '#16a34a');
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        xPos += colWidths[7];
+
+        // 8: 日工时高
+        ctx.font = row.workHoursHighCount > 0 ? 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif' : '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        drawCell(row.workHoursHighRate, xPos, colWidths[8], row.workHoursHighCount > 0 ? '#dc2626' : '#16a34a');
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        xPos += colWidths[8];
+
+        // 9: 日工时低
+        ctx.font = row.workHoursLowCount > 0 ? 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif' : '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        drawCell(String(row.workHoursLowCount), xPos, colWidths[9], row.workHoursLowCount > 0 ? '#dc2626' : '#16a34a');
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
       }
 
       // 底部时间戳
@@ -335,12 +349,14 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
   };
 
   // 统计各维度异常数
-  let totalJob = 0, totalSalary = 0, totalAtt15 = 0, totalAtt7 = 0;
+  let totalJob = 0, totalSalary = 0, totalAtt15 = 0, totalAtt7 = 0, totalWhHigh = 0, totalWhLow = 0;
   report.provinces.forEach(p => p.centers.forEach(c => {
     totalJob += c.jobAbnormalCount;
     totalSalary += c.salaryCount;
     totalAtt15 += c.att15Count;
     totalAtt7 += c.att7Count;
+    totalWhHigh += c.workHoursHighCount;
+    totalWhLow += c.workHoursLowCount;
   }));
 
   return (
@@ -370,6 +386,8 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
             { label: '绩效异常', value: totalSalary, unit: '人' },
             { label: '连续出勤', value: totalAtt15, unit: '人' },
             { label: '长期未出勤', value: totalAtt7, unit: '人' },
+            { label: '日工时高', value: totalWhHigh, unit: '人' },
+            { label: '日工时低', value: totalWhLow, unit: '人' },
           ].map(s => (
             <div key={s.label} className="flex items-center gap-1.5">
               <span className={`font-mono font-bold text-sm ${s.value > 0 ? 'text-red-600' : 'text-zinc-400'}`}>{s.value}</span>
@@ -425,11 +443,12 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
               <div className="space-y-3 pl-4">
                 {prov.centers.map(center => {
                   const hasJobOrSalaryIssue = center.jobAbnormalCount > 0 || center.salaryCount > 0;
-                  const hasAttWarning = center.att15Count > 0 || center.att7Count > 0;
+                  const hasAttWarning = center.att15Count > 0 || center.att7Count > 0 || center.workHoursHighCount > 0 || center.workHoursLowCount > 0;
                   const hasIssue = hasJobOrSalaryIssue || hasAttWarning;
+                  const hasWhIssue = center.workHoursHighCount > 0 || center.workHoursLowCount > 0;
                   const borderClass = hasJobOrSalaryIssue
                     ? 'border-red-200 bg-red-50/30'
-                    : hasAttWarning
+                    : hasAttWarning || hasWhIssue
                       ? 'border-amber-200 bg-amber-50/30'
                       : 'border-zinc-200 bg-zinc-50/50';
                   return (
@@ -444,7 +463,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="grid grid-cols-3 gap-2 text-xs">
                         {/* 效能异常 */}
                         <div className={`p-2 rounded ${center.jobAbnormalCount > 0 ? 'bg-red-50' : 'bg-zinc-50'}`}>
                           <span className="text-zinc-500">效能异常</span>
@@ -454,7 +473,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                               : <span className="text-zinc-500">0 <span className="text-[10px] text-zinc-400">(前一天 {center.jobPrevCount})</span></span>
                           }</div>
                         </div>
-
+                        
                         {/* 绩效异常 */}
                         <div className={`p-2 rounded ${center.salaryCount > 0 ? 'bg-red-50' : 'bg-zinc-50'}`}>
                           <span className="text-zinc-500">绩效异常</span>
@@ -464,7 +483,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                               : <span className="text-zinc-500">0 <span className="text-[10px] text-zinc-400">({center.salaryCoverage})</span></span>
                           }</div>
                         </div>
-
+                        
                         {/* 连续出勤 */}
                         <div className={`p-2 rounded ${center.att15Count > 0 ? 'bg-amber-50' : 'bg-zinc-50'}`}>
                           <span className="text-zinc-500">连续出勤</span>
@@ -474,7 +493,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                               : <span className="text-zinc-500">0 <span className="text-[10px] text-zinc-400">({center.att15Rate})</span></span>
                           }</div>
                         </div>
-
+                        
                         {/* 长期未出勤 */}
                         <div className={`p-2 rounded ${center.att7Count > 0 ? 'bg-amber-50' : 'bg-zinc-50'}`}>
                           <span className="text-zinc-500">长期未出勤</span>
@@ -484,22 +503,81 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                               : <span className="text-zinc-500">0 人</span>
                           }</div>
                         </div>
+                        
+                        {/* 日工时高 */}
+                        <div className={`p-2 rounded ${center.workHoursHighCount > 0 ? 'bg-rose-50' : 'bg-zinc-50'}`}>
+                          <span className="text-zinc-500">日工时高</span>
+                          <div className="font-mono font-bold">{
+                            center.workHoursHighCount > 0
+                              ? <span className="text-rose-600">{center.workHoursHighCount} 人 <span className="text-[10px] text-zinc-400">({center.workHoursHighRate})</span></span>
+                              : <span className="text-zinc-500">0 人</span>
+                          }</div>
+                        </div>
+                        
+                        {/* 日工时低 */}
+                        <div className={`p-2 rounded ${center.workHoursLowCount > 0 ? 'bg-cyan-50' : 'bg-zinc-50'}`}>
+                          <span className="text-zinc-500">日工时低</span>
+                          <div className="font-mono font-bold">{
+                            center.workHoursLowCount > 0
+                              ? <span className="text-cyan-600">{center.workHoursLowCount} 人</span>
+                              : <span className="text-zinc-500">0 人</span>
+                          }</div>
+                        </div>
                       </div>
 
-                      {/* 明细展开 - 仅保留效能异常明细 */}
-                      {hasIssue && center.jobAbnormalCount > 0 && (
+                      {/* 明细展开 */}
+                      {hasIssue && (center.jobAbnormalCount > 0 || center.workHoursHighCount > 0 || center.workHoursLowCount > 0) && (
                         <div className="mt-2 pt-2 border-t border-red-100">
-                          <p className="text-[10px] text-red-500 font-black uppercase mb-1">效能异常明细</p>
-                          <div className="space-y-1">
-                            {center.jobDetails?.slice(0, 5).map((d, i) => (
-                              <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-red-300">
-                                {d.jobName}：偏离 +{d.deviation}%（实际 {d.actualValue} / 目标 {d.targetValue}）
+                          {/* 效能异常明细 */}
+                          {center.jobAbnormalCount > 0 && (
+                            <div className="mb-2">
+                              <p className="text-[10px] text-red-500 font-black uppercase mb-1">效能异常明细</p>
+                              <div className="space-y-1">
+                                {center.jobDetails?.slice(0, 5).map((d, i) => (
+                                  <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-red-300">
+                                    {d.jobName}：偏离 +{d.deviation}%（实际 {d.actualValue} / 目标 {d.targetValue}）
+                                  </div>
+                                ))}
+                                {center.jobDetails && center.jobDetails.length > 5 && (
+                                  <div className="text-[10px] text-zinc-400">... 等 {center.jobDetails.length} 条</div>
+                                )}
                               </div>
-                            ))}
-                            {center.jobDetails && center.jobDetails.length > 5 && (
-                              <div className="text-[10px] text-zinc-400">... 等 {center.jobDetails.length} 条</div>
-                            )}
-                          </div>
+                            </div>
+                          )}
+                          
+                          {/* 日工时高明细 */}
+                          {center.workHoursHighCount > 0 && (
+                            <div className="mb-2">
+                              <p className="text-[10px] text-rose-500 font-black uppercase mb-1">日工时高明细</p>
+                              <div className="space-y-1">
+                                {center.workHoursHighDetails?.slice(0, 5).map((d, i) => (
+                                  <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-rose-300">
+                                    {d.name}（{d.jobName}）：工时 {d.workHours}h，连续 {d.overHoursDays} 天
+                                  </div>
+                                ))}
+                                {center.workHoursHighDetails && center.workHoursHighDetails.length > 5 && (
+                                  <div className="text-[10px] text-zinc-400">... 等 {center.workHoursHighDetails.length} 条</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* 日工时低明细 */}
+                          {center.workHoursLowCount > 0 && (
+                            <div className="mb-2">
+                              <p className="text-[10px] text-cyan-500 font-black uppercase mb-1">日工时低明细</p>
+                              <div className="space-y-1">
+                                {center.workHoursLowDetails?.slice(0, 5).map((d, i) => (
+                                  <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-cyan-300">
+                                    {d.name}（{d.jobName}）：工时 {d.workHours}h
+                                  </div>
+                                ))}
+                                {center.workHoursLowDetails && center.workHoursLowDetails.length > 5 && (
+                                  <div className="text-[10px] text-zinc-400">... 等 {center.workHoursLowDetails.length} 条</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

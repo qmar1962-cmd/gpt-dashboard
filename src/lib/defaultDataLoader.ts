@@ -49,6 +49,8 @@ const FILE_TYPE_MAP: Record<string, DataType> = {
   'roster': 'employee_roster',
   'module_attendance': 'module_attendance',
   'center_headcount': 'center_headcount',
+  'work_hours_high': 'work_hours_high',
+  'work_hours_low': 'work_hours_low',
 };
 
 // ── 工具函数 ───────────────────────────────────────────────
