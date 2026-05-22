@@ -23,6 +23,7 @@ export interface CenterReportItem {
 
   /** 绩效异常（薪资） */
   salaryCount: number;
+  salaryPrevCount: number;  // 前一天绩效异常人数
   salaryCoverage: string;
   salaryBase: number;
   salaryDetails?: Array<{
@@ -33,6 +34,7 @@ export interface CenterReportItem {
 
   /** 连续出勤 ≥15天 */
   att15Count: number;
+  att15PrevCount: number;  // 前一天连续出勤人数
   att15Rate: string;
   att15New: number;
   att15Over30?: number;
@@ -44,6 +46,7 @@ export interface CenterReportItem {
 
   /** 长期未出勤 ≥7天 */
   att7Count: number;
+  att7PrevCount: number;  // 前一天长期未出勤人数
   att7New: number;
   att7Details?: Array<{
     name: string;
@@ -389,12 +392,13 @@ export function renderReportAsText(report: FullReport): string {
   };
 
   // ── 标题 + 核心信息（前置）──
-  lines.push('════════════════════════════════');
-  lines.push('  GPT 数据通报 — 详情报告');
-  lines.push(`  数据日期：${report.reportDate}`);
-  lines.push(`  生成时间：${report.generatedAt}`);
-  lines.push(`  全区均分：${report.overallScore} 分`);
-  lines.push('════════════════════════════════');
+  const totalJob = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.jobAbnormalCount, 0), 0);
+  const totalSalary = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.salaryCount, 0), 0);
+  const totalAtt15 = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.att15Count, 0), 0);
+  const totalAtt7 = report.provinces.reduce((s, p) => s + p.centers.reduce((s2, c) => s2 + c.att7Count, 0), 0);
+  
+  lines.push(`GPT数据通报 — ${report.reportDate}`);
+  lines.push(`全区均分：${report.overallScore}分 | 效能异常：${totalJob}个 | 绩效异常：${totalSalary}人 | 连续出勤：${totalAtt15}人 | 长期未出勤：${totalAtt7}人`);
   lines.push('');
 
   // ── 执行摘要（核心结论前置）──
@@ -412,71 +416,47 @@ export function renderReportAsText(report: FullReport): string {
   lines.push('');
   lines.push('');
 
-  // ── 各省区详情 ──
+  // ── 各中心详情 ──
   for (const prov of report.provinces) {
-    lines.push('─'.repeat(36));
-    lines.push(`#${prov.ranking} ${prov.province}  |  负责人：${prov.responsible}  |  得分：${prov.totalScore}`);
-    lines.push('─'.repeat(36));
-    lines.push('');
-
     for (const center of prov.centers) {
-      const scoreTag = center.score >= 80 ? '[正常]' : center.score >= 50 ? '[警告]' : '[异常]';
       const scoreColor = center.score >= 80 ? '✅' : center.score >= 50 ? '⚠️' : '❌';
-      lines.push(`  ${scoreColor} ${center.centerName}（${center.responsible}）— 得分 ${center.score}  ${scoreTag}`);
+      lines.push(`${scoreColor} ${center.centerName}（${center.responsible}）${center.score}分`);
 
-      // 【待办】提示（只显示最紧急1项）
-      let actionTodo = '';
-      if (center.jobAbnormalCount > 0) {
-        actionTodo = `效能异常${center.jobAbnormalCount}个，请关注岗位效能偏离情况`;
-      } else if (center.att7Count > 0) {
-        actionTodo = `长期未出勤≥7天${center.att7Count}人，请核实原因并填写至网页`;
-      } else if (center.salaryCount > 0 && parseFloat(center.salaryCoverage) > 3) {
-        actionTodo = `绩效异常${center.salaryCoverage}（${center.salaryCount}人），请明确异常人员名单并制定改进计划`;
-      } else if (center.att15Count > 0 && parseFloat(center.att15Rate) > 3) {
-        actionTodo = `连续出勤≥15天${center.att15Rate}（${center.att15Count}人），请合理安排调休并将计划填写至网页`;
-      }
-      if (actionTodo) {
-        lines.push(`  【待办】${actionTodo}。`);
-        lines.push('');
-      }
 
-      const parts: string[] = [];
-
+      // 精简版：只显示异常类型和数值
+      const abnormalItems: string[] = [];
+      
       // 效能异常
       if (center.jobAbnormalCount > 0) {
-        parts.push(`  • 效能异常：${center.jobAbnormalCount} 个（前一天 ${center.jobPrevCount}）`);
         if (center.jobDetails?.length) {
-          center.jobDetails.forEach(d => {
-            parts.push(`      - ${d.jobName}：偏离 +${d.deviation}%（实际 ${d.actualValue} / 目标 ${d.targetValue}）`);
-          });
+          const jobStr = center.jobDetails.map(d => `${d.jobName}+${d.deviation}%`).join(' ');
+          abnormalItems.push(`效能：${jobStr}`);
+        } else {
+          abnormalItems.push(`效能：${center.jobAbnormalCount}个`);
         }
-      } else {
-        parts.push(`  • 效能异常：无（${center.jobPrevCount > 0 ? `前一天 ${center.jobPrevCount} 个，已清零` : '正常'})`);
       }
-
+      
       // 绩效异常
       if (center.salaryCount > 0) {
-        parts.push(`  • 绩效异常：${center.salaryCoverage}（${center.salaryCount} 人，算薪基数 ${center.salaryBase}）`);
-      } else {
-        parts.push(`  • 绩效异常：无（覆盖率 ${center.salaryCoverage}）`);
+        abnormalItems.push(`绩效：${center.salaryCoverage}(${center.salaryCount}人)`);
       }
-
+      
       // 连续出勤
       if (center.att15Count > 0) {
-        const extra = center.att15Over30 ? `，其中 >30 天 ${center.att15Over30} 人` : '';
-        parts.push(`  • 连续出勤≥15天：${center.att15Rate}（${center.att15Count} 人，新增 ${center.att15New}${extra}）`);
-      } else {
-        parts.push(`  • 连续出勤≥15天：无（触发率 ${center.att15Rate}）`);
+        const extra = center.att15Over30 ? ` >30天${center.att15Over30}人` : '';
+        abnormalItems.push(`出勤：${center.att15Rate}(${center.att15Count}人${extra})`);
       }
-
+      
       // 长期未出勤
       if (center.att7Count > 0) {
-        parts.push(`  • 长期未出勤≥7天：${center.att7Count} 人（新增 ${center.att7New}）`);
-      } else {
-        parts.push(`  • 长期未出勤≥7天：无`);
+        abnormalItems.push(`未出勤：${center.att7Count}人`);
       }
-
-      lines.push(...parts);
+      
+      if (abnormalItems.length > 0) {
+        lines.push(`  ${abnormalItems.join(' | ')}`);
+      } else {
+        lines.push(`  (无异常)`);
+      }
       lines.push('');
     }
   }
