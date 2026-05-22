@@ -1,8 +1,9 @@
 /**
  * 详情报告弹窗 — 展示自动生成的文字报告
  */
-import { useState, useEffect } from 'react';
-import { X, Copy, Check, Download, FileText } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Copy, Check, Download, FileText, Image } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import { generateReport, renderReportAsText, type FullReport } from '../lib/reportGenerator';
 
 interface ReportModalProps {
@@ -23,6 +24,8 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
   const [report, setReport] = useState<FullReport | null>(null);
   const [textContent, setTextContent] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [imgGenerating, setImgGenerating] = useState(false);
+  const overviewTableRef = useRef<HTMLDivElement>(null);
 
   // 打开弹窗时重新生成报告（基于 params）
   useEffect(() => {
@@ -74,6 +77,80 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       </div>
     );
   }
+
+  // 生成总览表图片
+  const generateOverviewTableHTML = (report: FullReport): string => {
+    const rows = report.overviewTable || [];
+    let html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; background: #ffffff;">
+        <h2 style="font-size: 18px; font-weight: 900; margin: 0 0 16px 0; color: #18181b;">GPT 数据总览 — ${report.reportDate}</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: #f4f4f5; border-bottom: 2px solid #d4d4d8;">
+              <th style="padding: 8px 12px; text-align: left; font-weight: 800; color: #52525b;">中心</th>
+              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">得分</th>
+              <th style="padding: 8px 12px; text-align: center; font-weight: 800; color: #52525b;" colspan="2">管幅（综/组）</th>
+              <th style="padding: 8px 12px; text-align: center; font-weight: 800; color: #52525b;" colspan="2">超目标（综/组）</th>
+              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">效能异常</th>
+              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">绩效异常</th>
+              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">连续出勤</th>
+              <th style="padding: 8px 12px; text-align: right; font-weight: 800; color: #52525b;">长期未出勤</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    for (const row of rows) {
+      const scoreColor = row.score >= 80 ? '#16a34a' : row.score >= 50 ? '#ca8a04' : '#dc2626';
+      const scoreBg = row.score >= 80 ? '#f0fdf4' : row.score >= 50 ? '#fefce8' : '#fef2f2';
+      html += `
+            <tr style="border-bottom: 1px solid #e4e4e7;">
+              <td style="padding: 8px 12px; font-weight: 700; color: #18181b;">${row.centerName}</td>
+              <td style="padding: 8px 12px; text-align: right; font-weight: 900; font-family: monospace; color: ${scoreColor}; background: ${scoreBg};">${row.score}</td>
+              <td style="padding: 8px 12px; text-align: right; font-family: monospace;">${row.compositeScope.toFixed(1)}</td>
+              <td style="padding: 8px 12px; text-align: right; font-family: monospace;">${row.leaderScope.toFixed(1)}</td>
+              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.compOverTarget > 0 ? '#dc2626' : '#16a34a'};">${row.compOverTarget > 0 ? '+' : ''}${row.compOverTarget.toFixed(1)}</td>
+              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.leadOverTarget > 0 ? '#dc2626' : '#16a34a'};">${row.leadOverTarget > 0 ? '+' : ''}${row.leadOverTarget.toFixed(1)}</td>
+              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.jobAbnormal > 0 ? '#dc2626' : '#16a34a'};">${row.jobAbnormal}</td>
+              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.salaryCount > 0 ? '#dc2626' : '#16a34a'};">${row.salaryCount}</td>
+              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.att15Count > 0 ? '#d97706' : '#16a34a'};">${row.att15Count}</td>
+              <td style="padding: 8px 12px; text-align: right; font-family: monospace; color: ${row.att7Count > 0 ? '#d97706' : '#16a34a'};">${row.att7Count}</td>
+            </tr>
+      `;
+    }
+    html += `
+          </tbody>
+        </table>
+        <div style="margin-top: 12px; font-size: 11px; color: #a1a1aa; text-align: right;">由 GPT 数据通报系统自动生成 · ${report.generatedAt}</div>
+      </div>
+    `;
+    return html;
+  };
+
+  const handleGenerateOverviewImage = async () => {
+    if (!report || imgGenerating) return;
+    setImgGenerating(true);
+    try {
+      const tableHTML = generateOverviewTableHTML(report);
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = tableHTML;
+      tempDiv.style.position = 'fixed';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.top = '0';
+      document.body.appendChild(tempDiv);
+      const canvas = await html2canvas(tempDiv, { backgroundColor: '#ffffff', scale: 2 });
+      document.body.removeChild(tempDiv);
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `GPT总览表_${report.dateStr}.png`;
+      a.click();
+    } catch (e) {
+      console.error('生成总览图失败:', e);
+      alert('生成总览图失败，请重试');
+    } finally {
+      setImgGenerating(false);
+    }
+  };
 
   const handleCopy = async () => {
     try {
@@ -158,6 +235,14 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
             >
               <Download size={13} />
               下载
+            </button>
+            <button
+              onClick={handleGenerateOverviewImage}
+              disabled={imgGenerating}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-[11px] font-black uppercase tracking-wide rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              <Image size={13} />
+              {imgGenerating ? '生成中...' : '总览图'}
             </button>
           </div>
         </div>
@@ -246,7 +331,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                         </div>
                       </div>
 
-                      {/* 明细展开 */}
+                      {/* 明细展开 - 仅保留效能异常明细 */}
                       {hasIssue && center.jobAbnormalCount > 0 && (
                         <div className="mt-2 pt-2 border-t border-red-100">
                           <p className="text-[10px] text-red-500 font-black uppercase mb-1">效能异常明细</p>
@@ -258,55 +343,6 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                             ))}
                             {center.jobDetails && center.jobDetails.length > 5 && (
                               <div className="text-[10px] text-zinc-400">... 等 {center.jobDetails.length} 条</div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                      {hasIssue && center.salaryCount > 0 && (
-                        <div className="mt-2 pt-2 border-t border-red-100">
-                          <p className="text-[10px] text-red-500 font-black uppercase mb-1">绩效异常明细</p>
-                          <div className="space-y-1">
-                            {center.salaryDetails?.slice(0, 5).map((d, i) => (
-                              <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-red-300">
-                                {d.name}（{d.jobName}）：均值偏离 +{d.avgDeviation}%
-                              </div>
-                            ))}
-                            {center.salaryDetails && center.salaryDetails.length > 5 && (
-                              <div className="text-[10px] text-zinc-400">... 等 {center.salaryDetails.length} 条</div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 连续出勤≥15天明细 */}
-                      {hasIssue && center.att15Count > 0 && (
-                        <div className="mt-2 pt-2 border-t border-amber-100">
-                          <p className="text-[10px] text-amber-600 font-black uppercase mb-1">连续出勤≥15天明细</p>
-                          <div className="space-y-1">
-                            {center.att15Details?.slice(0, 5).map((d, i) => (
-                              <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-amber-300">
-                                {d.name}（{d.jobName}）：连续 {d.continuousDays} 天
-                              </div>
-                            ))}
-                            {center.att15Details && center.att15Details.length > 5 && (
-                              <div className="text-[10px] text-zinc-400">... 等 {center.att15Details.length} 条</div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 长期未出勤≥7天明细 */}
-                      {hasIssue && center.att7Count > 0 && (
-                        <div className="mt-2 pt-2 border-t border-amber-100">
-                          <p className="text-[10px] text-amber-600 font-black uppercase mb-1">长期未出勤≥7天明细</p>
-                          <div className="space-y-1">
-                            {center.att7Details?.slice(0, 5).map((d, i) => (
-                              <div key={i} className="text-xs text-zinc-600 pl-2 border-l-2 border-amber-300">
-                                {d.name}（{d.jobName}）：未出勤 {d.continuousDays} 天
-                              </div>
-                            ))}
-                            {center.att7Details && center.att7Details.length > 5 && (
-                              <div className="text-[10px] text-zinc-400">... 等 {center.att7Details.length} 条</div>
                             )}
                           </div>
                         </div>

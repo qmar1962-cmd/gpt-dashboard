@@ -60,6 +60,19 @@ export interface ProvinceReport {
   centers: CenterReportItem[];
 }
 
+export interface OverviewTableRow {
+  centerName: string;
+  score: number;
+  compositeScope: number;   // 综合管幅
+  leaderScope: number;      // 组长管幅
+  compOverTarget: number;    // 综合超目标
+  leadOverTarget: number;    // 组长超目标
+  jobAbnormal: number;       // 效能异常
+  salaryCount: number;       // 绩效异常人数
+  att15Count: number;       // 连续出勤≥15天
+  att7Count: number;        // 长期未出勤≥7天
+}
+
 export interface FullReport {
   reportDate: string;       // T-2 日期文字
   dateStr: string;          // T-2 YYYY-MM-DD
@@ -68,6 +81,7 @@ export interface FullReport {
   totalProvinces: number;
   provinces: ProvinceReport[];
   summary: string;          // 一段话总结
+  overviewTable: OverviewTableRow[];  // 各中心总览表数据
 }
 
 /**
@@ -105,6 +119,8 @@ export function generateReport(params: {
 
   const sortedData = [...filteredData].sort((a, b) => b.totalScore - a.totalScore);
   const overallScore = Math.round(sortedData.reduce((s, r) => s + (r.totalScore || 0), 0) / sortedData.length);
+
+  const overviewTable: OverviewTableRow[] = [];  // 总览表数据
 
   const provinces: ProvinceReport[] = sortedData.map((prov, idx) => {
     const centers: CenterReportItem[] = (prov.subCenters || []).map((center: any) => {
@@ -200,6 +216,20 @@ export function generateReport(params: {
         }));
       }
 
+      // 填充总览表数据
+      overviewTable.push({
+        centerName: center.name,
+        score: center.score || 0,
+        compositeScope: center.compositeScope || 0,
+        leaderScope: center.leaderScope || 0,
+        compOverTarget: center.compOverTarget || 0,
+        leadOverTarget: center.leadOverTarget || 0,
+        jobAbnormal: center.abnormalCount || 0,
+        salaryCount: center.t2SalaryCount || 0,
+        att15Count: center.att15Count || 0,
+        att7Count: center.att7Count || 0,
+      });
+
       return item;
     });
 
@@ -223,6 +253,7 @@ export function generateReport(params: {
     totalProvinces: provinces.length,
     provinces,
     summary,
+    overviewTable,
   };
 }
 
@@ -388,6 +419,17 @@ export function renderReportAsText(report: FullReport): string {
       const scoreColor = center.score >= 80 ? '✅' : center.score >= 50 ? '⚠️' : '❌';
       lines.push(`  ${scoreColor} ${center.centerName}（${center.responsible}）— 得分 ${center.score}  ${scoreTag}`);
 
+      // 【待办】提示
+      const actions: string[] = [];
+      if (center.jobAbnormalCount > 0) actions.push(`效能异常${center.jobAbnormalCount}个，请关注岗位效能偏离情况`);
+      if (center.salaryCount > 0 && parseFloat(center.salaryCoverage) > 3) actions.push(`绩效异常${center.salaryCount}人（覆盖率${center.salaryCoverage}），请明确异常人员名单并制定改进计划`);
+      if (center.att15Count > 0 && parseFloat(center.att15Rate) > 3) actions.push(`连续出勤≥15天${center.att15Count}人（触发率${center.att15Rate}），请合理安排调休并将计划填写至网页`);
+      if (center.att7Count > 0) actions.push(`长期未出勤≥7天${center.att7Count}人，请核实原因并填写至网页`);
+      if (actions.length > 0) {
+        lines.push(`  【待办】${actions.join('；')}。`);
+        lines.push('');
+      }
+
       const parts: string[] = [];
 
       // 效能异常
@@ -405,12 +447,6 @@ export function renderReportAsText(report: FullReport): string {
       // 绩效异常
       if (center.salaryCount > 0) {
         parts.push(`  • 绩效异常：${center.salaryCount} 人（覆盖率 ${center.salaryCoverage}，算薪基数 ${center.salaryBase}）`);
-        if (center.salaryDetails?.length) {
-          center.salaryDetails.slice(0, 5).forEach(d => {
-            parts.push(`      - ${d.name}（${d.jobName}）：均值偏离 +${d.avgDeviation}%`);
-          });
-          if (center.salaryDetails.length > 5) parts.push(`      - ... 等 ${center.salaryDetails.length} 人`);
-        }
       } else {
         parts.push(`  • 绩效异常：无（覆盖率 ${center.salaryCoverage}）`);
       }
@@ -419,12 +455,6 @@ export function renderReportAsText(report: FullReport): string {
       if (center.att15Count > 0) {
         const extra = center.att15Over30 ? `，其中 >30 天 ${center.att15Over30} 人` : '';
         parts.push(`  • 连续出勤≥15天：${center.att15Count} 人（触发率 ${center.att15Rate}，新增 ${center.att15New}${extra}）`);
-        if (center.att15Details?.length) {
-          center.att15Details.slice(0, 5).forEach(d => {
-            parts.push(`      - ${d.name}（${d.jobName}）：连续 ${d.continuousDays} 天`);
-          });
-          if (center.att15Details.length > 5) parts.push(`      - ... 等 ${center.att15Details.length} 人`);
-        }
       } else {
         parts.push(`  • 连续出勤≥15天：无（触发率 ${center.att15Rate}）`);
       }
@@ -432,12 +462,6 @@ export function renderReportAsText(report: FullReport): string {
       // 长期未出勤
       if (center.att7Count > 0) {
         parts.push(`  • 长期未出勤≥7天：${center.att7Count} 人（新增 ${center.att7New}）`);
-        if (center.att7Details?.length) {
-          center.att7Details.slice(0, 5).forEach(d => {
-            parts.push(`      - ${d.name}（${d.jobName}）：未出勤 ${d.continuousDays} 天`);
-          });
-          if (center.att7Details.length > 5) parts.push(`      - ... 等 ${center.att7Details.length} 人`);
-        }
       } else {
         parts.push(`  • 长期未出勤≥7天：无`);
       }
