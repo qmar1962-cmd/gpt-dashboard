@@ -83,17 +83,18 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
     setImgGenerating(true);
     try {
       const rows = report.overviewTable || [];
-      const headers = ['中心', '得分', '管幅(综)', '管幅(组)', '超目标(综)', '超目标(组)', '效能异常', '绩效异常', '连续出勤', '长期未出勤'];
+      const headers = ['中心', '得分', '管幅', '超目标', '效能异常', '绩效异常', '连续出勤', '长期未出勤'];
 
-      // Canvas 尺寸
-      const colWidths = [90, 60, 72, 72, 82, 82, 72, 72, 72, 72];
+      // Canvas 尺寸（8列，管幅/超目标每列显示两行）
+      const colWidths = [100, 70, 110, 110, 80, 80, 80, 100];
       const tableWidth = colWidths.reduce((a, b) => a + b, 0);
-      const rowHeight = 34;
+      const rowHeight = 48;  // 增加行高以容纳两行文字
       const headerHeight = 42;
-      const titleHeight = 64;
+      const titleHeight = 80;  // 增加标题栏高度
       const footerHeight = 32;
       const tableHeight = headerHeight + rows.length * rowHeight;
-      const canvasWidth = tableWidth + 48;
+      const padding = 4;  // 左右边距（很窄）
+      const canvasWidth = tableWidth + padding * 2;
       const canvasHeight = titleHeight + tableHeight + footerHeight + 24;
 
       const canvas = document.createElement('canvas');
@@ -110,38 +111,46 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       ctx.fillStyle = '#1e3a5f';
       ctx.fillRect(0, 0, canvasWidth, titleHeight);
       
-      // 标题文字
+      // 标题文字（左对齐，偏上）
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('GPT 数据总览', 24, titleHeight / 2 - 10);
+      ctx.textBaseline = 'top';
+      ctx.fillText('GPT 数据总览', padding, 18);
       
-      // 副标题
-      ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillText(`数据日期：${report.reportDate}`, 24, titleHeight / 2 + 12);
+      // 副标题（在标题下方）
+      ctx.font = '13px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillText(`数据日期：${report.reportDate}`, padding, 48);
       
       // 右侧"全区均分"标签
       const scoreText = `全区均分 ${report.overallScore} 分`;
-      ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
       const scoreTextWidth = ctx.measureText(scoreText).width;
-      const scoreX = canvasWidth - 24 - scoreTextWidth - 24;
-      const scoreY = titleHeight / 2;
+      const tagWidth = scoreTextWidth + 32;
+      const tagHeight = 32;
+      const tagX = canvasWidth - padding - tagWidth;
+      const tagY = (titleHeight - tagHeight) / 2;
+      
+      // 标签背景
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
-      ctx.fillRect(scoreX - 12, scoreY - 14, scoreTextWidth + 24, 28);
+      ctx.fillRect(tagX, tagY, tagWidth, tagHeight);
+      
+      // 标签文字（居中）
       ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'right';
-      ctx.fillText(scoreText, canvasWidth - 24, scoreY + 5);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(scoreText, tagX + tagWidth / 2, tagY + tagHeight / 2);
 
-      // 表头背景
+      // 表头背景（全宽，与标题栏连成一体）
       ctx.fillStyle = '#1e3a5f';
-      ctx.fillRect(24, titleHeight, tableWidth, headerHeight);
+      ctx.fillRect(0, titleHeight, canvasWidth, headerHeight);
       
       // 表头文字
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.textBaseline = 'middle';
-      let xPos = 24;
+      let xPos = padding;
       for (let i = 0; i < headers.length; i++) {
         ctx.textAlign = i === 0 ? 'left' : 'center';
         const textX = i === 0 ? xPos + 10 : xPos + colWidths[i] / 2;
@@ -149,12 +158,12 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         xPos += colWidths[i];
       }
       
-      // 表头底边线（白色）
+      // 表头底边线（白色，全宽）
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(24, titleHeight + headerHeight);
-      ctx.lineTo(24 + tableWidth, titleHeight + headerHeight);
+      ctx.moveTo(0, titleHeight + headerHeight);
+      ctx.lineTo(canvasWidth, titleHeight + headerHeight);
       ctx.stroke();
 
       // 数据行
@@ -162,63 +171,103 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         const row = rows[r];
         const y = titleHeight + headerHeight + r * rowHeight;
 
-        // 行背景（斑马纹）
+        // 行背景（斑马纹，全宽）
         if (r % 2 === 0) {
-          ctx.fillStyle = '#fafafa';
-          ctx.fillRect(24, y, tableWidth, rowHeight);
+          ctx.fillStyle = '#f0f7ff';
+          ctx.fillRect(0, y, canvasWidth, rowHeight);
         }
 
-        // 底边线
+        // 底边线（全宽）
         ctx.strokeStyle = '#e4e4e7';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(24, y + rowHeight);
-        ctx.lineTo(24 + tableWidth, y + rowHeight);
+        ctx.moveTo(0, y + rowHeight);
+        ctx.lineTo(canvasWidth, y + rowHeight);
         ctx.stroke();
 
-        // 得分背景色
-        const scoreBg = row.score >= 80 ? '#f0fdf4' : row.score >= 50 ? '#fefce8' : '#fef2f2';
+        // 得分背景色（浅色）
+        const scoreBg = row.score >= 80 ? '#d1fae5' : row.score >= 50 ? '#fef3c7' : '#fecaca';
         ctx.fillStyle = scoreBg;
-        const scoreXStart = 24 + colWidths[0];
+        const scoreXStart = padding + colWidths[0];
         ctx.fillRect(scoreXStart, y, colWidths[1], rowHeight);
 
-        // 数据
-        const cells = [
-          row.centerName,
-          String(row.score),
-          row.compositeScope.toFixed(1),
-          row.leaderScope.toFixed(1),
-          (row.compOverTarget > 0 ? '+' : '') + row.compOverTarget.toFixed(1),
-          (row.leadOverTarget > 0 ? '+' : '') + row.leadOverTarget.toFixed(1),
-          String(row.jobAbnormal),
-          row.salaryCoverage,  // 显示百分比
-          row.att15Rate,         // 显示百分比
-          String(row.att7Count),
-        ];
-
-        const colors = [
-          '#18181b',
-          row.score >= 80 ? '#16a34a' : row.score >= 50 ? '#ca8a04' : '#dc2626',
-          '#18181b',
-          '#18181b',
-          row.compOverTarget > 0 ? '#dc2626' : '#16a34a',
-          row.leadOverTarget > 0 ? '#dc2626' : '#16a34a',
-          row.jobAbnormal > 0 ? '#dc2626' : '#16a34a',
-          row.salaryCount > 0 ? '#dc2626' : '#16a34a',
-          row.att15Count > 0 ? '#d97706' : '#16a34a',
-          row.att7Count > 0 ? '#d97706' : '#16a34a',
-        ];
-
-        xPos = 24;
-        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-        for (let i = 0; i < cells.length; i++) {
-          ctx.fillStyle = colors[i];
-          ctx.textAlign = i === 0 ? 'left' : 'right';
-          const textX = i === 0 ? xPos + 10 : xPos + colWidths[i] - 10;
+        // 绘制单列文字（通用）
+        const drawCell = (text: string, x: number, width: number, color: string, align: 'left' | 'center' = 'center') => {
+          ctx.fillStyle = color;
+          ctx.textAlign = align;
           ctx.textBaseline = 'middle';
-          ctx.fillText(cells[i], textX, y + rowHeight / 2);
-          xPos += colWidths[i];
-        }
+          const textX = align === 'left' ? x + 10 : x + width / 2;
+          ctx.fillText(text, textX, y + rowHeight / 2);
+        };
+
+        // 绘制双行文字（管幅/超目标用）
+        const drawTwoLineCell = (line1: string, line2: string, x: number, width: number, color1: string, color2: string) => {
+          const midY = y + rowHeight / 2;
+          const lineHeight = 14;
+          ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+          // 第一行
+          ctx.fillStyle = color1;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(line1, x + width / 2, midY - lineHeight / 2 + 2);
+          // 第二行
+          ctx.fillStyle = color2;
+          ctx.fillText(line2, x + width / 2, midY + lineHeight / 2 + 2);
+        };
+
+        xPos = padding;
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+
+        // 0: 中心
+        drawCell(row.centerName, xPos, colWidths[0], '#18181b', 'left');
+        xPos += colWidths[0];
+
+        // 1: 得分
+        drawCell(String(row.score), xPos, colWidths[1], row.score >= 80 ? '#16a34a' : row.score >= 50 ? '#ca8a04' : '#dc2626');
+        xPos += colWidths[1];
+
+        // 2: 管幅（两行：综合 + 组长）
+        const scopeColor1 = row.compositeScope > 0 ? '#18181b' : '#18181b';
+        const scopeColor2 = row.leaderScope > 0 ? '#18181b' : '#18181b';
+        drawTwoLineCell(
+          `综合: ${row.compositeScope.toFixed(1)}`,
+          `组长: ${row.leaderScope.toFixed(1)}`,
+          xPos, colWidths[2], scopeColor1, scopeColor2
+        );
+        xPos += colWidths[2];
+
+        // 3: 超目标（两行：综合 + 组长）
+        const overColor1 = row.compOverTarget > 0 ? '#dc2626' : '#16a34a';
+        const overColor2 = row.leadOverTarget > 0 ? '#dc2626' : '#16a34a';
+        drawTwoLineCell(
+          `综合: ${(row.compOverTarget > 0 ? '+' : '') + row.compOverTarget.toFixed(1)}`,
+          `组长: ${(row.leadOverTarget > 0 ? '+' : '') + row.leadOverTarget.toFixed(1)}`,
+          xPos, colWidths[3], overColor1, overColor2
+        );
+        xPos += colWidths[3];
+
+        // 4: 效能异常
+        ctx.font = row.jobAbnormal > 1 ? 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif' : '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        drawCell(String(row.jobAbnormal), xPos, colWidths[4], row.jobAbnormal > 1 ? '#dc2626' : '#16a34a');
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        xPos += colWidths[4];
+
+        // 5: 绩效异常
+        ctx.font = parseFloat(row.salaryCoverage) > 3 ? 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif' : '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        drawCell(row.salaryCoverage, xPos, colWidths[5], parseFloat(row.salaryCoverage) > 3 ? '#dc2626' : '#16a34a');
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        xPos += colWidths[5];
+
+        // 6: 连续出勤
+        ctx.font = parseFloat(row.att15Rate) > 3 ? 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif' : '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        drawCell(row.att15Rate, xPos, colWidths[6], parseFloat(row.att15Rate) > 3 ? '#dc2626' : '#16a34a');
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        xPos += colWidths[6];
+
+        // 7: 长期未出勤
+        ctx.font = parseFloat(row.att7Rate) > 3 ? 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif' : '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        drawCell(String(row.att7Count), xPos, colWidths[7], parseFloat(row.att7Rate) > 3 ? '#dc2626' : '#16a34a');
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
       }
 
       // 底部时间戳
@@ -226,7 +275,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText(`由 GPT 数据通报系统自动生成 · ${report.generatedAt}`, canvasWidth - 24, canvasHeight - 12);
+      ctx.fillText(`由 GPT 数据通报系统自动生成 · ${report.generatedAt}`, canvasWidth - padding, canvasHeight - 12);
 
       // 复制到剪贴板
       canvas.toBlob(async (blob) => {

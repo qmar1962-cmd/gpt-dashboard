@@ -358,6 +358,44 @@ export default function MetricHelpPanel() {
 
           {/* 版本历史内容 */}
           <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+            {/* V2.7.0 - 2026-05-22 */}
+            <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.7.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-22</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">通报总览图片生成：支持一键生成精致报告风格图片，可直接粘贴到微信</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">图片表格结构：10列精简为8列，管幅/超目标合并为2列（每列内显示综合+组长两行）</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">图片标红规则：绩效异常&gt;1个、薪资异常&gt;3%、连续出勤&gt;3%、长期未出勤&gt;3% 红色加粗</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">图片标题栏布局：标题左上对齐，副标题在下，全区均分标签居右，整体深蓝背景全宽渲染</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">得分背景色：高分浅绿/#d1fae5、中分浅黄/#fef3c7、低分浅红/#fecaca，视觉更柔和</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-zinc-600">标题栏与表头断开问题：标题栏、表头、数据行全部全宽连成一体</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-zinc-600">左右留白过大：边距从24px压缩到4px，图片更紧凑</span>
+                </div>
+              </div>
+            </div>
+
             {/* V2.6.0 - 2026-05-21 */}
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">

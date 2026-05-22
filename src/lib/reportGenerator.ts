@@ -75,7 +75,8 @@ export interface OverviewTableRow {
   salaryCoverage: string;    // 绩效异常覆盖率
   att15Count: number;       // 连续出勤≥15天人数
   att15Rate: string;        // 连续出勤触发率
-  att7Count: number;        // 长期未出勤≥7天
+  att7Count: number;        // 长期未出勤≥7天人数
+  att7Rate: string;         // 长期未出勤触发率
 }
 
 export interface FullReport {
@@ -105,16 +106,16 @@ function normalizeDate(rawValue: any): string {
 
 /**
  * 生成完整报告
+ * 优化：直接使用 filteredData（已计算好的数据），避免重复计算
  */
 export function generateReport(params: {
-  filteredData: any[];              // enriched 后的省区数据
-  rawData?: any[];                  // 岗位效能原始数据
-  salaryData?: any[];               // 薪资异常原始数据
-  attendanceData?: any[];           // 中心出勤原始数据
-  attendance15Data?: any[];         // 连续15日出勤原始数据
-  attendance7Data?: any[];          // 连续7日未出勤原始数据
+  filteredData: any[];              // 已计算的省区/中心数据（直接使用）
+  rawData?: any[];                  // 岗位效能原始数据（仅用于明细）
+  salaryData?: any[];               // 薪资异常原始数据（仅用于明细）
+  attendance15Data?: any[];         // 连续15日出勤原始数据（仅用于明细）
+  attendance7Data?: any[];          // 连续7日未出勤原始数据（仅用于明细）
 }): FullReport {
-  const { filteredData, rawData, salaryData, attendanceData, attendance15Data, attendance7Data } = params;
+  const { filteredData, rawData, salaryData, attendance15Data, attendance7Data } = params;
 
   // T-2 日期
   const today = new Date();
@@ -223,6 +224,7 @@ export function generateReport(params: {
       }
 
       // 填充总览表数据
+      const att7Rate = center.rosterTotal > 0 ? ((center.att7Count || 0) / center.rosterTotal * 100).toFixed(1) + '%' : '0%';
       overviewTable.push({
         centerName: center.name,
         score: center.score || 0,
@@ -236,6 +238,7 @@ export function generateReport(params: {
         att15Count: center.att15Count || 0,
         att15Rate: center.att15Rate || '0%',
         att7Count: center.att7Count || 0,
+        att7Rate: att7Rate,
       });
 
       return item;
