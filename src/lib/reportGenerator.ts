@@ -72,7 +72,9 @@ export interface OverviewTableRow {
   leadOverTarget: number;    // 组长超目标
   jobAbnormal: number;       // 效能异常
   salaryCount: number;       // 绩效异常人数
-  att15Count: number;       // 连续出勤≥15天
+  salaryCoverage: string;    // 绩效异常覆盖率
+  att15Count: number;       // 连续出勤≥15天人数
+  att15Rate: string;        // 连续出勤触发率
   att7Count: number;        // 长期未出勤≥7天
 }
 
@@ -230,7 +232,9 @@ export function generateReport(params: {
         leadOverTarget: center.leadOverTarget || 0,
         jobAbnormal: center.abnormalCount || 0,
         salaryCount: center.t2SalaryCount || 0,
+        salaryCoverage: center.salaryCoverage || '0%',
         att15Count: center.att15Count || 0,
+        att15Rate: center.att15Rate || '0%',
         att7Count: center.att7Count || 0,
       });
 

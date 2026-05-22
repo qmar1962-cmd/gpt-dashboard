@@ -111,27 +111,47 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.fillText(`GPT 数据总览 — ${report.reportDate}`, 24, 40);
 
-      // 表头背景
-      ctx.fillStyle = '#f4f4f5';
+      // 表头背景（两行）
+      const headerHeight1 = 36; // 第一行高度
+      const headerHeight2 = 28; // 第二行高度
+      const headerHeight = headerHeight1 + headerHeight2;
+      
+      ctx.fillStyle = '#1e3a5f';
       ctx.fillRect(24, titleHeight, tableWidth, headerHeight);
-      ctx.strokeStyle = '#d4d4d8';
-      ctx.lineWidth = 2;
+      
+      // 第一行表头文字：综合 | 组长
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillText('综合', 24 + colWidths[2] / 2, titleHeight + headerHeight1 / 2);
+      ctx.fillText('组长', 24 + colWidths[2] + colWidths[3] + colWidths[4] / 2, titleHeight + headerHeight1 / 2);
+      
+      // 第二行表头文字：管幅 | 超目标 | 管幅 | 超目标
+      ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillText('管幅', 24 + colWidths[2] / 2, titleHeight + headerHeight1 + headerHeight2 / 2);
+      ctx.fillText('超目标', 24 + colWidths[2] + colWidths[3] / 2, titleHeight + headerHeight1 + headerHeight2 / 2);
+      ctx.fillText('管幅', 24 + colWidths[2] + colWidths[3] + colWidths[4] / 2, titleHeight + headerHeight1 + headerHeight2 / 2);
+      ctx.fillText('超目标', 24 + colWidths[2] + colWidths[3] + colWidths[4] + colWidths[5] / 2, titleHeight + headerHeight1 + headerHeight2 / 2);
+      
+      // 其他表头（单行）：中心、得分、效能异常、绩效异常、连续出勤、长期未出勤
+      ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('中心', 24 + 10, titleHeight + headerHeight / 2);
+      ctx.textAlign = 'center';
+      ctx.fillText('得分', 24 + colWidths[0] + colWidths[1] / 2, titleHeight + headerHeight / 2);
+      ctx.fillText('效能异常', 24 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + colWidths[5] + colWidths[6] / 2, titleHeight + headerHeight / 2);
+      ctx.fillText('绩效异常', 24 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + colWidths[5] + colWidths[6] + colWidths[7] / 2, titleHeight + headerHeight / 2);
+      ctx.fillText('连续出勤', 24 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + colWidths[5] + colWidths[6] + colWidths[7] + colWidths[8] / 2, titleHeight + headerHeight / 2);
+      ctx.fillText('长期未出勤', 24 + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + colWidths[5] + colWidths[6] + colWidths[7] + colWidths[8] + colWidths[9] / 2, titleHeight + headerHeight / 2);
+      
+      // 表头底边线
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(24, titleHeight + headerHeight);
       ctx.lineTo(24 + tableWidth, titleHeight + headerHeight);
       ctx.stroke();
-
-      // 表头文字
-      ctx.fillStyle = '#52525b';
-      ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.textBaseline = 'middle';
-      let xPos = 24;
-      for (let i = 0; i < headers.length; i++) {
-        ctx.textAlign = i === 0 ? 'left' : 'center';
-        const textX = i === 0 ? xPos + 10 : xPos + colWidths[i] / 2;
-        ctx.fillText(headers[i], textX, titleHeight + headerHeight / 2);
-        xPos += colWidths[i];
-      }
 
       // 数据行
       for (let r = 0; r < rows.length; r++) {
