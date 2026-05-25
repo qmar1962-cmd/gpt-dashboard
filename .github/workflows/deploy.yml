@@ -44,6 +44,8 @@ jobs:
           VITE_GITHUB_OWNER: ${{ secrets.VITE_GITHUB_OWNER || 'qmar1962-cmd' }}
           VITE_GITHUB_REPO: ${{ secrets.VITE_GITHUB_REPO || 'gpt-dashboard' }}
           VITE_GITHUB_BRANCH: ${{ secrets.VITE_GITHUB_BRANCH || 'master' }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
