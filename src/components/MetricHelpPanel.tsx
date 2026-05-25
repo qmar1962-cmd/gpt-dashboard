@@ -409,6 +409,36 @@ export default function MetricHelpPanel() {
 
           {/* 版本历史内容 */}
           <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+            {/* V2.9.0 - 2026-05-25 */}
+            <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.9.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-25</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">协作数据存储迁移：从 GitHub API 迁移到 Supabase 数据库，解决多人并发编辑冲突</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">支持 5 种协作数据实时同步：排休计划、未出勤原因、考勤负责人、班组负责人、工时低原因</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">支持实时多人协作：Supabase Realtime 自动推送，多人同时编辑不再冲突</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">移除 GitHub API 限流限制：无 60次/小时 请求上限，支持 20 人同时使用</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-zinc-600">旧数据乱码问题：修复了 GitHub API 编码错误导致的历史数据中文乱码</span>
+                </div>
+              </div>
+            </div>
+
             {/* V2.8.0 - 2026-05-22 */}
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
