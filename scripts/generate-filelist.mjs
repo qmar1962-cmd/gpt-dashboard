@@ -3,44 +3,55 @@
 /**
  * 生成 public/database/filelist.json
  * 使用 git log 获取文件的最后修改时间（而非 checkout 时间）
+ * 同时计算文件 MD5 hash，作为增量更新的备用判断依据
  * 解决 GitHub Actions checkout 重置文件 mtime 导致增量更新失效的问题
  */
 
 import { execSync } from 'child_process';
-import { readdirSync, statSync, writeFileSync } from 'fs';
+import { readdirSync, statSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { createHash } from 'crypto';
 
 const DATABASE_DIR = 'public/database';
 
 /**
  * 获取文件的最后 git commit 时间
- * 如果文件尚未提交（新文件），返回当前时间
+ * 如果 git log 失败，返回 null（由调用方处理 fallback）
  */
 function getGitMtime(filepath) {
   try {
     // git log -1 --format=%cI: 获取最后一次 commit 的 ISO 8601 时间
-    // %cI = committer date in ISO 8601 (e.g. 2026-05-12T11:23:22+08:00)
     const result = execSync(`git log -1 --format=%cI -- "${filepath}"`, {
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'ignore'],
+      stdio: ['pipe', 'pipe', 'pipe'],
       cwd: process.cwd(),
     });
     const isoTime = result.trim();
     if (isoTime) {
-      // 转换为 UTC 时间（与现有 filelist.json 格式一致：2026-05-12T03:23:22.000Z）
       const date = new Date(isoTime);
       return date.toISOString();
     }
-  } catch {
-    // git log 失败（文件未提交或不在 git 历史中）
+  } catch (error) {
+    console.error(`[警告] git log 失败: ${filepath}`);
+    console.error(`  错误:`, error.message);
+    if (error.stderr) {
+      console.error(`  stderr:`, error.stderr.toString());
+    }
   }
+  return null;
+}
 
-  // fallback：使用文件 stat 时间（新文件尚未 commit）
+/**
+ * 计算文件 MD5 hash
+ * 用于增量更新判断（不受 mtime 影响，只与文件内容有关）
+ */
+function getFileHash(filepath) {
   try {
-    const stats = statSync(filepath);
-    return stats.mtime.toISOString();
-  } catch {
-    return new Date().toISOString();
+    const content = readFileSync(filepath);
+    return createHash('md5').update(content).digest('hex');
+  } catch (error) {
+    console.error(`[警告] 计算 hash 失败: ${filepath}`, error.message);
+    return null;
   }
 }
 
@@ -49,7 +60,7 @@ function getGitMtime(filepath) {
  */
 function generateFileList() {
   const dbDir = join(process.cwd(), DATABASE_DIR);
-  
+
   // 只处理 .xlsx 和 .csv 文件（排除 filelist.json 本身）
   const files = readdirSync(dbDir).filter(
     (f) => (f.endsWith('.xlsx') || f.endsWith('.csv')) && f !== 'filelist.json'
@@ -60,14 +71,29 @@ function generateFileList() {
     files: {},
   };
 
+  let gitLogSuccess = 0;
+  let gitLogFail = 0;
+
   for (const file of files) {
     const filepath = join(DATABASE_DIR, file);
-    const stats = statSync(filepath);
+    const fullPath = join(process.cwd(), filepath);
+    const stats = statSync(fullPath);
+
+    // 尝试获取 git commit 时间
     const mtime = getGitMtime(filepath);
+    if (mtime) {
+      gitLogSuccess++;
+    } else {
+      gitLogFail++;
+    }
+
+    // 计算文件 hash（备用判断依据）
+    const hash = getFileHash(fullPath);
 
     fileList.files[file] = {
-      mtime: mtime,
+      mtime: mtime || stats.mtime.toISOString(),
       size: stats.size,
+      hash: hash,
     };
   }
 
@@ -76,6 +102,7 @@ function generateFileList() {
   writeFileSync(outputPath, JSON.stringify(fileList, null, 2));
 
   console.log(`✅ 生成 filelist.json：共 ${files.length} 个文件`);
+  console.log(`   git log 成功: ${gitLogSuccess}, 失败: ${gitLogFail}`);
   console.log(`   generated_at: ${fileList.generated_at}`);
 }
 

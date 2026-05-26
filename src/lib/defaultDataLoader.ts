@@ -172,7 +172,15 @@ function getFilesToReload(
       continue;
     }
 
-    // 对比 mtime（只比较到秒，忽略毫秒和时区差异）和 size
+    // 优先用 hash 对比（最可靠，不受 mtime 影响）
+    if (remoteInfo.hash && localInfo.hash) {
+      if (remoteInfo.hash !== localInfo.hash) {
+        toReload.push(filename);
+      }
+      continue;
+    }
+
+    // fallback：对比 mtime（只比较到秒，忽略毫秒和时区差异）和 size
     const remoteMtimeSec = remoteInfo.mtime.split('.')[0]; // 去掉毫秒部分
     const localMtimeSec = localInfo.mtime.split('.')[0];
     if (remoteMtimeSec !== localMtimeSec || remoteInfo.size !== localInfo.size) {
