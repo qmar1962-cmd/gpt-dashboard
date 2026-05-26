@@ -1,19 +1,10 @@
 ﻿/**
  * 数据库存储服务
- * - 核心业务数据（每日汇总）: localStorage + 腾讯云 CloudBase 双写
+ * - 核心业务数据（每日汇总）: localStorage
  * - 原始大体积数据（薪资/出勤/效能）: IndexedDB（容量几百MB~数GB）
  */
 
 import { DataType, CenterData, DailyData, TrendQuery } from '../types/data';
-import {
-  initCloudBase,
-  isCloudBaseReady,
-  saveToCloudBase,
-  readFromCloudBase,
-  getAllFromCloudBase,
-  cleanupCloudBase,
-  clearCloudBase,
-} from './cloudbase';
 import {
   idbSaveRawData,
   idbGetRawData,
@@ -52,11 +43,8 @@ function setToStorage<T>(key: string, value: T): void {
 
 // ====== 初始化 ======
 
-let cloudbaseInitialized = false;
-
 /**
  * 初始化数据库（调用一次即可）
- * 自动尝试连接 CloudBase，失败则使用 localStorage
  */
 export async function initDatabase(): Promise<boolean> {
   // 启动时修复 localStorage 中的脏数据（centers 为 undefined 的情况）
@@ -81,24 +69,13 @@ export async function initDatabase(): Promise<boolean> {
     console.warn('[DB] 启动时数据修复失败', e);
   }
 
-  if (cloudbaseInitialized) return isCloudBaseReady();
-  
-  cloudbaseInitialized = true;
-  
-  const success = await initCloudBase();
-  if (success) {
-    console.log('[DB] ✅ CloudBase 初始化成功，共享数据功能已启用');
-  } else {
-    console.warn('[DB] 🔴 CloudBase 初始化失败，共享数据功能不可用（仅本地模式）');
-  }
-  
-  return success;
+  return true;
 }
 
 // ====== 核心数据操作 ======
 
 /**
- * 保存每日数据（双写：Firestore + localStorage）
+ * 保存每日数据（localStorage）
  * 大数据量时跳过 localStorage，避免 QuotaExceededError
  */
 export async function saveDailyData(
@@ -156,42 +133,12 @@ export async function saveDailyData(
     };
     setToStorage(DAILY_DATA_KEY, metaData);
   }
-
-  // ===== 2. CloudBase 写入（异步，不阻塞） =====
-  if (isCloudBaseReady()) {
-    // 写入日期文档
-    const dateDocKey = `daily_${date}`;
-    saveToCloudBase(dateDocKey, {
-      date,
-      uploadTime: Date.now(),
-      centers: centerDataList.reduce((acc, c) => ({ ...acc, [c.id]: c }), {}),
-    });
-
-    // 写入各中心数据
-    centerDataList.forEach(centerData => {
-      const key = `${centerData.id}_${dataType}_${date}`;
-      saveToCloudBase(key, centerData);
-    });
-  }
 }
 
 /**
  * 获取指定日期的数据
- * 优先从 Firestore 读，降级到 localStorage
  */
 export async function getDataByDate(date: string): Promise<DailyData | null> {
-  // 优先 CloudBase
-  if (isCloudBaseReady()) {
-    try {
-      const key = `daily_${date}`;
-      const data = await readFromCloudBase(key);
-      if (data) return data as DailyData;
-    } catch (e) {
-      console.warn('[DB] CloudBase 读取失败，降级到 localStorage');
-    }
-  }
-
-  // 降级 localStorage
   const dailyData = getFromStorage<Record<string, any>>(DAILY_DATA_KEY);
   return dailyData ? dailyData[date] || null : null;
 }
@@ -200,22 +147,6 @@ export async function getDataByDate(date: string): Promise<DailyData | null> {
  * 获取所有日期列表
  */
 export async function getAllDates(): Promise<string[]> {
-  // 优先 CloudBase
-  if (isCloudBaseReady()) {
-    try {
-      const allData = await getAllFromCloudBase();
-      const dates = new Set<string>();
-      Object.values(allData).forEach((v: any) => {
-        if (v.date) dates.add(v.date);
-      });
-      const sorted = Array.from(dates).sort((a, b) => b.localeCompare(a));
-      if (sorted.length > 0) return sorted;
-    } catch (e) {
-      console.warn('[DB] CloudBase 获取日期列表失败');
-    }
-  }
-
-  // 降级 localStorage
   const dailyData = getFromStorage<Record<string, any>>(DAILY_DATA_KEY);
   if (!dailyData) return [];
   return Object.keys(dailyData).sort((a, b) => b.localeCompare(a));
@@ -237,16 +168,9 @@ export async function getTrendData(query: TrendQuery): Promise<CenterData[]> {
 
     let data: any = null;
 
-    // 优先 CloudBase
-    if (isCloudBaseReady()) {
-      data = await readFromCloudBase(key);
-    }
-
-    // 降级 localStorage
-    if (!data) {
-      const centerDataStorage = getFromStorage<Record<string, any>>(CENTER_DATA_KEY);
-      data = centerDataStorage ? centerDataStorage[key] : null;
-    }
+    // 从 localStorage 读取
+    const centerDataStorage = getFromStorage<Record<string, any>>(CENTER_DATA_KEY);
+    data = centerDataStorage ? centerDataStorage[key] : null;
 
     if (data) {
       if (dataType === 'job_performance' && jobName) {
@@ -270,29 +194,9 @@ export async function getTrendData(query: TrendQuery): Promise<CenterData[]> {
  * 获取所有中心列表
  */
 export async function getAllCenters(): Promise<{ id: string; province: string; center: string }[]> {
-  // 优先 CloudBase
-  if (isCloudBaseReady()) {
-    try {
-      const allData = await getAllFromCloudBase();
-      const centerSet = new Set<string>();
-      const centers: { id: string; province: string; center: string }[] = [];
-
-      Object.values(allData).forEach((v: any) => {
-        if (v.id && v.province && v.center && !centerSet.has(v.id)) {
-          centerSet.add(v.id);
-          centers.push({ id: v.id, province: v.province, center: v.center });
-        }
-      });
-
-      if (centers.length > 0) return centers.sort((a, b) => a.province.localeCompare(b.province));
-    } catch (e) {
-      console.warn('[DB] CloudBase 获取中心列表失败');
-    }
-  }
-
-  // 降级 localStorage
   const dailyData = getFromStorage<Record<string, any>>(DAILY_DATA_KEY);
   if (!dailyData) return [];
+
 
   const centerSet = new Set<string>();
   const centers: { id: string; province: string; center: string }[] = [];
@@ -320,15 +224,10 @@ export async function getAllCenters(): Promise<{ id: string; province: string; c
 
 /**
  * 清理过期数据（超过 N 天）
- * 同时清理 Firestore 和 localStorage
+ * 清理 localStorage 和 IndexedDB
  */
 export async function cleanupExpiredData(daysToKeep: number = 30): Promise<number> {
   let totalDeleted = 0;
-
-  // CloudBase 清理
-  if (isCloudBaseReady()) {
-    totalDeleted += await cleanupCloudBase(daysToKeep);
-  }
 
   // localStorage 清理
   const dailyData = getFromStorage<Record<string, any>>(DAILY_DATA_KEY);
@@ -548,7 +447,7 @@ export async function getStorageStats() {
   } catch (e) { /* ignore */ }
 
   return {
-    storageMode: isCloudBaseReady() ? '腾讯云 CloudBase + IndexedDB 缓存' : 'IndexedDB（本地）',
+    storageMode: 'IndexedDB（本地）',
     totalDays: dates.length,
     totalDataPoints: centerKeys.length,
     storageSize: totalSize,
@@ -557,19 +456,14 @@ export async function getStorageStats() {
     idbQuotaMB: idbQuota,
     oldestDate: dates.length > 0 ? [...dates].sort()[0] : '无数据',
     newestDate: dates.length > 0 ? [...dates].sort().reverse()[0] : '无数据',
-    cloudbaseConnected: isCloudBaseReady(),
+    cloudbaseConnected: false,
   };
 }
 
 /**
- * 清空所有数据（Firestore + IndexedDB + localStorage）
+ * 清空所有数据（IndexedDB + localStorage）
  */
 export async function clearAllData(): Promise<void> {
-  // 清空 CloudBase
-  if (isCloudBaseReady()) {
-    await clearCloudBase();
-  }
-
   // 清空 IndexedDB
   try {
     await idbClearAllRawData();

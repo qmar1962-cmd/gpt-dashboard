@@ -12,7 +12,6 @@
     "build:data": "node scripts/build-json-data.mjs"
   },
   "dependencies": {
-    "@cloudbase/js-sdk": "^3.3.10",
     "@google/genai": "^1.29.0",
     "@supabase/supabase-js": "^2.106.1",
     "@tailwindcss/vite": "^4.1.14",

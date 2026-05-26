@@ -8,7 +8,6 @@ import { cn } from '../lib/utils';
 import AttendanceSummaryDetailModal from './AttendanceSummaryDetailModal';
 import { idbGetRawData } from '../lib/database';
 import { LoadingSpinner } from './LoadingOverlay';
-import { saveSharedData, readSharedData, isCloudBaseReady } from '../lib/cloudbase';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
 
 // ── 类型定义 ─────────────────────────────────────────────
