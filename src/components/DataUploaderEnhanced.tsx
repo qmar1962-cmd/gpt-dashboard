@@ -4,7 +4,7 @@ import { Upload, FileSpreadsheet, FileText, X, CheckCircle, AlertCircle, Databas
 import { cn } from '../lib/utils';
 import { DataType } from '../types/data';
 import TemplateSelector, { TEMPLATE_LABELS } from './TemplateSelector';
-import * as xlsx from 'xlsx';
+// xlsx 改为动态导入（减少主包大小）
 
 /**
  * 将各种格式的日期值统一转换为 YYYY-MM-DD 字符串
@@ -97,6 +97,9 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
     setFileName(file.name);
 
     try {
+      // 动态导入 xlsx（避免打入主包）
+      const xlsx = await import('xlsx');
+      
       const arrayBuffer = await file.arrayBuffer();
       let workbook;
       

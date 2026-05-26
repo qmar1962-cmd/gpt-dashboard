@@ -34,8 +34,10 @@ interface FileListData {
 
 // ── 常量 ─────────────────────────────────────────────────────
 
-const FILE_LIST_URL = './database/json/filelist.json';  // JSON 文件的 filelist（由 Excel 预解析生成）
-const FILE_BASE_URL = './database/json';  // JSON 文件所在目录
+const JSON_FILE_LIST_URL = './database/json/filelist.json';  // JSON 文件的 filelist（由 Excel 预解析生成，优先使用）
+const JSON_FILE_BASE_URL = './database/json';  // JSON 文件所在目录
+const EXCEL_FILE_LIST_URL = './database/filelist.json';  // Excel 文件的 filelist（兼容模式，回退使用）
+const EXCEL_FILE_BASE_URL = './database';  // Excel 文件所在目录
 const FILE_LIST_CACHE_KEY = 'gpt_filelist_cache';  // 本地缓存的文件列表
 
 // ── Excel 文件名前缀 -> 数据类型的映射 ──────────────────
@@ -69,23 +71,40 @@ function inferDataType(filename: string): DataType | null {
 }
 
 /**
- * 加载并解析单个 JSON 文件（由 Excel 预解析生成）
+ * 加载并解析单个文件（支持 JSON 和 Excel 两种模式）
+ * @param filename 文件名（xxx.json 或 xxx.xlsx）
+ * @param isJson 是否使用 JSON 模式（true=JSON, false=Excel）
  */
-async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataType: DataType } | null> {
+async function loadAndParseFile(filename: string, isJson: boolean): Promise<{ data: any[]; dataType: DataType } | null> {
   try {
-    const url = `${FILE_BASE_URL}/${filename}`;
+    // 根据模式选择基础 URL
+    const baseUrl = isJson ? JSON_FILE_BASE_URL : EXCEL_FILE_BASE_URL;
+    const url = `${baseUrl}/${filename}`;
+    
     const response = await fetch(url, { cache: 'no-cache' });  // 强制获取最新版本
     if (!response.ok) {
       console.warn(`[默认数据] 无法加载文件(${response.status})：${filename}`);
       return null;
     }
 
-    // JSON 文件直接解析（无需 XLSX）
-    const rawData = await response.json();
+    let rawData: any[];
+    
+    if (isJson) {
+      // JSON 模式：直接解析
+      rawData = await response.json();
+    } else {
+      // Excel 模式：需要 XLSX 解析
+      const XLSX = await import('xlsx');  // 动态导入，减少包大小
+      const arrayBuffer = await response.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) return null;
+      rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+    }
 
     if (!Array.isArray(rawData) || rawData.length === 0) return null;
 
-    // 推断数据类型（filename 是 xxx.json，inferDataType 仍能匹配前缀）
+    // 推断数据类型
     const dataType = inferDataType(filename);
     if (!dataType) {
       console.warn(`[默认数据] 无法推断文件类型：${filename}`);
@@ -102,23 +121,42 @@ async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataTy
 // ── 核心函数：获取文件列表（增量更新用）─────────────
 
 /**
- * 获取远程 filelist.json（强制不缓存）
+ * 获取远程 filelist（优先 JSON，失败回退 Excel）
  * 返回：{ filename: { mtime, size } }
  */
-async function fetchRemoteFileList(): Promise<FileListData | null> {
+async function fetchRemoteFileList(): Promise<{ data: FileListData | null; isJson: boolean }> {
+  // 1. 先尝试加载 JSON filelist（快速路径）
   try {
-    const url = `${FILE_LIST_URL}?t=${Date.now()}`;  // 防止缓存
-    const res = await fetch(url, { cache: 'no-cache' });
-    if (!res.ok) {
-      console.warn('[默认数据] 获取 filelist.json 失败:', res.status);
-      return null;
+    const url = `${JSON_FILE_LIST_URL}?t=${Date.now()}`;
+    const res = await fetch(url, { 
+      cache: 'no-cache',
+      signal: AbortSignal.timeout(5000) // 5秒超时，避免卡住
+    });
+    
+    if (res.ok) {
+      const data: FileListData = await res.json();
+      console.log('[默认数据] 使用 JSON filelist（快速模式）');
+      return { data, isJson: true };
     }
-    const data: FileListData = await res.json();
-    return data;
   } catch (err) {
-    console.warn('[默认数据] 获取远程 filelist.json 失败:', err);
-    return null;
+    console.warn('[默认数据] JSON filelist 加载失败，回退到 Excel 模式', err);
   }
+  
+  // 2. JSON 失败，回退到 Excel filelist（兼容模式）
+  try {
+    const url = `${EXCEL_FILE_LIST_URL}?t=${Date.now()}`;
+    const res = await fetch(url, { cache: 'no-cache' });
+    
+    if (res.ok) {
+      const data: FileListData = await res.json();
+      console.log('[默认数据] 使用 Excel filelist（兼容模式）');
+      return { data, isJson: false };
+    }
+  } catch (err) {
+    console.warn('[默认数据] Excel filelist 也加载失败', err);
+  }
+  
+  return { data: null, isJson: false };
 }
 
 /**
@@ -233,22 +271,20 @@ export async function loadDefaultData(
     // 确保数据库已初始化
     await initDatabase();
 
-    // 1. 获取远程文件列表
-    const remoteFileList = await fetchRemoteFileList();
+    // 1. 获取远程文件列表（优先 JSON，失败回退 Excel）
+    const { data: remoteFileList, isJson } = await fetchRemoteFileList();
     if (!remoteFileList) {
       console.warn('[默认数据] 无法获取远程文件列表，使用本地缓存');
-      // 如果无法获取远程列表，返回 false（让调用方决定是否使用缓存数据）
       return false;
     }
 
     const remoteFiles = Object.keys(remoteFileList.files);
-    console.log(`[默认数据] 远程文件列表：${remoteFiles.length} 个文件`);
+    console.log(`[默认数据] 远程文件列表：${remoteFiles.length} 个文件（${isJson ? 'JSON' : 'Excel'}模式）`);
 
     // 2. 获取本地缓存的文件列表
     const localFileList = getLocalFileListCache();
 
     // 2.5 检测被删除的文件并清除对应类型的 IndexedDB 数据
-    // 防止删除旧文件后，IndexedDB 中仍然保留旧数据导致数据重复
     await clearDeletedFileData(remoteFileList, localFileList);
 
     // 3. 对比，找出需要重新加载的文件
@@ -262,7 +298,7 @@ export async function loadDefaultData(
       console.log(`[默认数据] 需要重新加载 ${filesToReload.length} 个文件：`, filesToReload);
     } else {
       console.log('[默认数据] 所有文件未变化，无需重新加载');
-      return false;  // 没有重新加载任何文件
+      return false;
     }
 
     // 4. 并行加载需要重新加载的文件
@@ -271,7 +307,7 @@ export async function loadDefaultData(
 
     const loadPromises = filesToReload.map(async (file, idx) => {
       try {
-        const result = await loadAndParseFile(file);
+        const result = await loadAndParseFile(file, isJson);  // 传递 isJson 标志
         if (!result) {
           failCount++;
           return;
