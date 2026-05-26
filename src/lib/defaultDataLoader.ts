@@ -1,11 +1,10 @@
 /**
- * 默认数据加载器 - 从 public/database/ 读取 Excel 文件并解析
+ * 默认数据加载器 - 从 public/database/json/ 读取 JSON 文件（由 Excel 预解析生成）
  * B2 方案：数据随部署打包，所有用户看到相同数据
- * 
+ *
  * 增量更新：只重新加载修改时间变化的文件，其他使用缓存
  */
 
-import * as XLSX from 'xlsx';
 import { DataType } from '../types/data';
 import { extractDateFromData } from './dataParser';
 import {
@@ -35,7 +34,8 @@ interface FileListData {
 
 // ── 常量 ─────────────────────────────────────────────────────
 
-const FILE_LIST_URL = './database/filelist.json';
+const FILE_LIST_URL = './database/json/filelist.json';  // JSON 文件的 filelist（由 Excel 预解析生成）
+const FILE_BASE_URL = './database/json';  // JSON 文件所在目录
 const FILE_LIST_CACHE_KEY = 'gpt_filelist_cache';  // 本地缓存的文件列表
 
 // ── Excel 文件名前缀 -> 数据类型的映射 ──────────────────
@@ -69,27 +69,23 @@ function inferDataType(filename: string): DataType | null {
 }
 
 /**
- * 加载并解析单个 Excel 文件
+ * 加载并解析单个 JSON 文件（由 Excel 预解析生成）
  */
 async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataType: DataType } | null> {
   try {
-    const url = `./database/${filename}`;
+    const url = `${FILE_BASE_URL}/${filename}`;
     const response = await fetch(url, { cache: 'no-cache' });  // 强制获取最新版本
     if (!response.ok) {
       console.warn(`[默认数据] 无法加载文件(${response.status})：${filename}`);
       return null;
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) return null;
+    // JSON 文件直接解析（无需 XLSX）
+    const rawData = await response.json();
 
-    const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+    if (!Array.isArray(rawData) || rawData.length === 0) return null;
 
-    if (rawData.length === 0) return null;
-
-    // 推断数据类型
+    // 推断数据类型（filename 是 xxx.json，inferDataType 仍能匹配前缀）
     const dataType = inferDataType(filename);
     if (!dataType) {
       console.warn(`[默认数据] 无法推断文件类型：${filename}`);
@@ -98,7 +94,7 @@ async function loadAndParseFile(filename: string): Promise<{ data: any[]; dataTy
 
     return { data: rawData, dataType };
   } catch (error) {
-    console.error(`[默认数据] 解析文件失败 ${filename}:`, error);
+    console.error(`[默认数据] 加载文件失败 ${filename}:`, error);
     return null;
   }
 }

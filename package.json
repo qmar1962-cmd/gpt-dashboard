@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "build:data": "node scripts/build-json-data.mjs"
   },
   "dependencies": {
     "@cloudbase/js-sdk": "^3.3.10",

@@ -34,3 +34,4 @@ npm-debug.log*
 # Backup
 backup-*.zip
 .env.local
+public/database/json/
