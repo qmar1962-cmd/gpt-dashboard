@@ -409,6 +409,32 @@ export default function MetricHelpPanel() {
 
           {/* 版本历史内容 */}
           <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+            {/* V3.0.0 - 2026-05-26 */}
+            <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V3.0.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-26</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">数据加载架构升级：Excel 预解析为 JSON，浏览器直接加载 JSON，速度提升 5 倍+</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">增量更新修复：引入 MD5 hash 对比机制，解决 filelist.json mtime 被重置问题，只加载变更文件</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">自动兼容模式：先尝试 JSON 加载，失败后自动回退 Excel，本地开发无需手动生成 JSON</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">动态导入 xlsx：xlsx 库从主包中拆分，减少主包体积，加速首屏加载</span>
+                </div>
+              </div>
+            </div>
+
             {/* V2.9.0 - 2026-05-25 */}
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
