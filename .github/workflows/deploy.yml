@@ -39,9 +39,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate filelist.json (with git mtime)
-        run: node scripts/generate-filelist.mjs
-
       - name: Build
         run: npm run build
         env:
