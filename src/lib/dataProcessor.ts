@@ -1,70 +1,12 @@
 /**
  * 数据处理和转换工具函数
  */
-
-/**
- * 将 Excel 日期序列号转换为 YYYY-MM-DD 格式
- * @param excelDate Excel 日期序列号（如 46136.33383101852）或字符串（如 2026/4/1）
- * @returns YYYY-MM-DD 格式字符串（月和日均补零）
- */
-function convertExcelDate(excelDate: any): string {
-  // 如果是字符串格式，统一转换为 YYYY-MM-DD 并补零
-  if (typeof excelDate === 'string') {
-    const normalized = excelDate.replace(/\//g, '-');
-    const parts = normalized.split('-');
-    if (parts.length === 3) {
-      const year = parts[0];
-      const month = parts[1].padStart(2, '0');
-      const day = parts[2].padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-    return normalized;
-  }
-  
-  // 如果是数字（Excel 序列号）
-  if (typeof excelDate === 'number') {
-    // 使用 UTC 时间避免时区问题
-    const excelStartDate = Date.UTC(1899, 11, 30);
-    const date = new Date(excelStartDate + excelDate * 24 * 60 * 60 * 1000);
-    
-    const utcYear = date.getUTCFullYear();
-    const utcMonth = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const utcDay = String(date.getUTCDate()).padStart(2, '0');
-    
-    return `${utcYear}-${utcMonth}-${utcDay}`;
-  }
-  
-  // 其他情况返回空字符串
-  return '';
-}
-
-/**
- * 构建固定的华中大区数据结构
- * 使用 COUNTIFS 逻辑从数据库中提取数据填充
- * @param rawData 原始上传数据
- * @param dataType 数据类型
- * @param date 数据日期（T-2）
- */
-/**
- * 获取北京时间（Asia/Shanghai）的 YYYY-MM-DD 字符串
- * 不受浏览器时区影响，始终返回北京时间
- */
-function getBeijingDateString(offsetDays: number = 0): string {
-  // 最可靠方式：直接操作时间戳，完全避开 setUTCDate 的边界 bug
-  const now = new Date();
-  // 北京时间 = UTC + 8h；offsetDays 直接加毫秒数
-  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 + offsetDays * 24 * 60 * 60 * 1000;
-  const d = new Date(beijingMs);
-  const year = d.getUTCFullYear();
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+import { parseDate, beijingDate, weekDateRange } from './dateUtils';
 
 export function buildFixedHuazhongData(rawData: any[], dataType: string, date: string): any[] {
   // T-2 = 今天 - 2天（北京时间基准）
-  const t2DateStr = getBeijingDateString(-2);
-  const t3DateStr = getBeijingDateString(-3);
+  const t2DateStr = beijingDate(-2);
+  const t3DateStr = beijingDate(-3);
 
   // 默认数据（用于无原始数据时的回退）
   const defaultDataMap = new Map([
@@ -205,7 +147,7 @@ export function buildFixedHuazhongData(rawData: any[], dataType: string, date: s
         const rowProvince = row.省区 || row.province;
         const rowCenter = row.中心 || row.center;
         const rawRowDate = row.数据日期 || row.date || row.日期;
-        const rowDate = convertExcelDate(rawRowDate);
+        const rowDate = parseDate(rawRowDate);
         
         return rowProvince.includes(provData.province) && 
                rowCenter === center.name && 
@@ -217,7 +159,7 @@ export function buildFixedHuazhongData(rawData: any[], dataType: string, date: s
         const rowProvince = row.省区 || row.province;
         const rowCenter = row.中心 || row.center;
         const rawRowDate = row.数据日期 || row.date || row.日期;
-        const rowDate = convertExcelDate(rawRowDate);
+        const rowDate = parseDate(rawRowDate);
         
         return rowProvince.includes(provData.province) && 
                rowCenter === center.name && 
@@ -320,31 +262,17 @@ export function getWeeklyEfficiencyDetail(
   // 从数据中提取所有日期，取最新日期作为 T-2 基准（兼容历史数据）
   const allDates = rawData.map(row => {
     const rawDate = row.数据日期 || row.date || row.日期;
-    return convertExcelDate(rawDate);
+    return parseDate(rawDate);
   }).filter(d => d).sort((a, b) => b.localeCompare(a));
   
-  // T-2 = 今天 - 2天（北京时间基准，和 App.tsx / 薪资异常保持一致）
-  const now = new Date();
-  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
-  const t2 = new Date(beijingMs);
-
-  // 展示 T-2 前7天（含T-2当天），即 T-8 ~ T-2
   const days: WeeklyDetail[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(t2);
-    d.setUTCDate(t2.getUTCDate() - i);
-    // UTC 日期字符串 YYYY-MM-DD（与 convertExcelDate 输出保持一致）
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(d.getUTCDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
-
+  for (const { dateStr, dateLabel } of weekDateRange(7)) {
     // 筛选该中心该天的数据
     const rows = rawData.filter(row => {
       const rowProvince = row.省区 || row.province || '';
       const rowCenter = row.中心 || row.center || '';
       const rawDate = row.数据日期 || row.date || row.日期;
-      const rowDate = convertExcelDate(rawDate);
+      const rowDate = parseDate(rawDate);
       return (
         rowProvince.includes(provinceName) &&
         rowCenter.includes(centerName) &&
@@ -367,11 +295,6 @@ export function getWeeklyEfficiencyDetail(
       avgValue: parseFloat(row['全网同岗均值'] || row.avgValue || 0),
       avgDeviation: parseFloat(row['均值偏离（%）'] || row.avgDeviation || 0),
     }));
-
-    // 格式化日期为 MM/DD（UTC，即北京时间）
-    const month = d.getUTCMonth() + 1;
-    const day = d.getUTCDate();
-    const dateLabel = `${month}/${day}`;
 
     days.push({
       date: dateStr,
@@ -401,43 +324,6 @@ export interface WeeklyDetail {
 }
 
 /**
- * 将 Excel 日期序列号转换为 YYYY-MM-DD 字符串
- * Excel 日期起点为 1900-01-01（序列号1），但有一个闰年 bug 导致序列号 1 = 1900-01-01
- */
-function excelSerialToDateStr(serial: number): string | null {
-  if (!serial || isNaN(serial) || serial < 1) return null;
-  // Excel 序列号转 JS Date：起点 1899-12-30（修正 Excel 的闰年 bug）
-  const epoch = new Date(1899, 11, 30); // 1899-12-30
-  const date = new Date(epoch.getTime() + serial * 86400000);
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-/**
- * 将薪资数据中的日期字段统一转换为 YYYY-MM-DD 格式
- * 支持多种输入格式：Excel 序列号、YYYY/MM/DD、YYYY-MM-DD、YYYYMMDD
- */
-function normalizeSalaryDate(rawValue: any): string {
-  if (typeof rawValue === 'number') {
-    const result = excelSerialToDateStr(rawValue);
-    return result || '';
-  }
-  if (typeof rawValue === 'string') {
-    const trimmed = rawValue.trim();
-    // 纯数字字符串可能是 Excel 序列号
-    if (/^\d+(\.\d+)?$/.test(trimmed)) {
-      const result = excelSerialToDateStr(parseFloat(trimmed));
-      return result || trimmed;
-    }
-    // YYYY/MM/DD 或 YYYY-MM-DD
-    return trimmed.replace(/\//g, '-');
-  }
-  return '';
-}
-
-/**
  * 提取指定中心近一周的绩效异常（工资偏高）人员明细
  * 以现实日期 T-2（今天 - 2天）为基准，展示前7天（含T-2当天）
  * salaryData 中每一行本身就是异常记录
@@ -454,7 +340,7 @@ export function getWeeklySalaryDetail(
   // 预处理：将每行的数据日期转换为 YYYY-MM-DD
   const normalized = salaryData.map(row => ({
     ...row,
-    _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
+    _dateStr: parseDate(row['数据日期'] || row.date || row.日期),
   }));
 
   // 预处理出勤数据：筛选"中心操作"部门，按中心+日期聚合出勤人数
@@ -469,7 +355,7 @@ export function getWeeklySalaryDetail(
       
       const province = row.省区名称 || row.省区 || row.province || '';
       const center = row.中心名称 || row.中心 || row.center || '';
-      const dateStr = normalizeSalaryDate(row.日期 || row.数据日期 || row.date);
+      const dateStr = parseDate(row.日期 || row.数据日期 || row.date);
       const centerMatch = center.includes(centerName) || centerName.includes(center);
       const normProv = province.replace(/区$/, '');
       const normProvName = provinceName.replace(/区$/, '');
@@ -488,18 +374,8 @@ export function getWeeklySalaryDetail(
   }
 
   // T-2 = 今天往前推 2 天（北京时间基准）
-  const now = new Date();
-  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
-  const t2 = new Date(beijingMs);
-
   const days: SalaryWeeklyDetail[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(t2);
-    d.setUTCDate(t2.getUTCDate() - i);
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(d.getUTCDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
+  for (const { dateStr, dateLabel } of weekDateRange(7)) {
 
     // 筛选该中心该天的数据（模糊匹配：数据中可能带"区"/"中心"后缀）
     const rows = normalized.filter(row => {
@@ -521,10 +397,6 @@ export function getWeeklySalaryDetail(
       jobAvgSalary: parseFloat(row.岗位上月均值 || 0),
       avgDeviation: parseFloat(row['均值偏离（%）'] || 0),
     }));
-
-    const month = d.getUTCMonth() + 1;
-    const day = d.getUTCDate();
-    const dateLabel = `${month}/${day}`;
 
     // 每天用各自日期的算薪人数计算覆盖率
     const attendance = attendanceMap.get(dateStr);
@@ -590,21 +462,11 @@ export function getWeeklyAttendance15Detail(
 
   const normalized = attendance15Data.map(row => ({
     ...row,
-    _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
+    _dateStr: parseDate(row['数据日期'] || row.date || row.日期),
   }));
 
-  const now = new Date();
-  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
-  const t2 = new Date(beijingMs);
-
   const days: Attendance15WeeklyDetail[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(t2);
-    d.setUTCDate(t2.getUTCDate() - i);
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(d.getUTCDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
+  for (const { dateStr, dateLabel } of weekDateRange(7)) {
 
     const rows = normalized.filter(row => {
       const rowProvince = row.省区 || row.省区名称 || '';
@@ -623,10 +485,6 @@ export function getWeeklyAttendance15Detail(
       continuousDays: parseInt(row.连续出勤天数 || 0) || 0,
       employeeId: String(row.工号 || row['员工编号'] || '').trim(),
     }));
-
-    const month = d.getUTCMonth() + 1;
-    const day = d.getUTCDate();
-    const dateLabel = `${month}/${day}`;
 
     days.push({
       date: dateStr,
@@ -664,21 +522,11 @@ export function getWeeklyAttendance7Detail(
 
   const normalized = attendance7Data.map(row => ({
     ...row,
-    _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
+    _dateStr: parseDate(row['数据日期'] || row.date || row.日期),
   }));
 
-  const now = new Date();
-  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
-  const t2 = new Date(beijingMs);
-
   const days: Attendance7WeeklyDetail[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(t2);
-    d.setUTCDate(t2.getUTCDate() - i);
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(d.getUTCDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
+  for (const { dateStr, dateLabel } of weekDateRange(7)) {
 
     const rows = normalized.filter(row => {
       const rowProvince = row.省区 || row.省区名称 || '';
@@ -697,10 +545,6 @@ export function getWeeklyAttendance7Detail(
       continuousDays: parseInt(row.连续未出勤天数 || 0) || 0,
       employeeId: String(row.工号 || row['员工编号'] || '').trim(),
     }));
-
-    const month = d.getUTCMonth() + 1;
-    const day = d.getUTCDate();
-    const dateLabel = `${month}/${day}`;
 
     days.push({
       date: dateStr,
@@ -741,21 +585,11 @@ export function getWorkHoursHighDetail(
 
   const normalized = workHoursHighData.map(row => ({
     ...row,
-    _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
+    _dateStr: parseDate(row['数据日期'] || row.date || row.日期),
   }));
 
-  const now = new Date();
-  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
-  const t2 = new Date(beijingMs);
-
   const days: WorkHoursHighWeeklyDetail[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(t2);
-    d.setUTCDate(t2.getUTCDate() - i);
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(d.getUTCDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
+  for (const { dateStr, dateLabel } of weekDateRange(7)) {
 
     const rows = normalized.filter(row => {
       const rowProvince = row.省区 || row.省区名称 || '';
@@ -774,10 +608,6 @@ export function getWorkHoursHighDetail(
       overHoursDays: parseInt(row['超过12.5h天数'] || 0) || 0,
       employeeId: String(row.工号 || row['员工编号'] || '').trim(),
     }));
-
-    const month = d.getUTCMonth() + 1;
-    const day = d.getUTCDate();
-    const dateLabel = `${month}/${day}`;
 
     days.push({
       date: dateStr,
@@ -818,21 +648,11 @@ export function getWorkHoursLowDetail(
 
   const normalized = workHoursLowData.map(row => ({
     ...row,
-    _dateStr: normalizeSalaryDate(row['数据日期'] || row.date || row.日期),
+    _dateStr: parseDate(row['数据日期'] || row.date || row.日期),
   }));
 
-  const now = new Date();
-  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
-  const t2 = new Date(beijingMs);
-
   const days: WorkHoursLowWeeklyDetail[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(t2);
-    d.setUTCDate(t2.getUTCDate() - i);
-    const yyyy = d.getUTCFullYear();
-    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(d.getUTCDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
+  for (const { dateStr, dateLabel } of weekDateRange(7)) {
 
     const rows = normalized.filter(row => {
       const rowProvince = row.省区 || row.省区名称 || '';
@@ -851,10 +671,6 @@ export function getWorkHoursLowDetail(
       underHoursDays: parseInt(row['低于8h天数'] || 0) || 0,
       employeeId: String(row.工号 || row['员工编号'] || '').trim(),
     }));
-
-    const month = d.getUTCMonth() + 1;
-    const day = d.getUTCDate();
-    const dateLabel = `${month}/${day}`;
 
     days.push({
       date: dateStr,

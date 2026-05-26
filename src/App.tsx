@@ -20,6 +20,7 @@ import MetricHelpPanel from './components/MetricHelpPanel';
 import ConfirmModal from './components/ConfirmModal';
 import { PERFORMANCE_DATA } from './constants';
 import { cn } from './lib/utils';
+import { beijingDate, beijingDateCN } from './lib/dateUtils';
 import { DataType } from './lib/types.js';
 import { useAdminMode } from './hooks/useAdminMode';
 import { useAuth } from './hooks/useAuth';
@@ -75,15 +76,9 @@ export default function App() {
     setViewMode('dashboard');
   };
 
-  // ── 时间计算（北京时间） ──
-  const now = new Date();
-  const beijingTimestamp = now.getTime() + 8 * 60 * 60 * 1000;
-  const beijingDate = new Date(beijingTimestamp);
-  const formattedDate = `${beijingDate.getUTCFullYear()}-${String(beijingDate.getUTCMonth() + 1).padStart(2, '0')}-${String(beijingDate.getUTCDate()).padStart(2, '0')}`;
-
-  const t2Ms = beijingTimestamp - 2 * 24 * 60 * 60 * 1000;
-  const t2Date = new Date(t2Ms);
-  const formattedT2Date = `${t2Date.getUTCFullYear()}年${String(t2Date.getUTCMonth() + 1).padStart(2, '0')}月${String(t2Date.getUTCDate()).padStart(2, '0')}日`;
+  // ── 时间 ──
+  const formattedDate = beijingDate(0);
+  const formattedT2Date = beijingDateCN(-2);
 
   // ── 渲染 ──
   return (

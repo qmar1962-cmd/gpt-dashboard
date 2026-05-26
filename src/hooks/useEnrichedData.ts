@@ -2,33 +2,7 @@
  * 数据增强 Hook：将原始数据按维度计算得分，关联到省区/中心结构上
  */
 import { useMemo } from 'react';
-
-// ── 日期工具 ──
-
-function normalizeDate(rawDate: any): string {
-  if (!rawDate) return '';
-  if (typeof rawDate === 'number') {
-    const utcMs = (rawDate - 25569) * 86400000;
-    const d = new Date(utcMs);
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-  }
-  if (typeof rawDate === 'string') {
-    let s = rawDate.replace(/\//g, '-').trim();
-    const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-    if (m) {
-      return `${m[1]}-${String(parseInt(m[2])).padStart(2, '0')}-${String(parseInt(m[3])).padStart(2, '0')}`;
-    }
-    return s;
-  }
-  return '';
-}
-
-function getBeijingDateStr(offsetDays: number): string {
-  const now = new Date();
-  const beijingMs = now.getTime() + 8 * 60 * 60 * 1000 + offsetDays * 24 * 60 * 60 * 1000;
-  const d = new Date(beijingMs);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-}
+import { parseDate, beijingDate } from '../lib/dateUtils';
 
 // ── 中心名称别名 ──
 
@@ -60,7 +34,7 @@ function aggregateByCenterDate(rows: any[], filter: (row: any) => boolean): Map<
     if (!filter(row)) return;
     const center = row.中心 || row.中心名称 || '';
     const province = row.省区 || row.省区名称 || row.省份 || '';
-    const dateStr = normalizeDate(row['数据日期'] || row.date || row.日期);
+    const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
     if (!dateStr) return;
     const key = `${center}_${province}_${dateStr}`;
     map.set(key, (map.get(key) || 0) + 1);
@@ -111,8 +85,8 @@ export function useEnrichedData(
       return displayData;
     }
 
-    const t2DateStr = getBeijingDateStr(-2);
-    const t3DateStr = getBeijingDateStr(-3);
+    const t2DateStr = beijingDate(-2);
+    const t3DateStr = beijingDate(-3);
 
     // 省区→中心 映射（用于反查无省区列的数据）
     const centerToProvince = new Map<string, string>();
@@ -133,7 +107,7 @@ export function useEnrichedData(
       salaryDataState.forEach(row => {
         const center = row.中心 || row.中心名称 || '';
         const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
-        const dateStr = normalizeDate(row['数据日期'] || row.date || row.日期);
+        const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
         const key = `${center}_${province}_${dateStr}`;
         salaryByCenterDate.set(key, (salaryByCenterDate.get(key) || 0) + 1);
       });
@@ -147,7 +121,7 @@ export function useEnrichedData(
         if (days < 15) return;
         const center = row.中心 || row.中心名称 || '';
         const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
-        const dateStr = normalizeDate(row['数据日期'] || row.date || row.日期);
+        const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
         const key = `${center}_${province}_${dateStr}`;
         att15ByCenterDate.set(key, (att15ByCenterDate.get(key) || 0) + 1);
         if (days > 30) att15Over30ByCenterDate.set(key, (att15Over30ByCenterDate.get(key) || 0) + 1);
@@ -161,7 +135,7 @@ export function useEnrichedData(
         if (days < 7) return;
         const center = row.中心 || row.中心名称 || '';
         const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
-        const dateStr = normalizeDate(row['数据日期'] || row.date || row.日期);
+        const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
         const key = `${center}_${province}_${dateStr}`;
         att7ByCenterDate.set(key, (att7ByCenterDate.get(key) || 0) + 1);
       });
