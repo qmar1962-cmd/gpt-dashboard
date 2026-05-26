@@ -172,8 +172,10 @@ function getFilesToReload(
       continue;
     }
 
-    // 对比 mtime 和 size
-    if (remoteInfo.mtime !== localInfo.mtime || remoteInfo.size !== localInfo.size) {
+    // 对比 mtime（只比较到秒，忽略毫秒和时区差异）和 size
+    const remoteMtimeSec = remoteInfo.mtime.split('.')[0]; // 去掉毫秒部分
+    const localMtimeSec = localInfo.mtime.split('.')[0];
+    if (remoteMtimeSec !== localMtimeSec || remoteInfo.size !== localInfo.size) {
       // 文件已变化，需要重新加载
       toReload.push(filename);
     }
