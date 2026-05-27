@@ -308,46 +308,57 @@ export default function Attendance15DetailModal({
       // 4. 加载小组出勤率数据（计算排休判定）
       try {
         const t2Date = weeklyData[weeklyData.length - 1]?.date || '';
-        // 花名册 → 工号→组别 映射
+        // 花名册 → 工号→组别 映射（取七级部门列）
         const rosterStored = await idbGetRawData('employee_roster');
         const empGroupMap = new Map<string, string>();
         if (rosterStored?.rawData) {
           rosterStored.rawData.forEach((row: any) => {
             const eid = String(row.工号 || row['员工ID'] || row['员工编号'] || '').trim();
-            const g = row.组别 || row['七级部门'] || row.group || '';
+            const g = row['七级部门'] || row.组别 || row.group || '';
             if (eid && g) empGroupMap.set(eid, g);
           });
         }
-        // 中心日出勤明细 → 组别→{总人数, 出勤人数}  on T-2
+        // 中心日出勤明细 → T-2当天出勤的工号集合
         const dailyStored = await idbGetRawData('center_daily_attendance');
-        const groupStats = new Map<string, { total: number; present: number }>();
-        if (dailyStored?.rawData && t2Date) {
+        const presentEmployees = new Set<string>();
+        if (dailyStored?.rawData) {
           dailyStored.rawData.forEach((row: any) => {
-            const c = row.中心 || row.中心名称 || '';
-            const d = String(row['数据日期'] || row.date || row.日期 || '').trim();
+            const c = row.中心名称 || row.中心 || '';
+            const d = String(row.日期 || row.数据日期 || row.date || '').trim();
             if (!c.includes(centerName) && !centerName.includes(c)) return;
-            const g = row.组别 || row.group || '';
-            if (!g) return;
-            if (!groupStats.has(g)) groupStats.set(g, { total: 0, present: 0 });
-            const s = groupStats.get(g)!;
-            if (d === t2Date) { s.total++; if (row['是否出勤'] === '是' || row.isPresent) s.present++; }
-            else s.total++; // 其他日期也计入总人数估算
+            const eid = String(row.代号 || row.工号 || '').trim();
+            if (d === t2Date && eid) presentEmployees.add(eid);
           });
         }
+        // 统计各组操作人员总数（仅二级部门含"操作"）
+        const groupTotal = new Map<string, number>();
+        rosterStored?.rawData?.forEach((row: any) => {
+          const c = row['六级单位'] || row.中心 || '';
+          if (!c.includes(centerName) && !centerName.includes(c)) return;
+          if (!String(row['二级部门'] || '').includes('操作')) return;
+          const g = row['七级部门'] || '';
+          if (g) groupTotal.set(g, (groupTotal.get(g) || 0) + 1);
+        });
+        // 统计各组 T-2 出勤人数（工号→组别→计数）
+        const groupPresent = new Map<string, number>();
+        presentEmployees.forEach(eid => {
+          const g = empGroupMap.get(eid);
+          if (g) groupPresent.set(g, (groupPresent.get(g) || 0) + 1);
+        });
         // 组装 groupInfo
         const info = new Map<string, { group: string; rate: number; judgment: string }>();
         weeklyData.forEach(day => day.details.forEach(p => {
           if (info.has(p.employeeId)) return;
-          const group = empGroupMap.get(p.employeeId) || groupStats.has(p.employeeId) ? p.employeeId : '';
-          const gKey = group || '未知';
-          const stats = groupStats.get(gKey);
-          const rate = stats && stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0;
-          const judgment = stats ? (rate >= 85 ? '无法排休' : '没排休') : '数据不足';
-          info.set(p.employeeId, { group: gKey, rate, judgment });
-          // 回填 detail.group
-          p.group = gKey;
+          const group = empGroupMap.get(p.employeeId) || '未知';
+          const total = groupTotal.get(group) || 0;
+          const present = groupPresent.get(group) || 0;
+          const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+          const judgment = total > 0 ? (rate >= 85 ? '无法排休' : '没排休') : '数据不足';
+          info.set(p.employeeId, { group, rate, judgment });
+          p.group = group;
         }));
         setGroupInfo(info);
+        console.log('[排休判定] 完成, 工号→组别:', empGroupMap.size, '人, 组出勤数据:', groupTotal.size, '组');
       } catch (e) { console.warn('[排休判定] 小组数据加载失败:', e); }
 
       // 加载完成后才重置未保存标记
