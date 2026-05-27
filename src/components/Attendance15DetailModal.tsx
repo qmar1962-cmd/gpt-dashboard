@@ -363,7 +363,14 @@ export default function Attendance15DetailModal({
           p.group = group;
         }));
         setGroupInfo(info);
-        console.log('[排休判定] 完成, 工号→组别:', empGroupMap.size, '人, 组出勤数据:', groupTotal.size, '组');
+        // 诊断日志
+        const sampleAtt15Eids = new Set<string>();
+        weeklyData.forEach(d => d.details.forEach(p => { if (sampleAtt15Eids.size < 5) sampleAtt15Eids.add(p.employeeId); }));
+        const rosterEids = Array.from(empGroupMap.keys()).slice(0, 5);
+        console.log('[排休判定] 完成, 工号→组别:', empGroupMap.size, '人, 组出勤:', groupTotal.size, '组, T-2出勤人数:', presentEmployees.size);
+        console.log('[排休判定] 连续出勤工号示例:', Array.from(sampleAtt15Eids));
+        console.log('[排休判定] 花名册工号示例:', rosterEids);
+        console.log('[排休判定] 组出勤率:', Array.from(groupTotal.entries()).slice(0, 5).map(([g, t]) => ({ g, t, p: groupPresent.get(g) || 0 })));
       } catch (e) { console.warn('[排休判定] 小组数据加载失败:', e); }
 
       // 加载完成后才重置未保存标记
