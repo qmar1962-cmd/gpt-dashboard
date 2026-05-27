@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, Check, Edit3, User } from 'lucide-react';
+import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, Check, Edit3, User } from 'lucide-react';
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
@@ -224,6 +224,8 @@ export default function Attendance15DetailModal({
   currentCount,
   prevCount,
 }: Attendance15DetailModalProps) {
+  const [showAllDays, setShowAllDays] = useState(false);
+  const displayDays = showAllDays ? weeklyData : [weeklyData[weeklyData.length - 1]];
   const maxAbnormal = Math.max(...weeklyData.map(d => d.abnormalCount), 1);
 
   // 排休计划状态：按「日期_姓名」key → 显示用的排休记录
@@ -695,7 +697,10 @@ export default function Attendance15DetailModal({
                 <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                   每日连续出勤明细（≥ 15 天）
                 </h4>
-                {weeklyData.map(day => (
+                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 mb-1">
+                  <ChevronDown size={12} className={showAllDays ? 'rotate-180' : ''} />{showAllDays ? '收起' : '展开近 7 天'}
+                </button>
+                {displayDays.map(day => (
                   <div
                     key={day.date}
                     className={cn(

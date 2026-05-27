@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, AlertTriangle } from 'lucide-react';
+import { X, TrendingUp, AlertTriangle, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 import { WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 
@@ -23,6 +24,8 @@ export default function EfficiencyDetailModal({
   currentCount,
   prevCount,
 }: EfficiencyDetailModalProps) {
+  const [showAllDays, setShowAllDays] = useState(false);
+  const displayDays = showAllDays ? weeklyData : [weeklyData[weeklyData.length - 1]];
   const maxAbnormal = Math.max(...weeklyData.map(d => d.abnormalCount), 1);
 
   return (
@@ -124,7 +127,10 @@ export default function EfficiencyDetailModal({
                 <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                   每日岗位异常明细
                 </h4>
-                {weeklyData.map(day => (
+                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 mb-1">
+                  <ChevronDown size={12} className={showAllDays ? 'rotate-180' : ''} />{showAllDays ? '收起' : '展开近 7 天'}
+                </button>
+                {displayDays.map(day => (
                   <div
                     key={day.date}
                     className={cn(

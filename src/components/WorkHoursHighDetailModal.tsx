@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, Clock, CalendarDays } from 'lucide-react';
+import { X, TrendingUp, Clock, ChevronDown } from 'lucide-react';
 import { WorkHoursHighWeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 
@@ -23,6 +23,8 @@ export default function WorkHoursHighDetailModal({
   currentCount,
   prevCount,
 }: WorkHoursHighDetailModalProps) {
+  const [showAllDays, setShowAllDays] = useState(false);
+  const displayDays = showAllDays ? weeklyData : [weeklyData[weeklyData.length - 1]];
   const maxAbnormal = Math.max(...weeklyData.map(d => d.abnormalCount), 1);
 
   // 关闭弹窗
@@ -129,7 +131,10 @@ export default function WorkHoursHighDetailModal({
                 <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                   每日日工时高明细（出勤工时 &gt; 12.5h）
                 </h4>
-                {weeklyData.map(day => (
+                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 mb-1">
+                  <ChevronDown size={12} className={showAllDays ? 'rotate-180' : ''} />{showAllDays ? '收起' : '展开近 7 天'}
+                </button>
+                {displayDays.map(day => (
                   <div
                     key={day.date}
                     className={cn(

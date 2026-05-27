@@ -41,6 +41,8 @@ export default function Attendance7DetailModal({
   currentCount,
   prevCount,
 }: Attendance7DetailModalProps) {
+  const [showAllDays, setShowAllDays] = useState(false);
+  const displayDays = showAllDays ? weeklyData : [weeklyData[weeklyData.length - 1]];
   const maxAbnormal = Math.max(...weeklyData.map(d => d.abnormalCount), 1);
 
   // 未出勤原因状态：按「date_name」key → 原因字符串
@@ -446,7 +448,10 @@ export default function Attendance7DetailModal({
                 <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                   每日连续未出勤明细（≥ 7 天）
                 </h4>
-                {weeklyData.map(day => (
+                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 mb-1">
+                  <ChevronDown size={12} className={showAllDays ? 'rotate-180' : ''} />{showAllDays ? '收起' : '展开近 7 天'}
+                </button>
+                {displayDays.map(day => (
                   <div
                     key={day.date}
                     className={cn(

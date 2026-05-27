@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, Clock, ChevronDown, Edit3 } from 'lucide-react';
+import { X, TrendingUp, Clock, ChevronDown, ChevronUp, Edit3 } from 'lucide-react';
 import { WorkHoursLowWeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
@@ -39,6 +39,8 @@ export default function WorkHoursLowDetailModal({
   currentCount,
   prevCount,
 }: WorkHoursLowDetailModalProps) {
+  const [showAllDays, setShowAllDays] = useState(false);
+  const displayDays = showAllDays ? weeklyData : [weeklyData[weeklyData.length - 1]];
   const maxAbnormal = Math.max(...weeklyData.map(d => d.abnormalCount), 1);
 
   // 原因状态：按「date_name」key → 原因字符串
@@ -358,7 +360,10 @@ export default function WorkHoursLowDetailModal({
                 <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
                   每日日工时低明细（出勤工时 ≤ 8h）
                 </h4>
-                {weeklyData.map(day => (
+                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 mb-1">
+                  <ChevronDown size={12} className={showAllDays ? 'rotate-180' : ''} />{showAllDays ? '收起' : '展开近 7 天'}
+                </button>
+                {displayDays.map(day => (
                   <div
                     key={day.date}
                     className={cn(
