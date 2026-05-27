@@ -51,6 +51,7 @@ jobs:
           VITE_GITHUB_BRANCH: ${{ secrets.VITE_GITHUB_BRANCH || 'master' }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_ADMIN_PASSWORD_HASH: ${{ secrets.VITE_ADMIN_PASSWORD_HASH || '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92' }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

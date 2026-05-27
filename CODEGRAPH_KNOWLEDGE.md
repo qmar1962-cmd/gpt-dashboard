@@ -1,341 +1,117 @@
-# CodeGraph 知识图谱 - GPT 每日通报可视化看板
+# GPT 每日通报可视化看板 — 知识图谱
 
-> **生成时间**: 2026-05-25  
-> **项目路径**: `C:\Users\0347\Documents\trae_projects\1\GPT2\GPT 每日通报可视化看板`  
-> **CodeGraph 索引**: `.codegraph/` (472 nodes, 430 edges)
+> 2026-05-27 · React 19 + TypeScript + Vite + Tailwind CSS v4 · GitHub Pages 部署
 
 ---
 
-## 1. 项目概览
+## 项目概述
 
-| 项目 | 信息 |
-|------|------|
-| **名称** | GPT 每日通报可视化看板 |
-| **技术栈** | React 18 + TypeScript + Vite + Tailwind CSS + IndexedDB |
-| **部署** | GitHub Pages (https://qmar1962-cmd.github.io/gpt-dashboard/) |
-| **仓库** | https://github.com/qmar1962-cmd/gpt-dashboard |
-| **本地路径** | `C:\Users\0347\Documents\trae_projects\1\GPT2\GPT 每日通报可视化看板` |
+华中大区（湖北/湖南/河南/江西）14 个操作中心的 HR 绩效监控看板，覆盖 6 大考核维度。
 
----
+## 技术架构
 
-## 2. 目录结构
+| 层 | 技术 |
+|---|---|
+| 框架 | React 19 + TypeScript |
+| 构建 | Vite 6 |
+| 样式 | Tailwind CSS v4 + tailwind-merge + clsx |
+| 图表 | Recharts（雷达图）+ Canvas（总览图） |
+| 动效 | motion (framer-motion) |
+| 本地存储 | IndexedDB（原始数据）+ localStorage（元数据） |
+| 协作存储 | Supabase（排休计划/未出勤原因/班组负责人） |
+| 部署 | GitHub Pages + GitHub Actions |
 
-```
-gpt-dashboard/
-├── public/
-│   ├── database/              # 数据源文件（Excel）
-│   │   ├── job_performance_*.xlsx    # 绩效数据
-│   │   ├── salary_performance_*.xlsx  # 薪资数据
-│   │   ├── attendance15_*.xlsx       # 连续15日出勤
-│   │   ├── attendance7_*.xlsx        # 连续7日未出勤
-│   │   ├── center_attendance_*.xlsx   # 中心考勤
-│   │   ├── work_hours_high_*.xlsx    # 日工时高
-│   │   ├── work_hours_low_*.xlsx     # 日工时低
-│   │   └── roster_*.xlsx             # 花名册
-│   └── favicon.svg
-├── src/
-│   ├── components/            # React 组件
-│   ├── lib/                  # 工具库
-│   ├── hooks/                # React Hooks
-│   ├── types/                # TypeScript 类型定义
-│   ├── App.tsx               # 主应用组件
-│   ├── main.tsx              # 入口文件
-│   └── index.css             # 全局样式
-├── .codegraph/              # CodeGraph 索引（不提交 Git）
-├── PROJECT_KNOWLEDGE.md     # 项目知识文档（手动维护）
-└── package.json
-```
+## 6 大考核维度
 
----
+| 维度 | 满分 | 扣分规则 |
+|---|---|---|
+| 效能异常（岗位） | 25 | 每个异常岗位扣 5 分 |
+| 绩效异常（薪资） | 15 | 覆盖率 >3% 每多 1% 扣 3 分 |
+| 连续出勤 ≥15 天 | 25 | >3% 每多 1% 扣 5 分 + >30 天每人扣 2 分 |
+| 长期未出勤 ≥7 天 | 25 | 每人扣 2 分 |
+| 日工时高 >12.5h | 5 | >10% 每多 1% 扣 1 分 |
+| 日工时低 ≤8h | 5 | 每人扣 1 分 |
 
-## 3. 核心组件层次
+## 目录结构
 
 ```
-App.tsx (主应用)
-├── Login.tsx (登录组件)
-├── DataUploaderEnhanced.tsx (数据上传)
-├── DataManagerEnhanced.tsx (数据管理)
-├── MetricHelpPanel.tsx (指标说明面板)
-├── DataTable.tsx (数据表格 - 主页)
-├── KpiCard.tsx (KPI 卡片)
-├── SummaryChart.tsx (汇总图表)
-├── AttendanceModule.tsx (考勤模块)
-├── ReportModal.tsx (报告导出弹窗)
-├── TemplateSelector.tsx (模板选择器)
-├── ConfirmModal.tsx (确认弹窗)
-├── LoadingOverlay.tsx (加载遮罩)
-├── ErrorBoundary.tsx (错误边界)
-│
-└── 详情弹窗组件 (Modals)
-    ├── Attendance15DetailModal.tsx (连续15日出勤详情)
-    ├── Attendance7DetailModal.tsx (连续7日未出勤详情)
-    ├── AttendanceSummaryDetailModal.tsx (考勤汇总详情)
-    ├── EfficiencyDetailModal.tsx (效能异常详情)
-    ├── SalaryDetailModal.tsx (薪资异常详情)
-    ├── WorkHoursHighDetailModal.tsx (日工时高详情)
-    └── WorkHoursLowDetailModal.tsx (日工时低详情)
+src/
+├── App.tsx                     # 主入口（290 行，已拆分）
+├── components/
+│   ├── DataTable.tsx            # 主数据表（省区/中心排名）
+│   ├── SummaryChart.tsx         # 6 维雷达图
+│   ├── ReportModal.tsx          # 详情报告弹窗（Canvas 总览图导出）
+│   ├── Login.tsx                # 登录页（Tailwind 重写版）
+│   ├── ConfirmModal.tsx         # 通用确认弹窗
+│   ├── ErrorBoundary.tsx        # 错误边界
+│   ├── LoadingOverlay.tsx       # 加载动画
+│   ├── KPICard.tsx              # KPI 卡片
+│   ├── MetricHelpPanel.tsx      # 指标口径说明
+│   ├── DataManagerEnhanced.tsx  # 数据上传/管理（管理员）
+│   ├── DataUploaderEnhanced.tsx # 文件上传器
+│   ├── DataDownloader.tsx       # 文件下载
+│   ├── AttendanceModule.tsx     # 中心考勤模块（1303 行）
+│   ├── Attendance15DetailModal.tsx  # 连续出勤详情 + 排休计划 + 小组判定
+│   ├── Attendance7DetailModal.tsx   # 长期未出勤详情 + 原因编辑
+│   ├── EfficiencyDetailModal.tsx    # 效能异常详情
+│   ├── SalaryDetailModal.tsx        # 绩效异常详情
+│   ├── WorkHoursHighDetailModal.tsx # 日工时高详情
+│   └── WorkHoursLowDetailModal.tsx  # 日工时低详情 + 原因编辑
+├── hooks/
+│   ├── useAuth.ts              # 登录状态
+│   ├── useViewMode.ts          # 视图切换 + 离开确认
+│   ├── useDataInit.ts          # IndexedDB 数据加载 + 上传处理
+│   ├── useEnrichedData.ts      # 6 维度得分计算（评分常量命名）
+│   ├── useFilteredData.ts      # 豁免中心过滤
+│   └── useAdminMode.ts         # 管理员模式
+├── lib/
+│   ├── dataProcessor.ts        # 数据处理 + 周明细查询
+│   ├── dateUtils.ts            # 日期工具（parseDate/beijingDate/weekDateRange）
+│   ├── dataMerge.ts            # 通用合并去重
+│   ├── database.ts             # IndexedDB/localStorage 封装
+│   ├── idb.ts                  # IndexedDB 底层操作
+│   ├── defaultDataLoader.ts    # 默认数据加载（filelist.json 增量更新）
+│   ├── dataParser.ts           # Excel 数据解析
+│   ├── reportGenerator.ts      # 文字报告生成
+│   ├── collaborationApi.ts     # 协作数据 API（Supabase）
+│   ├── utils.ts                # cn() 工具函数
+│   └── types.ts                # 类型定义
+├── types/
+│   ├── types.ts                # 核心类型（Selection 等）
+│   └── data.ts                 # 数据类型定义
+└── constants.ts                # 默认演示数据
 ```
 
----
-
-## 4. 核心库文件 (src/lib/)
-
-| 文件 | 功能 | 关键导出 |
-|------|------|----------|
-| `auth.ts` | 认证逻辑 | `isAdmin()`, `getUserInfo()` |
-| `cloudbase.ts` | CloudBase 云服务 | `cloudbase`, `auth` |
-| `collaborationApi.ts` | 协作数据 API | `loadLeavePlans()`, `saveLeavePlan()`, `loadAbsenceReasons()`, `saveAbsenceReason()`, `loadCenterMeta()`, `saveCenterMeta()`, `loadGroupLeaders()`, `saveGroupLeaders()` |
-| `dataParser.ts` | Excel 解析 | `parseExcelFile()`, `parseExcelBlob()` |
-| `dataProcessor.ts` | 数据处理 | `processJobPerformance()`, `processSalaryPerformance()`, `processAttendance15()`, `processAttendance7()`, `processCenterAttendance()`, `processWorkHoursHigh()`, `processWorkHoursLow()` |
-| `database.ts` | IndexedDB 操作 | `saveRawData()`, `loadRawData()`, `clearRawData()`, `clearRawDataByType()` |
-| `defaultDataLoader.ts` | 默认数据加载器 | `loadDefaultData()`, `clearDeletedFileData()` |
-| `githubApi.ts` | GitHub API | `fetchFile()`, `uploadFile()`, `deleteFile()` |
-| `idb.ts` | IndexedDB 封装 | `openIDB()`, `putData()`, `getData()`, `clearStore()` |
-| `jobPerformanceProcessor.ts` | 绩效数据处理 | `processJobPerformanceData()` |
-| `reportGenerator.ts` | 报告生成 | `generateReport()`, `exportToExcel()` |
-| `utils.ts` | 工具函数 | `formatDate()`, `calculateDays()`, `getCenterName()` |
-
----
-
-## 5. 数据流架构
-
-### 5.1 数据加载流程
+## 数据流
 
 ```
-用户访问页面
-    ↓
-App.tsx: useEffect() → loadDefaultData()
-    ↓
-defaultDataLoader.ts: loadDefaultData()
-    ↓
-┌─────────────────┬────────────────────┐
-│                 │                    │
-↓                 ↓                    ↓
-检查 IndexedDB  检查 GitHub API    检查 public/database/
-有缓存？        有协作文档？       有 Excel 文件？
-    ↓                 ↓                    ↓
-是→直接返回      是→加载协作数据     是→解析 Excel
-否→继续          否→降级 localStorage   否→报错
+Excel 上传 → IndexedDB（原始数据）
+              ↓
+         useEnrichedData（T-2/T-3 计算得分）
+              ↓
+         DataTable（展示）+ SummaryChart（雷达图）
+              ↓
+         详情弹窗（近 7 天明细 + 协作编辑）
+
+协作数据（排休/原因/负责人）↔ Supabase ↔ 多人共享
 ```
 
-### 5.2 协作数据流程 (GitHub API)
+## 关键设计决策
+
+- **详情弹窗独立**：6 个弹窗表面相似但内部交互不同（排休日历 vs 原因下拉 vs 纯显示），不合并不合并
+- **继承用 savedAt**：排休/原因的自动继承基于真实保存日期而非窗口日期，间隔 ≤1 天
+- **小组判定**：连续出勤弹窗用花名册九级单位取中心 + 七级部门取组别，T-2 出勤率 ≥85% 为"无法排休"
+- **弹窗折叠**：6 个详情弹窗默认只展示 T-2 最新一天，可展开近 7 天
+- **评分常量**：SCORE/PENALTY/THRESH/SPAN 命名常量替代魔法数字
+
+## 数据管道
 
 ```
-用户点击"编辑原因"/"设置排休"
-    ↓
-collaborationApi.ts: loadXxx()
-    ↓
-GitHub API: GET /repos/.../contents/xxx.json
-    ↓
-解析 base64 → JSON
-    ↓
-存储到 React state
-    ↓
-用户编辑 → onClick 保存
-    ↓
-collaborationApi.ts: saveXxx()
-    ↓
-GitHub API: PUT /repos/.../contents/xxx.json
-    ↓
-更新成功 → 刷新 state
+Downloads/ → process_data.py → 过滤省区 + 合并岗位 → public/database/ → git push
+                                                                    ↓
+                                                            GitHub Actions
+                                                          build:data (xlsx→json)
+                                                          vite build (部署)
 ```
 
-### 5.3 文件命名规则
-
-| 数据类型 | 文件前缀 | 示例 | 识别规则 |
-|---------|---------|------|----------|
-| 绩效数据 | `job_performance_` | `job_performance_0525.xlsx` | `fileName.startsWith('job_performance_')` |
-| 薪资数据 | `salary_performance_` | `salary_performance_0525.xlsx` | `fileName.startsWith('salary_performance_')` |
-| 连续15日出勤 | `attendance15_` | `attendance15_0525.xlsx` | `fileName.startsWith('attendance15_')` |
-| 连续7日未出勤 | `attendance7_` | `attendance7_0525.xlsx` | `fileName.startsWith('attendance7_')` |
-| 中心考勤 | `center_attendance_` | `center_attendance_0525.xlsx` | `fileName.startsWith('center_attendance_')` |
-| 日工时高 | `work_hours_high_` | `work_hours_high_0525.xlsx` | `fileName.startsWith('work_hours_high_')` |
-| 日工时低 | `work_hours_low_` | `work_hours_low_0525.xlsx` | `fileName.startsWith('work_hours_low_')` |
-| 花名册 | `roster_` | `roster_0525.xlsx` | `fileName.startsWith('roster_')` |
-
-**日期格式**: MMDD (月月日日)，如 `0525` = 5月25日
-
----
-
-## 6. 关键业务逻辑
-
-### 6.1 异常判定阈值
-
-| 指标 | 异常阈值 | 说明 |
-|------|----------|------|
-| 岗位效能偏离 | ≥ 10% | 目标偏离%，正数=超标 |
-| 连续出勤 | ≥ 10天 | 黄色预警 |
-| 连续缺勤 | ≥ 5天 | 黄色预警 |
-| 日工时高 | > 10% 触发占比 | 每增1%扣1分，5分制 |
-| 日工时低 | 每人每天 | 每发生1次扣1分，5分制 |
-
-### 6.2 超目标计算
-
-```
-综合超目标 = 操作人数 / 25 - (组长数 + 主管数)
-组长超目标 = 操作人数 / 35 - 组长数
-
-正数 = 缺管理
-负数 = 超编
-```
-
-### 6.3 日工时高/低考核公式
-
-**日工时高**（5分制）:
-```
-触发占比 = 触发次数 / 应覆盖人次
-得分 = 5 - (触发占比 - 10%) × 100   # 每超1%扣1分
-最低分 = 0
-```
-
-**日工时低**（5分制）:
-```
-发生人次 = 漏签人次
-得分 = 5 - 发生人次 × 1   # 每发生1次扣1分
-最低分 = 0
-```
-
----
-
-## 7. 常用命令
-
-### 7.1 开发命令
-
-```bash
-# 安装依赖
-npm install
-
-# 启动开发服务器
-npm run dev
-
-# 构建生产版本
-npm run build
-
-# 预览生产版本
-npm run preview
-```
-
-### 7.2 Git 命令
-
-```bash
-# 查看状态
-git status
-
-# 添加文件
-git add .
-
-# 提交
-git commit -m "描述"
-
-# 推送
-git push
-
-# 拉取
-git pull
-```
-
-### 7.3 数据更新流程
-
-1. 导出新数据（从业务系统）
-2. 转换为 Excel 格式，命名规则：`{前缀}_{MMDD}.xlsx`
-3. 放入 `public/database/` 文件夹
-4. `git add .` → `git commit` → `git push`
-5. 等待 GitHub Actions 构建完成（约2-3分钟）
-
----
-
-## 8. 配置说明
-
-### 8.1 环境变量 (`.env.local`)
-
-```bash
-# GitHub Token (必须，用于 GitHub API 读写协作数据)
-VITE_GITHUB_TOKEN=ghp_xxxxxxxxxxxx
-
-# CloudBase 配置 (可选，未使用)
-VITE_CLOUDBASE_ENV_ID=xxx
-VITE_CLOUDBASE_REGION=xxx
-```
-
-### 8.2 GitHub Actions (`.github/workflows/deploy.yml`)
-
-```yaml
-# 触发条件: push to master branch
-# 构建步骤:
-# 1. checkout code
-# 2. setup node.js 20
-# 3. install dependencies
-# 4. build project
-# 5. deploy to GitHub Pages
-```
-
----
-
-## 9. 已知问题与待办
-
-### 9.1 已知 Bug
-
-- [ ] `salary_abnormal.csv` 数据过期（4月份），需要更新
-- [ ] `public/database/` 中可能有多余的旧 Excel 文件（0512-0522）
-- [ ] GitHub Actions 偶尔构建失败（需检查日志）
-
-### 9.2 待办功能
-
-- [ ] 接入 DeepSeek v4 pro API（自动分析异常原因）
-- [ ] 迁移协作数据到 Supabase（解决并发冲突）
-- [ ] 优化移动端体验
-- [ ] 添加数据导出 PDF 功能
-
----
-
-## 10. AI 助手注意事项
-
-### 10.1 代码修改原则
-
-- **不要** 直接修改 `src/App.tsx` 的主结构（除非用户明确要求）
-- **优先** 修改子组件或 lib 文件
-- **测试** 修改后必须在浏览器中验证功能
-- **提交** 修改后必须 `git commit` + `git push`
-
-### 10.2 常见任务模式
-
-| 任务 | 模式 |
-|------|------|
-| 修改数据源 | 更新 `public/database/` → Git 推送 → 等待构建 |
-| 修改业务逻辑 | 修改 `src/lib/dataProcessor.ts` 或对应 processor |
-| 修改 UI | 修改 `src/components/*.tsx` |
-| 修改样式 | 修改 `src/index.css` 或组件内联样式 |
-| 修复 Bug | 先复现 → 定位代码 → 修改 → 测试 |
-
-### 10.3 文件搜索技巧
-
-- **找组件**: `find src/components -name "*.tsx" | xargs grep -l "关键词"`
-- **找函数**: `grep -r "function_name" src/`
-- **找类型**: `grep -r "interface_name" src/types/`
-
----
-
-## 11. 版本历史
-
-| 版本 | 日期 | 主要变更 |
-|------|------|----------|
-| V2.8.0 | 2026-05-24 | 新增日工时高/低考核维度；修复指标口径说明 |
-| V2.7.0 | 2026-05-17 | 修复 GitHub Actions Node.js 20 弃用警告 |
-| V2.6.0 | 2026-05-12 | 优化数据加载逻辑；添加 IndexedDB 缓存清理 |
-| V2.5.0 | 2026-05-08 | 新增协作编辑功能（GitHub API） |
-| V2.0.0 | 2026-04-27 | 重构为 React + TypeScript + Vite |
-| V1.0.0 | 2026-04-01 | 初始版本（WPS 插件） |
-
----
-
-## 12. 联系信息
-
-- **项目负责人**: 刘洋 (0347)
-- **GitHub**: qmar1962-cmd
-- **仓库**: https://github.com/qmar1962-cmd/gpt-dashboard
-- **部署**: https://qmar1962-cmd.github.io/gpt-dashboard/
-
----
-
-**文档维护**: 此文档由 AI 助手维护，每次重大变更后更新。  
-**最后更新**: 2026-05-25 by CodeBuddy
+脚本位置：`C:\Users\0347\data-pipeline\process_data.py`

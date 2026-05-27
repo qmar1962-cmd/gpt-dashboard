@@ -269,12 +269,11 @@ export async function cleanupExpiredData(daysToKeep: number = 30): Promise<numbe
  * 保存原始上传数据到 IndexedDB（异步）
  * 调用方已负责合并去重
  */
-export async function saveRawData(rawData: any[], dataType: string): Promise<void> {
+export async function saveRawData(rawData: any[], dataType: string, getKey?: (row: any) => string): Promise<void> {
   try {
-    await idbSaveRawData(rawData, dataType);
+    await idbSaveRawData(rawData, dataType, getKey);
   } catch (e) {
     console.error('[DB] IndexedDB 保存失败，降级到 localStorage:', e);
-    // 降级：只存轻量元数据到 localStorage
     const meta = { dataType, rowCount: rawData.length, savedAt: Date.now() };
     localStorage.setItem(`${STORAGE_PREFIX}${dataType}_meta`, JSON.stringify(meta));
   }
@@ -462,6 +461,7 @@ export async function getStorageStats() {
 
 /**
  * 清空所有数据（IndexedDB + localStorage）
+ * 注意：不清理登录态（gpt_loggedin/gpt_user/gpt_admin/gpt_dashboard_auth）
  */
 export async function clearAllData(): Promise<void> {
   // 清空 IndexedDB
@@ -471,10 +471,14 @@ export async function clearAllData(): Promise<void> {
     console.error('[DB] IndexedDB 清空失败:', e);
   }
 
-  // 清空 localStorage（轻量元数据）
+  // 清空 localStorage 数据/配置/缓存（保留登录态）
   localStorage.removeItem(DAILY_DATA_KEY);
   localStorage.removeItem(CENTER_DATA_KEY);
-  // 清理可能的旧 localStorage 原始数据（迁移后残留）
   localStorage.removeItem(`${STORAGE_PREFIX}raw_data`);
   localStorage.removeItem(`${STORAGE_PREFIX}salary_raw_data`);
+  localStorage.removeItem(`${STORAGE_PREFIX}admin_mode`);
+  localStorage.removeItem(`${STORAGE_PREFIX}exempt_centers`);
+  localStorage.removeItem(`${STORAGE_PREFIX}group_leaders`);
+  localStorage.removeItem('gpt_loaded_files');
+  localStorage.removeItem('gpt_filelist_cache');
 }

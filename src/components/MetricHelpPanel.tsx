@@ -409,6 +409,40 @@ export default function MetricHelpPanel() {
 
           {/* 版本历史内容 */}
           <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+            {/* V3.1.0 - 2026-05-27 */}
+            <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V3.1.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-27</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">数据去重升级：IndexedDB 写入从 JSON.stringify 去重改为业务键去重（工号+日期），重复推送同一天数据不再重复显示</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">管理员登录加固：密码从源码明文 123456 改为 SHA-256 哈希存储，源码和 JS 包均不暴露密码</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">数据清理完善："清除全部数据"按钮新增清理文件缓存、管理员模式、豁免中心等残留项</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">安全</span>
+                  <span className="text-zinc-600">GitHub 仓库从公开改为私有，保护员工数据不外泄</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">安全</span>
+                  <span className="text-zinc-600">Git 远程 URL 移除硬编码的 PAT 令牌，消除令牌泄露风险</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">安全</span>
+                  <span className="text-zinc-600">Supabase 5 张协作数据表启用 RLS（行级安全），后续可随时收紧写入权限</span>
+                </div>
+              </div>
+            </div>
+
             {/* V3.0.0 - 2026-05-26 */}
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">

@@ -57,6 +57,33 @@ const FILE_TYPE_MAP: Record<string, DataType> = {
 
 // ── 工具函数 ───────────────────────────────────────────────
 
+/** 根据数据类型生成业务键函数（用于 IndexedDB 去重，同键覆盖） */
+function getKeyForType(dataType: DataType): ((row: any) => string) | undefined {
+  switch (dataType) {
+    case 'salary_performance':
+      return (row) => `${row['姓名'] || ''}_${row['岗位'] || ''}_${row['数据日期'] || row['日期'] || row['date'] || ''}`;
+    case 'attendance_15days':
+    case 'attendance_7days':
+      return (row) => `${row['工号'] || ''}_${row['数据日期'] || row['日期'] || row['date'] || ''}`;
+    case 'employee_roster':
+      return (row) => String(row['工号'] || row['员工ID'] || '').trim();
+    case 'center_daily_attendance':
+      return (row) => {
+        const keys = Object.keys(row);
+        const idCol = keys.find(k => /工号|员工ID|编号/i.test(k)) || '工号';
+        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '日期';
+        return `${row[idCol] || ''}_${row[dateCol] || ''}`;
+      };
+    case 'job_performance':
+      return (row) => `${row['岗位名称'] || row['jobName'] || ''}_${row['数据日期'] || row['日期'] || row['date'] || ''}_${row['中心'] || row['center'] || ''}`;
+    case 'work_hours_high':
+    case 'work_hours_low':
+      return (row) => `${row['工号'] || ''}_${row['数据日期'] || row['日期'] || row['date'] || ''}`;
+    default:
+      return undefined;
+  }
+}
+
 /**
  * 根据文件名推断数据类型
  */
@@ -314,7 +341,7 @@ export async function loadDefaultData(
         }
 
         const { data, dataType } = result;
-        await saveRawData(data, dataType);
+        await saveRawData(data, dataType, getKeyForType(dataType));
 
         console.log(`[默认数据] 已加载：${file} -> ${dataType}，共 ${data.length} 条`);
         successCount++;

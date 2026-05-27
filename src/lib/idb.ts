@@ -83,7 +83,7 @@ function txComplete(tx: IDBTransaction): Promise<void> {
  * 保存原始数据到 IndexedDB
  * 合并策略：先读取已有数据，追加新数据（去重基于日期+工号/唯一键）
  */
-export async function idbSaveRawData(rawData: any[], dataType: string): Promise<void> {
+export async function idbSaveRawData(rawData: any[], dataType: string, getKey?: (row: any) => string): Promise<void> {
   const idKey = DATA_TYPE_KEYS[dataType] || dataType;
   const db = await openDB();
 
@@ -92,7 +92,6 @@ export async function idbSaveRawData(rawData: any[], dataType: string): Promise<
     const rawStore = tx.objectStore(RAW_DATA_STORE);
     const metaStore = tx.objectStore(META_STORE);
 
-    // 先读取已有数据
     const getRequest = rawStore.get(idKey);
 
     getRequest.onsuccess = () => {
@@ -100,19 +99,25 @@ export async function idbSaveRawData(rawData: any[], dataType: string): Promise<
       let mergedData: any[];
 
       if (existing && existing.rawData && existing.rawData.length > 0) {
-        // 合并：新数据追加到已有数据后面
-        mergedData = [...existing.rawData, ...rawData];
-        // 简单去重：基于 JSON.stringify 去重（保留第一次出现的）
-        const seen = new Set<string>();
-        const deduplicated: any[] = [];
-        for (const row of mergedData) {
-          const key = JSON.stringify(row);
-          if (!seen.has(key)) {
-            seen.add(key);
-            deduplicated.push(row);
+        if (getKey) {
+          // 业务键去重：同键覆盖（新数据覆盖旧数据），不同键追加
+          const map = new Map(existing.rawData.map((row: any) => [getKey(row), row]));
+          for (const row of rawData) {
+            const key = getKey(row);
+            if (key) map.set(key, row);
           }
+          mergedData = Array.from(map.values());
+        } else {
+          // 回退：JSON.stringify 去重
+          mergedData = [...existing.rawData, ...rawData];
+          const seen = new Set<string>();
+          const deduplicated: any[] = [];
+          for (const row of mergedData) {
+            const k = JSON.stringify(row);
+            if (!seen.has(k)) { seen.add(k); deduplicated.push(row); }
+          }
+          mergedData = deduplicated;
         }
-        mergedData = deduplicated;
       } else {
         mergedData = rawData;
       }

@@ -2,6 +2,14 @@ import React from 'react';
 import { useState } from 'react';
 import { Settings } from 'lucide-react';
 
+async function sha256(message: string): Promise<string> {
+  const data = new TextEncoder().encode(message);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+const ADMIN_HASH = import.meta.env.VITE_ADMIN_PASSWORD_HASH || '';
+
 interface LoginProps {
   onLoginSuccess: (name: string, empId: string, isAdmin: boolean) => void;
 }
@@ -31,10 +39,15 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     if (validate()) onLoginSuccess(name.trim(), empId.trim(), false);
   };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    if (adminPassword.trim() !== '123456') {
+    if (!ADMIN_HASH) {
+      setAdminError('管理员功能未配置');
+      return;
+    }
+    const inputHash = await sha256(adminPassword.trim());
+    if (inputHash !== ADMIN_HASH) {
       setAdminError('密码错误');
       return;
     }
