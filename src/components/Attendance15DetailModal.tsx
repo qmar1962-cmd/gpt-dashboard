@@ -308,19 +308,20 @@ export default function Attendance15DetailModal({
       // 4. 加载小组出勤率数据（计算排休判定）
       try {
         const t2Date = weeklyData[weeklyData.length - 1]?.date || '';
-        // 花名册 → 工号→组别 映射（动态查找列名，兼容 Excel 隐藏字符）
         const rosterStored = await idbGetRawData('employee_roster');
-        const empGroupMap = new Map<string, string>();
         const findKey = (row: any, patterns: string[]) => {
           const keys = Object.keys(row);
           for (const p of patterns) { const k = keys.find(k => k.includes(p)); if (k) return row[k]; }
           return '';
         };
+        // 花名册 → 工号→{组别(九级单位), 中心} 映射
+        const empInfoMap = new Map<string, { group: string; center: string }>();
         if (rosterStored?.rawData) {
           rosterStored.rawData.forEach((row: any) => {
             const eid = String(findKey(row, ['工号', '员工ID', '员工编号']) || '').trim();
             const g = findKey(row, ['七级部门', '组别']) || '';
-            if (eid && g) empGroupMap.set(eid, g);
+            const c = findKey(row, ['九级单位', '六级单位', '所在单位']) || '';
+            if (eid && g) empInfoMap.set(eid, { group: g, center: c });
           });
         }
         // 中心日出勤明细 → T-2当天出勤的工号集合
@@ -335,26 +336,24 @@ export default function Attendance15DetailModal({
             if (d === t2Date && eid) presentEmployees.add(eid);
           });
         }
-        // 统计各组操作人员总数（仅二级部门含"操作"）
+        // 统计各组总人数（仅当前中心）
         const groupTotal = new Map<string, number>();
-        rosterStored?.rawData?.forEach((row: any) => {
-          const c = findKey(row, ['六级单位', '七级单位', '中心']);
-          if (!c.includes(centerName) && !centerName.includes(c)) return;
-          if (!String(findKey(row, ['二级部门']) || '').includes('操作')) return;
-          const g = findKey(row, ['七级部门']) || '';
-          if (g) groupTotal.set(g, (groupTotal.get(g) || 0) + 1);
+        empInfoMap.forEach(({ group, center }) => {
+          if (!center.includes(centerName) && !centerName.includes(center)) return;
+          groupTotal.set(group, (groupTotal.get(group) || 0) + 1);
         });
         // 统计各组 T-2 出勤人数（工号→组别→计数）
         const groupPresent = new Map<string, number>();
         presentEmployees.forEach(eid => {
-          const g = empGroupMap.get(eid);
-          if (g) groupPresent.set(g, (groupPresent.get(g) || 0) + 1);
+          const entry = empInfoMap.get(eid);
+          if (entry) groupPresent.set(entry.group, (groupPresent.get(entry.group) || 0) + 1);
         });
         // 组装 groupInfo
         const info = new Map<string, { group: string; rate: number; judgment: string }>();
         weeklyData.forEach(day => day.details.forEach(p => {
           if (info.has(p.employeeId)) return;
-          const group = empGroupMap.get(p.employeeId) || '未知';
+          const entry = empInfoMap.get(p.employeeId);
+          const group = entry?.group || '未知';
           const total = groupTotal.get(group) || 0;
           const present = groupPresent.get(group) || 0;
           const rate = total > 0 ? Math.round((present / total) * 100) : 0;
@@ -366,8 +365,8 @@ export default function Attendance15DetailModal({
         // 诊断日志
         const sampleAtt15Eids = new Set<string>();
         weeklyData.forEach(d => d.details.forEach(p => { if (sampleAtt15Eids.size < 5) sampleAtt15Eids.add(p.employeeId); }));
-        const rosterEids = Array.from(empGroupMap.keys()).slice(0, 5);
-        console.log('[排休判定] 完成, 工号→组别:', empGroupMap.size, '人, 组出勤:', groupTotal.size, '组, T-2出勤人数:', presentEmployees.size);
+        const rosterEids = Array.from(empInfoMap.keys()).slice(0, 5);
+        console.log('[排休判定] 完成, 工号→组别:', empInfoMap.size, '人, 组出勤:', groupTotal.size, '组, T-2出勤人数:', presentEmployees.size);
         console.log('[排休判定] 连续出勤工号示例:', Array.from(sampleAtt15Eids));
         console.log('[排休判定] 花名册工号示例:', rosterEids);
         console.log('[排休判定] 组出勤率:', Array.from(groupTotal.entries()).slice(0, 5).map(([g, t]) => ({ g, t, p: groupPresent.get(g) || 0 })));
