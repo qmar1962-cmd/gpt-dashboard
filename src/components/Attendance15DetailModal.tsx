@@ -221,75 +221,91 @@ function exportGroupImage(
   badgeText: string,
   badgeColor: string
 ): void {
+  const F = '-apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif';
   const dpr = window.devicePixelRatio || 1;
-  const W = 820, P = 20, ROW_H = 34;
-  const totalPeople = groups.reduce((s, g) => s + g.members.length, 0);
-  // 计算总行数
+  const colW = [140, 80, 90, 380]; // 组别, 出勤率, 判定, 人员
+  const tableW = colW.reduce((a, b) => a + b, 0);
+  const P = 12, rowH = 38, headH = 34, titleH = 70, footerH = 28;
+
   let totalRows = 0;
   for (const g of groups) totalRows += Math.max(1, g.members.length);
-  const H = 68 + 38 + totalRows * ROW_H + 36;
+  const totalPeople = groups.reduce((s, g) => s + g.members.length, 0);
+
+  const canvasW = tableW + P * 2;
+  const canvasH = titleH + headH + totalRows * rowH + footerH + 4;
 
   const canvas = document.createElement('canvas');
-  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.width = canvasW * 2; canvas.height = canvasH * 2;
   const ctx = canvas.getContext('2d')!;
-  ctx.scale(dpr, dpr);
+  ctx.scale(2, 2);
+  ctx.textBaseline = 'middle';
 
   // 背景
-  ctx.fillStyle = '#f9fafb'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvasW, canvasH);
 
-  // 标题
-  ctx.fillStyle = '#18181b'; ctx.font = 'bold 17px sans-serif';
-  ctx.fillText(`${centerName}中心 · 连续出勤排休通报`, P, 28);
-  ctx.fillStyle = '#a1a1aa'; ctx.font = '11px sans-serif';
-  ctx.fillText(`数据日期：${dateLabel}  |  导出时间：${new Date().toLocaleString('zh-CN')}`, P, 48);
-  // 判定标签
-  const badgeW = ctx.measureText(badgeText).width + 24;
-  ctx.fillStyle = badgeColor; ctx.fillRect(W - P - badgeW, 16, badgeW, 30);
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px sans-serif';
-  ctx.fillText(badgeText, W - P - badgeW / 2, 38);
+  // 标题栏
+  ctx.fillStyle = '#18181b'; ctx.fillRect(0, 0, canvasW, titleH);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffffff'; ctx.font = `bold 18px ${F}`;
+  ctx.fillText(`${centerName}中心 · 连续出勤排休通报`, P, 24);
+  ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = `12px ${F}`;
+  ctx.fillText(`数据日期：${dateLabel}  ·  ${new Date().toLocaleDateString('zh-CN')}`, P, 48);
+  // 右边标签
+  const badgeW = ctx.measureText(badgeText).width + 28;
+  ctx.fillStyle = badgeColor; ctx.fillRect(canvasW - P - badgeW, 20, badgeW, 30);
+  ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
+  ctx.fillText(badgeText, canvasW - P - badgeW / 2, 35);
 
   // 表头
-  let y = 68;
-  ctx.fillStyle = '#f4f4f5'; ctx.fillRect(0, y, W, 38);
-  ctx.fillStyle = '#71717a'; ctx.font = 'bold 11px sans-serif';
-  const col: [number, string][] = [[P, '组别'], [P + 120, '出勤率'], [P + 200, '判定'], [P + 280, '连续出勤人员']];
-  for (const [x, label] of col) ctx.fillText(label, x, y + 24);
+  let y = titleH;
+  ctx.fillStyle = '#27272a'; ctx.fillRect(0, y, canvasW, headH);
+  ctx.fillStyle = '#fafafa'; ctx.font = `bold 11px ${F}`;
+  let x = P;
+  const headers = ['组别', '出勤率', '判定', '连续出勤人员'];
+  headers.forEach((h, i) => {
+    ctx.textAlign = i === 0 ? 'left' : 'center';
+    ctx.fillText(h, i === 0 ? x + 8 : x + colW[i] / 2, y + headH / 2);
+    x += colW[i];
+  });
 
   // 数据行
-  y += 38;
+  y += headH;
   let ri = 0;
   for (const g of groups) {
     const rows = Math.max(1, g.members.length);
     for (let i = 0; i < rows; i++) {
-      const ry = y + ri * ROW_H;
-      if (ri % 2 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, ry, W, ROW_H); }
-      // 组别（只在第一行显示）
+      const ry = y + ri * rowH;
+      ctx.fillStyle = ri % 2 === 0 ? '#fafafa' : '#ffffff';
+      ctx.fillRect(0, ry, canvasW, rowH);
+      ctx.strokeStyle = '#e4e4e7'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, ry + rowH); ctx.lineTo(canvasW, ry + rowH); ctx.stroke();
+
+      x = P;
+      const cell = (text: string, w: number, c: string, a: CanvasTextAlign = 'center') => {
+        ctx.fillStyle = c; ctx.textAlign = a; ctx.font = `12px ${F}`;
+        ctx.fillText(text, a === 'left' ? x + 8 : x + w / 2, ry + rowH / 2);
+      };
+
       if (i === 0) {
-        ctx.fillStyle = '#18181b'; ctx.font = 'bold 12px sans-serif';
-        ctx.fillText(g.name, col[0][0], ry + 22);
-        // 出勤率
-        ctx.fillStyle = g.rate >= 85 ? '#dc2626' : '#16a34a';
-        ctx.font = 'bold 13px sans-serif';
-        ctx.fillText(`${g.rate}%`, col[1][0], ry + 22);
-        // 判定
-        ctx.fillStyle = g.judgment === '无法排休' ? '#dc2626' : '#16a34a';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillText(g.judgment, col[2][0], ry + 22);
+        cell(g.name, colW[0], '#18181b', 'left');
+        cell(`${g.rate}%`, colW[1], g.rate >= 85 ? '#dc2626' : '#16a34a');
+        cell(g.judgment, colW[2], g.judgment === '无法排休' ? '#dc2626' : '#16a34a');
+        x += colW[0] + colW[1] + colW[2];
+      } else {
+        x += colW[0] + colW[1] + colW[2];
       }
-      // 人员
+
       const m = g.members[i];
-      ctx.fillStyle = '#3f3f46'; ctx.font = '12px sans-serif';
-      ctx.fillText(`${m.name}（${m.days}天）`, col[3][0], ry + 22);
+      ctx.fillStyle = '#3f3f46'; ctx.textAlign = 'left'; ctx.font = `12px ${F}`;
+      ctx.fillText(`${m.name}（${m.days}天）`, x + 8, ry + rowH / 2);
       ri++;
     }
   }
 
   // 底部
-  y = H - 36;
-  ctx.fillStyle = '#f4f4f5'; ctx.fillRect(0, y, W, 36);
-  ctx.fillStyle = '#71717a'; ctx.font = '11px sans-serif';
-  ctx.textAlign = 'right';
-  ctx.fillText(`共 ${groups.length} 个组 · ${totalPeople} 人`, W - P, y + 24);
+  y = titleH + headH + totalRows * rowH;
+  ctx.fillStyle = '#a1a1aa'; ctx.textAlign = 'right'; ctx.font = `10px ${F}`;
+  ctx.fillText(`由 GPT 数据通报系统自动生成  ·  共 ${groups.length} 个组 ${totalPeople} 人`, canvasW - P, y + footerH / 2);
 
   canvas.toBlob(async (blob) => {
     if (!blob) { alert('图片生成失败'); return; }
@@ -297,7 +313,6 @@ function exportGroupImage(
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       alert(`已复制到剪贴板（${badgeText} · ${groups.length}组${totalPeople}人）`);
     } catch {
-      // 回退下载
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
       a.download = `${centerName}_${badgeText}_${dateLabel}.png`;
