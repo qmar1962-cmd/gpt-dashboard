@@ -308,13 +308,18 @@ export default function Attendance15DetailModal({
       // 4. 加载小组出勤率数据（计算排休判定）
       try {
         const t2Date = weeklyData[weeklyData.length - 1]?.date || '';
-        // 花名册 → 工号→组别 映射（取七级部门列）
+        // 花名册 → 工号→组别 映射（动态查找列名，兼容 Excel 隐藏字符）
         const rosterStored = await idbGetRawData('employee_roster');
         const empGroupMap = new Map<string, string>();
+        const findKey = (row: any, patterns: string[]) => {
+          const keys = Object.keys(row);
+          for (const p of patterns) { const k = keys.find(k => k.includes(p)); if (k) return row[k]; }
+          return '';
+        };
         if (rosterStored?.rawData) {
           rosterStored.rawData.forEach((row: any) => {
-            const eid = String(row.工号 || row['员工ID'] || row['员工编号'] || '').trim();
-            const g = row['七级部门'] || row.组别 || row.group || '';
+            const eid = String(findKey(row, ['工号', '员工ID', '员工编号']) || '').trim();
+            const g = findKey(row, ['七级部门', '组别']) || '';
             if (eid && g) empGroupMap.set(eid, g);
           });
         }
@@ -323,20 +328,20 @@ export default function Attendance15DetailModal({
         const presentEmployees = new Set<string>();
         if (dailyStored?.rawData) {
           dailyStored.rawData.forEach((row: any) => {
-            const c = row.中心名称 || row.中心 || '';
-            const d = String(row.日期 || row.数据日期 || row.date || '').trim();
+            const c = findKey(row, ['中心名称', '中心']);
+            const d = String(findKey(row, ['日期', '数据日期']) || '').trim();
             if (!c.includes(centerName) && !centerName.includes(c)) return;
-            const eid = String(row.代号 || row.工号 || '').trim();
+            const eid = String(findKey(row, ['代号', '工号']) || '').trim();
             if (d === t2Date && eid) presentEmployees.add(eid);
           });
         }
         // 统计各组操作人员总数（仅二级部门含"操作"）
         const groupTotal = new Map<string, number>();
         rosterStored?.rawData?.forEach((row: any) => {
-          const c = row['六级单位'] || row.中心 || '';
+          const c = findKey(row, ['六级单位', '七级单位', '中心']);
           if (!c.includes(centerName) && !centerName.includes(c)) return;
-          if (!String(row['二级部门'] || '').includes('操作')) return;
-          const g = row['七级部门'] || '';
+          if (!String(findKey(row, ['二级部门']) || '').includes('操作')) return;
+          const g = findKey(row, ['七级部门']) || '';
           if (g) groupTotal.set(g, (groupTotal.get(g) || 0) + 1);
         });
         // 统计各组 T-2 出勤人数（工号→组别→计数）
