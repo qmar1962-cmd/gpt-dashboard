@@ -308,10 +308,9 @@ function exportGroupImage(
   ctx.fillText(`由 GPT 数据通报系统自动生成  ·  共 ${groups.length} 个组 ${totalPeople} 人`, canvasW - P, y + footerH / 2);
 
   canvas.toBlob(async (blob) => {
-    if (!blob) { alert('图片生成失败'); return; }
+    if (!blob) return;
     try {
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      alert(`已复制到剪贴板（${badgeText} · ${groups.length}组${totalPeople}人）`);
     } catch {
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
@@ -662,7 +661,8 @@ export default function Attendance15DetailModal({
   }, [responsibleInput]);
 
   // ── 排休通报导出 ──
-  const [exporting, setExporting] = useState<string | null>(null); // 'cannot' | 'can'
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [exportDone, setExportDone] = useState<string | null>(null);
 
   const handleExport = useCallback((judgment: string) => {
     setExporting(judgment);
@@ -681,6 +681,8 @@ export default function Attendance15DetailModal({
 
       const isCannot = judgment === '无法排休';
       exportGroupImage(centerName, latestDay.dateLabel, groups, isCannot ? '无法排休' : '能排休', isCannot ? '#dc2626' : '#16a34a');
+      setExportDone(judgment);
+      setTimeout(() => setExportDone(null), 2000);
     } catch (e) {
       console.error('[导出] 生成图片失败:', e);
     } finally {
@@ -785,7 +787,7 @@ export default function Attendance15DetailModal({
                   className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-1 disabled:opacity-50"
                   title="导出无法排休图片"
                 >
-                  {exporting === '无法排休' ? '生成中...' : <><Download size={10} /> 导出无法排休</>}
+                  {exportDone === '无法排休' ? '✓ 已复制' : exporting === '无法排休' ? '生成中...' : <><Download size={10} /> 导出无法排休</>}
                 </button>
                 <button
                   onClick={() => handleExport('没排休')}
@@ -793,7 +795,7 @@ export default function Attendance15DetailModal({
                   className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1 disabled:opacity-50"
                   title="导出能排休图片"
                 >
-                  {exporting === '没排休' ? '生成中...' : <><Download size={10} /> 导出能排休</>}
+                  {exportDone === '没排休' ? '✓ 已复制' : exporting === '没排休' ? '生成中...' : <><Download size={10} /> 导出能排休</>}
                 </button>
                 <button
                   onClick={handleClose}
