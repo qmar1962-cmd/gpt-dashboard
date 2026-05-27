@@ -269,8 +269,9 @@ export default function Attendance15DetailModal({
         let mostRecentPlan: LeavePlanRecord | null = null;
         for (const [histDate, histPeople] of Object.entries(centerPlans)) {
           const rec = histPeople[personName];
-          if (rec?.savedAt && rec.savedAt > mostRecentSavedAt) {
-            mostRecentSavedAt = rec.savedAt;
+          const saveDate = rec?.savedAt || rec?.setDate; // 兼容旧数据（无 savedAt 字段）
+          if (rec && saveDate > mostRecentSavedAt) {
+            mostRecentSavedAt = saveDate;
             mostRecentPlan = rec;
           }
         }
