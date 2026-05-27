@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, Check, Edit3, User, Download } from 'lucide-react';
+import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, Check, Edit3, User } from 'lucide-react';
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
@@ -203,121 +203,6 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentPlan }: 
       </motion.div>
     </AnimatePresence>
   );
-}
-
-// ── 排休通报图片导出 ──
-
-interface GroupExportData {
-  name: string;
-  rate: number;
-  judgment: string;
-  members: { name: string; days: number }[];
-}
-
-function exportGroupImage(
-  centerName: string,
-  dateLabel: string,
-  groups: GroupExportData[],
-  badgeText: string,
-  badgeColor: string
-): void {
-  const F = '-apple-system, BlinkMacSystemFont, "Microsoft YaHei", sans-serif';
-  const dpr = window.devicePixelRatio || 1;
-  const colW = [140, 80, 90, 380]; // 组别, 出勤率, 判定, 人员
-  const tableW = colW.reduce((a, b) => a + b, 0);
-  const P = 12, rowH = 38, headH = 34, titleH = 70, footerH = 28;
-
-  let totalRows = 0;
-  for (const g of groups) totalRows += Math.max(1, g.members.length);
-  const totalPeople = groups.reduce((s, g) => s + g.members.length, 0);
-
-  const canvasW = tableW + P * 2;
-  const canvasH = titleH + headH + totalRows * rowH + footerH + 4;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = canvasW * 2; canvas.height = canvasH * 2;
-  const ctx = canvas.getContext('2d')!;
-  ctx.scale(2, 2);
-  ctx.textBaseline = 'middle';
-
-  // 背景
-  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // 标题栏
-  ctx.fillStyle = '#18181b'; ctx.fillRect(0, 0, canvasW, titleH);
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#ffffff'; ctx.font = `bold 18px ${F}`;
-  ctx.fillText(`${centerName}中心 · 连续出勤排休通报`, P, 24);
-  ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = `12px ${F}`;
-  ctx.fillText(`数据日期：${dateLabel}  ·  ${new Date().toLocaleDateString('zh-CN')}`, P, 48);
-  // 右边标签
-  const badgeW = ctx.measureText(badgeText).width + 28;
-  ctx.fillStyle = badgeColor; ctx.fillRect(canvasW - P - badgeW, 20, badgeW, 30);
-  ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
-  ctx.fillText(badgeText, canvasW - P - badgeW / 2, 35);
-
-  // 表头
-  let y = titleH;
-  ctx.fillStyle = '#27272a'; ctx.fillRect(0, y, canvasW, headH);
-  ctx.fillStyle = '#fafafa'; ctx.font = `bold 11px ${F}`;
-  let x = P;
-  const headers = ['组别', '出勤率', '判定', '连续出勤人员'];
-  headers.forEach((h, i) => {
-    ctx.textAlign = i === 0 ? 'left' : 'center';
-    ctx.fillText(h, i === 0 ? x + 8 : x + colW[i] / 2, y + headH / 2);
-    x += colW[i];
-  });
-
-  // 数据行
-  y += headH;
-  let ri = 0;
-  for (const g of groups) {
-    const rows = Math.max(1, g.members.length);
-    for (let i = 0; i < rows; i++) {
-      const ry = y + ri * rowH;
-      ctx.fillStyle = ri % 2 === 0 ? '#fafafa' : '#ffffff';
-      ctx.fillRect(0, ry, canvasW, rowH);
-      ctx.strokeStyle = '#e4e4e7'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(0, ry + rowH); ctx.lineTo(canvasW, ry + rowH); ctx.stroke();
-
-      x = P;
-      const cell = (text: string, w: number, c: string, a: CanvasTextAlign = 'center') => {
-        ctx.fillStyle = c; ctx.textAlign = a; ctx.font = `12px ${F}`;
-        ctx.fillText(text, a === 'left' ? x + 8 : x + w / 2, ry + rowH / 2);
-      };
-
-      if (i === 0) {
-        cell(g.name, colW[0], '#18181b', 'left');
-        cell(`${g.rate}%`, colW[1], g.rate >= 85 ? '#dc2626' : '#16a34a');
-        cell(g.judgment, colW[2], g.judgment === '无法排休' ? '#dc2626' : '#16a34a');
-        x += colW[0] + colW[1] + colW[2];
-      } else {
-        x += colW[0] + colW[1] + colW[2];
-      }
-
-      const m = g.members[i];
-      ctx.fillStyle = '#3f3f46'; ctx.textAlign = 'left'; ctx.font = `12px ${F}`;
-      ctx.fillText(`${m.name}（${m.days}天）`, x + 8, ry + rowH / 2);
-      ri++;
-    }
-  }
-
-  // 底部
-  y = titleH + headH + totalRows * rowH;
-  ctx.fillStyle = '#a1a1aa'; ctx.textAlign = 'right'; ctx.font = `10px ${F}`;
-  ctx.fillText(`由 GPT 数据通报系统自动生成  ·  共 ${groups.length} 个组 ${totalPeople} 人`, canvasW - P, y + footerH / 2);
-
-  canvas.toBlob(async (blob) => {
-    if (!blob) return;
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-    } catch {
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png');
-      a.download = `${centerName}_${badgeText}_${dateLabel}.png`;
-      a.click();
-    }
-  }, 'image/png');
 }
 
 interface Attendance15DetailModalProps {
@@ -660,36 +545,6 @@ export default function Attendance15DetailModal({
     setHasUnsavedChanges(true);
   }, [responsibleInput]);
 
-  // ── 排休通报导出 ──
-  const [exporting, setExporting] = useState<string | null>(null);
-  const [exportDone, setExportDone] = useState<string | null>(null);
-
-  const handleExport = useCallback((judgment: string) => {
-    setExporting(judgment);
-    try {
-      const latestDay = weeklyData[weeklyData.length - 1];
-      const groupMap = new Map<string, { rate: number; judgment: string; members: { name: string; days: number }[] }>();
-      for (const detail of latestDay.details) {
-        const gi = groupInfo.get(detail.employeeId);
-        if (!gi || gi.judgment !== judgment) continue;
-        if (!groupMap.has(gi.group)) groupMap.set(gi.group, { rate: gi.rate, judgment: gi.judgment, members: [] });
-        groupMap.get(gi.group)!.members.push({ name: detail.name, days: detail.continuousDays });
-      }
-      const groups: GroupExportData[] = Array.from(groupMap.entries())
-        .map(([name, g]) => ({ name, rate: g.rate, judgment: g.judgment, members: g.members }))
-        .sort((a, b) => b.rate - a.rate);
-
-      const isCannot = judgment === '无法排休';
-      exportGroupImage(centerName, latestDay.dateLabel, groups, isCannot ? '无法排休' : '能排休', isCannot ? '#dc2626' : '#16a34a');
-      setExportDone(judgment);
-      setTimeout(() => setExportDone(null), 2000);
-    } catch (e) {
-      console.error('[导出] 生成图片失败:', e);
-    } finally {
-      setExporting(null);
-    }
-  }, [weeklyData, groupInfo, centerName]);
-
   // 关闭 picker 的点击外部逻辑
   useEffect(() => {
     if (!pickerFor) return;
@@ -780,30 +635,12 @@ export default function Attendance15DetailModal({
                   </span>
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                <button
-                  onClick={() => handleExport('无法排休')}
-                  disabled={exporting !== null}
-                  className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-1 disabled:opacity-50"
-                  title="导出无法排休图片"
-                >
-                  {exportDone === '无法排休' ? '✓ 已复制' : exporting === '无法排休' ? '生成中...' : <><Download size={10} /> 导出无法排休</>}
-                </button>
-                <button
-                  onClick={() => handleExport('没排休')}
-                  disabled={exporting !== null}
-                  className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1 disabled:opacity-50"
-                  title="导出能排休图片"
-                >
-                  {exportDone === '没排休' ? '✓ 已复制' : exporting === '没排休' ? '生成中...' : <><Download size={10} /> 导出能排休</>}
-                </button>
-                <button
-                  onClick={handleClose}
-                  className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600"
-                >
-                  <X size={16} />
-                </button>
-              </div>
+              <button
+                onClick={handleClose}
+                className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600 flex-shrink-0 ml-2"
+              >
+                <X size={16} />
+              </button>
             </div>
 
             {/* 内容区域 */}
