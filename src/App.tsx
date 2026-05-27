@@ -206,7 +206,7 @@ export default function App() {
                   </ErrorBoundary>
                 </div>
               ) : (
-                <>
+                <ErrorBoundary label="数据看板">
                   {/* Main Visual & Registry */}
                   <div className="col-span-12 xl:col-span-9 border-r border-zinc-200 bg-white">
                     <div className="p-12 border-b border-zinc-200 bg-zinc-50/50">
@@ -380,7 +380,7 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                </>
+                </ErrorBoundary>
               )}
             </main>
 

@@ -23,7 +23,6 @@ interface DataTableProps {
   onToggleExempt?: (centerId: string) => void;
   rawData?: any[];
   salaryData?: any[];
-  attendanceData?: any[];
   attendance15Data?: any[];
   attendance7Data?: any[];
   rosterData?: any[];
@@ -67,7 +66,7 @@ interface Attendance7ModalState {
   prevCount: number;
 }
 
-export default function DataTable({ data, onSelect, currentSelection, adminMode, exemptCenters, onToggleExempt, rawData, salaryData, attendanceData, attendance15Data, attendance7Data, rosterData, workHoursHighData, workHoursLowData }: DataTableProps) {
+export default function DataTable({ data, onSelect, currentSelection, adminMode, exemptCenters, onToggleExempt, rawData, salaryData, attendance15Data, attendance7Data, rosterData, workHoursHighData, workHoursLowData }: DataTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({ 'shanghai-prov': true });
   // 中心元数据（负责人等）
   const [centerMeta, setCenterMeta] = useState<Record<string, Record<string, string>>>({});
@@ -423,7 +422,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       onClick={(e) => {
                         e.stopPropagation();
                         if (salaryData && salaryData.length > 0) {
-                          const weekly = getWeeklySalaryDetail(salaryData, center.name, item.province, attendanceData);
+                          const weekly = getWeeklySalaryDetail(salaryData, center.name, item.province);
                           setSalaryModal({
                             isOpen: true,
                             centerName: center.name,

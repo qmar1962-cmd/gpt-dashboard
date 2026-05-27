@@ -4,6 +4,12 @@
 import { useMemo } from 'react';
 import { parseDate, beijingDate } from '../lib/dateUtils';
 
+// ── 评分常量 ──
+const SCORE =   { JOB: 25, SALARY: 15, ATT15: 25, ATT7: 25, WH_HIGH: 5,  WH_LOW: 5  } as const;
+const PENALTY = { JOB_PER: 5, SALARY_PCT: 3, ATT15_PCT: 5, ATT15_O30: 2, ATT7_PER: 2, WH_HIGH_PCT: 1 } as const;
+const THRESH =  { JOB_DEV: 10, SALARY_RATE: 3, ATT15_RATE: 3, WH_HIGH_RATE: 10 } as const;
+const SPAN =    { COMP_TGT: 25, LEAD_TGT: 35 } as const;
+
 // ── 中心名称别名 ──
 
 const CENTER_ALIASES: Record<string, string[]> = {
@@ -99,7 +105,7 @@ export function useEnrichedData(
     // 聚合各维度数据
     const jobByCenterDate = aggregateByCenterDate(rawDataState || [], row => {
       const deviation = parseFloat(row['目标偏离（%）'] || row.targetDeviation || 0);
-      return deviation >= 10;
+      return deviation >= THRESH.JOB_DEV;
     });
 
     const salaryByCenterDate = new Map<string, number>();
@@ -217,7 +223,7 @@ export function useEnrichedData(
         // === 岗位效能异常 (满分25) ===
         const t2JobCount = findCount(jobByCenterDate, center.name, province.province, t2DateStr);
         const t3JobCount = findCount(jobByCenterDate, center.name, province.province, t3DateStr);
-        enrichedCenter.metrics.job = Math.max(0, 25 - t2JobCount * 5);
+        enrichedCenter.metrics.job = Math.max(0, SCORE.JOB - t2JobCount * PENALTY.JOB_PER);
         enrichedCenter.abnormalCount = t2JobCount;
         enrichedCenter.prevAbnormalCount = t3JobCount;
         enrichedCenter.t2JobCount = t2JobCount;
@@ -226,7 +232,7 @@ export function useEnrichedData(
         const t2SalaryCount = findCount(salaryByCenterDate, center.name, province.province, t2DateStr);
         const t3SalaryCount = findCount(salaryByCenterDate, center.name, province.province, t3DateStr);
         const rateNum = t2SalaryBase > 0 ? (t2SalaryCount / t2SalaryBase) * 100 : 0;
-        const salaryScore = rateNum <= 3 ? 15 : Math.max(0, 15 - Math.round((rateNum - 3) * 3));
+        const salaryScore = rateNum <= THRESH.SALARY_RATE ? SCORE.SALARY : Math.max(0, SCORE.SALARY - Math.round((rateNum - THRESH.SALARY_RATE) * PENALTY.SALARY_PCT));
         if (salaryDataState && salaryDataState.length > 0) {
           enrichedCenter.metrics.salary = salaryScore;
           enrichedCenter.prevSalaryCount = t3SalaryCount;
@@ -240,8 +246,8 @@ export function useEnrichedData(
         const t3Att15Count = findCount(att15ByCenterDate, center.name, province.province, t3DateStr);
         const att15RateNum = t2SalaryBase > 0 ? (t2Att15Count / t2SalaryBase) * 100 : 0;
         const t2Over30 = findCount(att15Over30ByCenterDate, center.name, province.province, t2DateStr);
-        const coverageDeduction = att15RateNum <= 3 ? 0 : Math.round((att15RateNum - 3) * 5);
-        const att15Score = Math.max(0, 25 - coverageDeduction - t2Over30 * 2);
+        const coverageDeduction = att15RateNum <= THRESH.ATT15_RATE ? 0 : Math.round((att15RateNum - THRESH.ATT15_RATE) * PENALTY.ATT15_PCT);
+        const att15Score = Math.max(0, SCORE.ATT15 - coverageDeduction - t2Over30 * PENALTY.ATT15_O30);
         if (attendance15DataState && attendance15DataState.length > 0) {
           enrichedCenter.metrics.att15 = att15Score;
           enrichedCenter.att15Count = t2Att15Count;
@@ -254,7 +260,7 @@ export function useEnrichedData(
         // === 连续7日未出勤 (满分25) ===
         const t2Att7Count = findCount(att7ByCenterDate, center.name, province.province, t2DateStr);
         const t3Att7Count = findCount(att7ByCenterDate, center.name, province.province, t3DateStr);
-        const att7Score = Math.max(0, 25 - t2Att7Count * 2);
+        const att7Score = Math.max(0, SCORE.ATT7 - t2Att7Count * PENALTY.ATT7_PER);
         if (attendance7DataState && attendance7DataState.length > 0) {
           enrichedCenter.metrics.att7 = att7Score;
           enrichedCenter.att7Count = t2Att7Count;
@@ -266,7 +272,7 @@ export function useEnrichedData(
         const t2WhHighCount = findCount(whHighByCenterDate, center.name, province.province, t2DateStr);
         const t3WhHighCount = findCount(whHighByCenterDate, center.name, province.province, t3DateStr);
         const whHighRateNum = t2SalaryBase > 0 ? (t2WhHighCount / t2SalaryBase) * 100 : 0;
-        const whHighScore = whHighRateNum <= 10 ? 5 : Math.max(0, 5 - Math.round(whHighRateNum - 10));
+        const whHighScore = whHighRateNum <= THRESH.WH_HIGH_RATE ? SCORE.WH_HIGH : Math.max(0, SCORE.WH_HIGH - Math.round(whHighRateNum - THRESH.WH_HIGH_RATE) * PENALTY.WH_HIGH_PCT);
         if (workHoursHighDataState && workHoursHighDataState.length > 0) {
           enrichedCenter.metrics.workHoursHigh = whHighScore;
           enrichedCenter.whHighCount = t2WhHighCount;
@@ -278,7 +284,7 @@ export function useEnrichedData(
         // === 日工时低 (满分5) ===
         const t2WhLowCount = findCount(whLowByCenterDate, center.name, province.province, t2DateStr);
         const t3WhLowCount = findCount(whLowByCenterDate, center.name, province.province, t3DateStr);
-        const whLowScore = Math.max(0, 5 - t2WhLowCount);
+        const whLowScore = Math.max(0, SCORE.WH_LOW - t2WhLowCount);
         if (workHoursLowDataState && workHoursLowDataState.length > 0) {
           enrichedCenter.metrics.workHoursLow = whLowScore;
           enrichedCenter.whLowCount = t2WhLowCount;
@@ -295,8 +301,8 @@ export function useEnrichedData(
           enrichedCenter.rosterManagers = rosterStats.managers;
           enrichedCenter.compositeScope = mgrTotal > 0 ? parseFloat((workers / mgrTotal).toFixed(1)) : 0;
           enrichedCenter.leaderScope = rosterStats.leaders > 0 ? parseFloat((workers / rosterStats.leaders).toFixed(1)) : 0;
-          enrichedCenter.compOverTarget = parseFloat((workers / 25 - mgrTotal).toFixed(1));
-          enrichedCenter.leadOverTarget = parseFloat((workers / 35 - rosterStats.leaders).toFixed(1));
+          enrichedCenter.compOverTarget = parseFloat((workers / SPAN.COMP_TGT - mgrTotal).toFixed(1));
+          enrichedCenter.leadOverTarget = parseFloat((workers / SPAN.LEAD_TGT - rosterStats.leaders).toFixed(1));
         }
 
         // === 中心总分 = 六项之和 ===
