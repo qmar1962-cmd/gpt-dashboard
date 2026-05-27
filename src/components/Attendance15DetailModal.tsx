@@ -11,6 +11,7 @@ interface LeavePlanRecord {
   start: string;      // YYYY-MM-DD 排休开始
   end: string;        // YYYY-MM-DD 排休结束
   setDate: string;    // YYYY-MM-DD 设置日期（用于判断过期）
+  savedAt: string;    // 真实保存日期（YYYY-MM-DD），用于继承判断
   name: string;       // 姓名（显示用）
   employeeId: string; // 工号（主键）
 }
@@ -260,27 +261,24 @@ export default function Attendance15DetailModal({
         }
       }
 
-      // 3. 自动继承：对当前7天窗口内每个缺失排休计划的条目，检查历史数据并继承最近一次排休计划
-      //    但只继承"连续异常"的情况（历史最近日期与当前窗口第一天差距≤3天），不继承"中断后重新异常"
+      // 3. 自动继承：用最近一次保存的真实日期（savedAt）跟今天比，≤ 1 天才继承
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
-      const currentWindowStart = weeklyData.length > 0 ? weeklyData[0].date : '';
+      const today = new Date().toISOString().slice(0, 10);
       for (const personName of allPeopleInWindow) {
-        // 先找到此人最近一次历史排休计划（无论当前窗口有没有）
-        let mostRecentDate = '';
+        let mostRecentSavedAt = '';
         let mostRecentPlan: LeavePlanRecord | null = null;
         for (const [histDate, histPeople] of Object.entries(centerPlans)) {
-          if (histPeople[personName] && histDate > mostRecentDate) {
-            mostRecentDate = histDate;
-            mostRecentPlan = histPeople[personName];
+          const rec = histPeople[personName];
+          if (rec?.savedAt && rec.savedAt > mostRecentSavedAt) {
+            mostRecentSavedAt = rec.savedAt;
+            mostRecentPlan = rec;
           }
         }
-        // 如果找到历史排休计划，且历史最近日期与当前窗口第一天差距≤3天（连续异常），才填充
-        if (mostRecentPlan && currentWindowStart) {
+        if (mostRecentPlan && mostRecentSavedAt) {
           const gapDays = Math.abs(
-            (new Date(currentWindowStart).getTime() - new Date(mostRecentDate).getTime()) / (1000 * 60 * 60 * 24)
+            (new Date(today).getTime() - new Date(mostRecentSavedAt).getTime()) / (1000 * 60 * 60 * 24)
           );
-          if (gapDays <= 3) {
-            // 继承到当前窗口内此人的所有缺失日期
+          if (gapDays <= 1) {
             for (const d of weeklyData) {
               if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
                 matched[`${d.date}_${personName}`] = mostRecentPlan;
@@ -319,7 +317,7 @@ export default function Attendance15DetailModal({
 
   const handleSelectDate = useCallback((date: string, name: string, employeeId: string, start: string, end: string) => {
     const todayStr = new Date().toISOString().slice(0, 10);
-    const newPlan: LeavePlanRecord = { employeeId, name, start, end, setDate: todayStr };
+    const newPlan: LeavePlanRecord = { employeeId, name, start, end, setDate: todayStr, savedAt: todayStr };
 
     // 更新远端协作数据结构（只更新当前日期，保存时统一清理）
     setCollaborationData(prev => {
@@ -383,6 +381,7 @@ export default function Attendance15DetailModal({
         const date = key.substring(0, underscoreIdx);
         const name = key.substring(underscoreIdx + 1);
         if (!rebuiltData[centerName][date]) rebuiltData[centerName][date] = {};
+        if (!plan.savedAt) plan.savedAt = new Date().toISOString().slice(0, 10);
         rebuiltData[centerName][date][name] = plan;
       }
 

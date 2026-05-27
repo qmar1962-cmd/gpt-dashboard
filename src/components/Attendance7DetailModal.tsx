@@ -18,6 +18,7 @@ interface AbsenceReasonRecord {
   employeeId: string;  // 工号（主键）
   name: string;        // 姓名（显示用）
   date: string;        // 记录这是哪一天的异常（格式：YYYY-MM-DD）
+  savedAt: string;     // 真实保存日期（YYYY-MM-DD），用于继承判断
 }
 
 interface Attendance7DetailModalProps {
@@ -80,27 +81,24 @@ export default function Attendance7DetailModal({
         }
       }
 
-      // 3. 自动继承：对当前7天窗口内每个缺失原因的条目，检查历史数据并继承最近一次原因
-      //    但只继承"连续异常"的情况（历史最近日期与当前窗口第一天差距≤3天），不继承"中断后重新异常"
+      // 3. 自动继承：用最近一次保存的真实日期（savedAt）跟今天比，≤ 1 天才继承
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
-      const currentWindowStart = weeklyData.length > 0 ? weeklyData[0].date : '';
+      const today = new Date().toISOString().slice(0, 10);
       for (const personName of allPeopleInWindow) {
-        // 先找到此人最近一次历史原因（无论当前窗口有没有）
-        let mostRecentDate = '';
+        let mostRecentSavedAt = '';
         let mostRecentReason = '';
         for (const [histDate, histPeople] of Object.entries(centerReasons)) {
-          if (histPeople[personName] && histDate > mostRecentDate) {
-            mostRecentDate = histDate;
-            mostRecentReason = histPeople[personName].reason;
+          const rec = histPeople[personName];
+          if (rec?.savedAt && rec.savedAt > mostRecentSavedAt) {
+            mostRecentSavedAt = rec.savedAt;
+            mostRecentReason = rec.reason;
           }
         }
-        // 如果找到历史原因，且历史最近日期与当前窗口第一天差距≤3天（连续异常），才填充
-        if (mostRecentReason && currentWindowStart) {
+        if (mostRecentReason && mostRecentSavedAt) {
           const gapDays = Math.abs(
-            (new Date(currentWindowStart).getTime() - new Date(mostRecentDate).getTime()) / (1000 * 60 * 60 * 24)
+            (new Date(today).getTime() - new Date(mostRecentSavedAt).getTime()) / (1000 * 60 * 60 * 24)
           );
-          if (gapDays <= 3) {
-            // 继承到当前窗口内此人的所有缺失日期
+          if (gapDays <= 1) {
             for (const d of weeklyData) {
               if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
                 matched[`${d.date}_${personName}`] = mostRecentReason;
@@ -129,7 +127,8 @@ export default function Attendance7DetailModal({
 
   // 选择原因
   const handleSelectReason = useCallback((date: string, name: string, employeeId: string, reason: string) => {
-    const newRecord: AbsenceReasonRecord = { employeeId: employeeId || '', name, reason, date };
+    const savedAt = new Date().toISOString().slice(0, 10);
+    const newRecord: AbsenceReasonRecord = { employeeId: employeeId || '', name, reason, date, savedAt };
 
     // 更新远端协作数据结构（只更新当前日期，保存时统一清理）
     setCollaborationData(prev => {
@@ -201,7 +200,10 @@ export default function Attendance7DetailModal({
           const person = day.details.find(p => p.name === name);
           if (person) { employeeId = person.employeeId || ''; break; }
         }
-        rebuiltData[centerName][date][name] = { employeeId, name, reason, date };
+        // 保留已有的 savedAt，没有则用今天
+        let savedAt = collaborationData[centerName]?.[date]?.[name]?.savedAt;
+        if (!savedAt) savedAt = new Date().toISOString().slice(0, 10);
+        rebuiltData[centerName][date][name] = { employeeId, name, reason, date, savedAt };
       }
 
       // 第二步：清理当前7天窗口内不在异常列表里的人（不碰历史数据）
