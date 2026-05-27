@@ -713,6 +713,7 @@ export default function Attendance15DetailModal({
                         {day.details.map((detail, idx) => {
                           const plan = leavePlans[`${day.date}_${detail.name}`];
                           const isPickerOpen = pickerFor?.date === day.date && pickerFor?.name === detail.name;
+                          const gi = groupInfo.get(detail.employeeId);
                           return (
                             <div
                               key={idx}
