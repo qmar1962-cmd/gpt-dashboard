@@ -5,11 +5,13 @@
 /** 将 Excel 序列号或字符串转换为 YYYY-MM-DD */
 export function parseDate(raw: any): string {
   if (!raw) return '';
-  if (typeof raw === 'number') {
-    // Excel 序列号 → UTC 日期（起点 1899-12-30，修正闰年 bug）
-    const utcMs = (raw - 25569) * 86400000;
-    const d = new Date(utcMs);
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  if (typeof raw === 'number' || (typeof raw === 'string' && /^\d+(\.\d+)?$/.test(raw.trim()))) {
+    // Excel 序列号 → 本地日期（与旧版 excelSerialToDateStr / normalizeSalaryDate 行为一致）
+    const serial = typeof raw === 'number' ? raw : parseFloat(raw.trim());
+    if (!serial || serial < 1) return typeof raw === 'string' ? raw : '';
+    const epoch = new Date(1899, 11, 30);
+    const date = new Date(epoch.getTime() + serial * 86400000);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
   if (typeof raw === 'string') {
     const s = raw.replace(/\//g, '-').trim();
