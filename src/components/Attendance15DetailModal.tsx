@@ -210,86 +210,100 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentPlan }: 
 interface GroupExportData {
   name: string;
   rate: number;
+  judgment: string;
   members: { name: string; days: number }[];
 }
 
-function generateExportImage(
+function exportGroupImage(
   centerName: string,
   dateLabel: string,
   groups: GroupExportData[],
-  judgmentType: string,
-  color: string,
-  bgColor: string
-): Promise<Blob> {
-  const W = 800, P = 28, ROW_H = 42, HEADER_H = 36, TITLE_H = 70, FOOTER_H = 40;
+  badgeText: string,
+  badgeColor: string
+): void {
+  const dpr = window.devicePixelRatio || 1;
+  const W = 820, P = 20, ROW_H = 34;
   const totalPeople = groups.reduce((s, g) => s + g.members.length, 0);
-
-  // 计算内容高度
-  let contentRows = 0;
-  for (const g of groups) contentRows += Math.max(1, g.members.length);
-  const H = TITLE_H + HEADER_H + contentRows * ROW_H + FOOTER_H + P * 2;
+  // 计算总行数
+  let totalRows = 0;
+  for (const g of groups) totalRows += Math.max(1, g.members.length);
+  const H = 68 + 38 + totalRows * ROW_H + 36;
 
   const canvas = document.createElement('canvas');
-  canvas.width = W * 2; canvas.height = H * 2;
+  canvas.width = W * dpr; canvas.height = H * dpr;
   const ctx = canvas.getContext('2d')!;
-  ctx.scale(2, 2);
+  ctx.scale(dpr, dpr);
 
   // 背景
-  ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#f9fafb'; ctx.fillRect(0, 0, W, H);
 
-  // 标题栏
-  ctx.fillStyle = '#1e293b'; ctx.fillRect(0, 0, W, TITLE_H);
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 18px "Microsoft YaHei", sans-serif';
-  ctx.fillText(`${centerName}中心 · 连续出勤排休通报`, P, 30);
-  ctx.font = '12px "Microsoft YaHei", sans-serif';
-  ctx.fillStyle = '#94a3b8'; ctx.fillText(`数据日期：${dateLabel}`, P, 52);
+  // 标题
+  ctx.fillStyle = '#18181b'; ctx.font = 'bold 17px sans-serif';
+  ctx.fillText(`${centerName}中心 · 连续出勤排休通报`, P, 28);
+  ctx.fillStyle = '#a1a1aa'; ctx.font = '11px sans-serif';
+  ctx.fillText(`数据日期：${dateLabel}  |  导出时间：${new Date().toLocaleString('zh-CN')}`, P, 48);
   // 判定标签
-  const badgeW = ctx.measureText(judgmentType).width + 20;
-  ctx.fillStyle = color; ctx.fillRect(W - P - badgeW, 22, badgeW, 28);
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px "Microsoft YaHei", sans-serif';
-  ctx.fillText(judgmentType, W - P - badgeW / 2, 42);
+  const badgeW = ctx.measureText(badgeText).width + 24;
+  ctx.fillStyle = badgeColor; ctx.fillRect(W - P - badgeW, 16, badgeW, 30);
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 13px sans-serif';
+  ctx.fillText(badgeText, W - P - badgeW / 2, 38);
 
   // 表头
-  let y = TITLE_H;
-  ctx.fillStyle = '#f1f5f9'; ctx.fillRect(0, y, W, HEADER_H);
-  ctx.fillStyle = '#64748b'; ctx.font = 'bold 11px "Microsoft YaHei", sans-serif';
-  const colX = [P, P + 140, P + 200, P + 280];
-  ctx.textAlign = 'left';
-  ctx.fillText('组别', colX[0], y + HEADER_H / 2 + 4);
-  ctx.fillText('出勤率', colX[1], y + HEADER_H / 2 + 4);
-  ctx.fillText('连续出勤人员', colX[2], y + HEADER_H / 2 + 4);
+  let y = 68;
+  ctx.fillStyle = '#f4f4f5'; ctx.fillRect(0, y, W, 38);
+  ctx.fillStyle = '#71717a'; ctx.font = 'bold 11px sans-serif';
+  const col: [number, string][] = [[P, '组别'], [P + 120, '出勤率'], [P + 200, '判定'], [P + 280, '连续出勤人员']];
+  for (const [x, label] of col) ctx.fillText(label, x, y + 24);
 
   // 数据行
-  y += HEADER_H;
-  ctx.textAlign = 'left';
+  y += 38;
+  let ri = 0;
   for (const g of groups) {
     const rows = Math.max(1, g.members.length);
-    // 组名 + 出勤率（合并单元格效果）
-    ctx.fillStyle = bgColor; ctx.fillRect(0, y, W, ROW_H * rows);
-    ctx.fillStyle = '#1e293b'; ctx.font = 'bold 12px "Microsoft YaHei", sans-serif';
-    ctx.fillText(g.name, colX[0], y + ROW_H / 2 + 4);
-    ctx.fillStyle = g.rate >= 85 ? '#dc2626' : '#16a34a';
-    ctx.font = 'bold 13px "Microsoft YaHei", sans-serif';
-    ctx.fillText(`${g.rate}%`, colX[1], y + ROW_H / 2 + 4);
-    // 人员列表
-    for (let i = 0; i < g.members.length; i++) {
+    for (let i = 0; i < rows; i++) {
+      const ry = y + ri * ROW_H;
+      if (ri % 2 === 0) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, ry, W, ROW_H); }
+      // 组别（只在第一行显示）
+      if (i === 0) {
+        ctx.fillStyle = '#18181b'; ctx.font = 'bold 12px sans-serif';
+        ctx.fillText(g.name, col[0][0], ry + 22);
+        // 出勤率
+        ctx.fillStyle = g.rate >= 85 ? '#dc2626' : '#16a34a';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText(`${g.rate}%`, col[1][0], ry + 22);
+        // 判定
+        ctx.fillStyle = g.judgment === '无法排休' ? '#dc2626' : '#16a34a';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(g.judgment, col[2][0], ry + 22);
+      }
+      // 人员
       const m = g.members[i];
-      ctx.fillStyle = '#334155'; ctx.font = '12px "Microsoft YaHei", sans-serif';
-      ctx.fillText(`${m.name}(${m.days}天)`, colX[2], y + ROW_H / 2 + 4 + i * ROW_H);
+      ctx.fillStyle = '#3f3f46'; ctx.font = '12px sans-serif';
+      ctx.fillText(`${m.name}（${m.days}天）`, col[3][0], ry + 22);
+      ri++;
     }
-    // 行分隔线
-    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 0.5;
-    ctx.beginPath(); ctx.moveTo(0, y + ROW_H * rows); ctx.lineTo(W, y + ROW_H * rows); ctx.stroke();
-    y += ROW_H * rows;
   }
 
-  // 底部汇总
-  ctx.fillStyle = '#f1f5f9'; ctx.fillRect(0, y, W, FOOTER_H);
-  ctx.fillStyle = '#64748b'; ctx.font = '11px "Microsoft YaHei", sans-serif';
+  // 底部
+  y = H - 36;
+  ctx.fillStyle = '#f4f4f5'; ctx.fillRect(0, y, W, 36);
+  ctx.fillStyle = '#71717a'; ctx.font = '11px sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText(`共 ${groups.length} 个组 · ${totalPeople} 人`, W - P, y + FOOTER_H / 2 + 4);
+  ctx.fillText(`共 ${groups.length} 个组 · ${totalPeople} 人`, W - P, y + 24);
 
-  return new Promise(resolve => canvas.toBlob(b => resolve(b!), 'image/png'));
+  canvas.toBlob(async (blob) => {
+    if (!blob) { alert('图片生成失败'); return; }
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      alert(`已复制到剪贴板（${badgeText} · ${groups.length}组${totalPeople}人）`);
+    } catch {
+      // 回退下载
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `${centerName}_${badgeText}_${dateLabel}.png`;
+      a.click();
+    }
+  }, 'image/png');
 }
 
 interface Attendance15DetailModalProps {
@@ -635,43 +649,23 @@ export default function Attendance15DetailModal({
   // ── 排休通报导出 ──
   const [exporting, setExporting] = useState<string | null>(null); // 'cannot' | 'can'
 
-  const handleExport = useCallback(async (judgment: string) => {
+  const handleExport = useCallback((judgment: string) => {
     setExporting(judgment);
     try {
-      // 按小组聚合最新一天的数据
       const latestDay = weeklyData[weeklyData.length - 1];
-      const groupMap = new Map<string, { rate: number; members: { name: string; days: number }[] }>();
+      const groupMap = new Map<string, { rate: number; judgment: string; members: { name: string; days: number }[] }>();
       for (const detail of latestDay.details) {
         const gi = groupInfo.get(detail.employeeId);
         if (!gi || gi.judgment !== judgment) continue;
-        if (!groupMap.has(gi.group)) groupMap.set(gi.group, { rate: gi.rate, members: [] });
+        if (!groupMap.has(gi.group)) groupMap.set(gi.group, { rate: gi.rate, judgment: gi.judgment, members: [] });
         groupMap.get(gi.group)!.members.push({ name: detail.name, days: detail.continuousDays });
       }
       const groups: GroupExportData[] = Array.from(groupMap.entries())
-        .map(([name, g]) => ({ name, rate: g.rate, members: g.members }))
+        .map(([name, g]) => ({ name, rate: g.rate, judgment: g.judgment, members: g.members }))
         .sort((a, b) => b.rate - a.rate);
 
       const isCannot = judgment === '无法排休';
-      const blob = await generateExportImage(
-        centerName,
-        latestDay.dateLabel,
-        groups,
-        isCannot ? '无法排休' : '能排休',
-        isCannot ? '#dc2626' : '#16a34a',
-        isCannot ? '#fef2f2' : '#f0fdf4'
-      );
-      const url = URL.createObjectURL(blob);
-      try {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        alert(`已复制到剪贴板（${isCannot ? '无法排休' : '能排休'} · ${groups.length}组${totalPeople}人）`);
-      } catch {
-        // 回退：下载文件
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${centerName}_${isCannot ? '无法排休' : '能排休'}_${latestDay.dateLabel}.png`;
-        a.click();
-      }
-      URL.revokeObjectURL(url);
+      exportGroupImage(centerName, latestDay.dateLabel, groups, isCannot ? '无法排休' : '能排休', isCannot ? '#dc2626' : '#16a34a');
     } catch (e) {
       console.error('[导出] 生成图片失败:', e);
     } finally {
