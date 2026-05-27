@@ -446,6 +446,7 @@ export interface Attendance15WeeklyDetail {
     jobName: string;
     continuousDays: number;
     employeeId: string; // 工号（用于排休计划全局匹配）
+    group?: string;     // 所属小组（从花名册/日出勤明细关联）
   }[];
 }
 

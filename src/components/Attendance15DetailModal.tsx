@@ -4,6 +4,7 @@ import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, Check, E
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
+import { idbGetRawData } from '../lib/database';
 import ConfirmModal from './ConfirmModal';
 
 // ── 排休数据结构 ──
@@ -15,6 +16,8 @@ interface LeavePlanRecord {
   savedAt: string;    // 真实保存日期（YYYY-MM-DD），用于继承判断
   name: string;       // 姓名（显示用）
   employeeId: string; // 工号（主键）
+  groupRate?: number; // 小组出勤率（%）
+  restJudgment?: string; // 排休判定：无法排休 / 没排休
 }
 
 // ── 日期范围选择器弹窗 ──
@@ -237,6 +240,8 @@ export default function Attendance15DetailModal({
   const [responsiblePerson, setResponsiblePerson] = useState('');
   const [isEditingResponsible, setIsEditingResponsible] = useState(false);
   const [responsibleInput, setResponsibleInput] = useState('');
+  // 小组出勤率与排休判定：工号 → { group, rate, judgment }
+  const [groupInfo, setGroupInfo] = useState<Map<string, { group: string; rate: number; judgment: string }>>(new Map());
 
   // 加载远端协作数据
   useEffect(() => {
@@ -300,6 +305,51 @@ export default function Attendance15DetailModal({
       if (centerMeta['考勤负责人']) {
         setResponsiblePerson(centerMeta['考勤负责人']);
       }
+      // 4. 加载小组出勤率数据（计算排休判定）
+      try {
+        const t2Date = weeklyData[weeklyData.length - 1]?.date || '';
+        // 花名册 → 工号→组别 映射
+        const rosterStored = await idbGetRawData('employee_roster');
+        const empGroupMap = new Map<string, string>();
+        if (rosterStored?.rawData) {
+          rosterStored.rawData.forEach((row: any) => {
+            const eid = String(row.工号 || row['员工ID'] || row['员工编号'] || '').trim();
+            const g = row.组别 || row['七级部门'] || row.group || '';
+            if (eid && g) empGroupMap.set(eid, g);
+          });
+        }
+        // 中心日出勤明细 → 组别→{总人数, 出勤人数}  on T-2
+        const dailyStored = await idbGetRawData('center_daily_attendance');
+        const groupStats = new Map<string, { total: number; present: number }>();
+        if (dailyStored?.rawData && t2Date) {
+          dailyStored.rawData.forEach((row: any) => {
+            const c = row.中心 || row.中心名称 || '';
+            const d = String(row['数据日期'] || row.date || row.日期 || '').trim();
+            if (!c.includes(centerName) && !centerName.includes(c)) return;
+            const g = row.组别 || row.group || '';
+            if (!g) return;
+            if (!groupStats.has(g)) groupStats.set(g, { total: 0, present: 0 });
+            const s = groupStats.get(g)!;
+            if (d === t2Date) { s.total++; if (row['是否出勤'] === '是' || row.isPresent) s.present++; }
+            else s.total++; // 其他日期也计入总人数估算
+          });
+        }
+        // 组装 groupInfo
+        const info = new Map<string, { group: string; rate: number; judgment: string }>();
+        weeklyData.forEach(day => day.details.forEach(p => {
+          if (info.has(p.employeeId)) return;
+          const group = empGroupMap.get(p.employeeId) || groupStats.has(p.employeeId) ? p.employeeId : '';
+          const gKey = group || '未知';
+          const stats = groupStats.get(gKey);
+          const rate = stats && stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0;
+          const judgment = stats ? (rate >= 85 ? '无法排休' : '没排休') : '数据不足';
+          info.set(p.employeeId, { group: gKey, rate, judgment });
+          // 回填 detail.group
+          p.group = gKey;
+        }));
+        setGroupInfo(info);
+      } catch (e) { console.warn('[排休判定] 小组数据加载失败:', e); }
+
       // 加载完成后才重置未保存标记
       setHasUnsavedChanges(false);
     };
@@ -384,6 +434,9 @@ export default function Attendance15DetailModal({
         const name = key.substring(underscoreIdx + 1);
         if (!rebuiltData[centerName][date]) rebuiltData[centerName][date] = {};
         if (!plan.savedAt) plan.savedAt = new Date().toISOString().slice(0, 10);
+        // 附上小组排休判定
+        const gi = groupInfo.get(plan.employeeId);
+        if (gi) { plan.groupRate = gi.rate; plan.restJudgment = gi.judgment; }
         rebuiltData[centerName][date][name] = plan;
       }
 
@@ -663,8 +716,9 @@ export default function Attendance15DetailModal({
                           return (
                             <div
                               key={idx}
-                              className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-blue-50 relative"
+                              className="bg-white rounded-md px-3 py-2 border border-blue-50 relative"
                             >
+                            <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center">
                               {/* 姓名 */}
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <Clock size={10} className="text-blue-400 flex-shrink-0" />
@@ -713,6 +767,18 @@ export default function Attendance15DetailModal({
                                   currentPlan={plan}
                                 />
                               </div>
+                            </div>
+                            {/* 组别 + 出勤率 + 排休判定 */}
+                            {gi && (
+                              <div className="flex items-center gap-3 mt-1.5 pt-1.5 border-t border-blue-50 text-[10px]">
+                                <span className="text-zinc-500">组别：<span className="font-bold text-zinc-700">{gi.group}</span></span>
+                                <span className="text-zinc-500">出勤率：<span className={cn("font-bold", gi.rate >= 85 ? "text-red-600" : "text-emerald-600")}>{gi.rate}%</span></span>
+                                <span className={cn("px-1.5 py-0.5 rounded font-bold text-[9px]",
+                                  gi.judgment === '无法排休' ? "bg-red-100 text-red-600" :
+                                  gi.judgment === '没排休' ? "bg-amber-100 text-amber-600" : "bg-zinc-100 text-zinc-500"
+                                )}>{gi.judgment}</span>
+                              </div>
+                            )}
                             </div>
                           );
                         })}
