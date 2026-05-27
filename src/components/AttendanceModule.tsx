@@ -200,7 +200,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
     try {
       const saved = localStorage.getItem('unsaved_group_leaders_data');
       if (saved) return JSON.parse(saved);
-    } catch {}
+    } catch (e) { console.error('[考勤] localStorage 读取失败:', e); }
     return null;
   });
 

@@ -4,6 +4,7 @@ import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, Check, E
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
+import ConfirmModal from './ConfirmModal';
 
 // ── 排休数据结构 ──
 
@@ -445,19 +446,20 @@ export default function Attendance15DetailModal({
   }, [collaborationData, centerName, responsiblePerson, weeklyData, leavePlans]);
 
   // 处理关闭弹窗（检查未保存修改）
-  const handleClose = useCallback(async () => {
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+
+  const handleClose = useCallback(() => {
     if (hasUnsavedChanges) {
-      const confirmed = confirm('排休计划已修改，是否保存到远端？\n保存后其他用户刷新页面即可看到最新数据。');
-      if (confirmed) {
-        const saved = await handleSave();
-        if (saved) onClose();
-      } else {
-        onClose();
-      }
+      setShowSaveConfirm(true);
     } else {
       onClose();
     }
-  }, [hasUnsavedChanges, handleSave, onClose]);
+  }, [hasUnsavedChanges, onClose]);
+
+  const handleConfirmSave = () => {
+    setShowSaveConfirm(false);
+    handleSave().then(saved => { if (saved) onClose(); });
+  };
 
   // 保存考勤负责人
   const handleSaveResponsible = useCallback(async () => {
@@ -475,6 +477,7 @@ export default function Attendance15DetailModal({
   }, [pickerFor]);
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -493,7 +496,7 @@ export default function Attendance15DetailModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[700px] max-h-[88vh] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
           >
             {/* 头部 */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 flex-shrink-0">
@@ -741,5 +744,16 @@ export default function Attendance15DetailModal({
         </>
       )}
     </AnimatePresence>
+    <ConfirmModal
+      isOpen={showSaveConfirm}
+      title="保存排休计划"
+      message="排休计划已修改，是否保存到远端？保存后其他用户刷新页面即可看到最新数据。"
+      confirmText="保存并关闭"
+      cancelText="不保存，直接关闭"
+      destructive
+      onConfirm={handleConfirmSave}
+      onCancel={() => { setShowSaveConfirm(false); onClose(); }}
+    />
+    </>
   );
 }

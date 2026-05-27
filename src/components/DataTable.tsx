@@ -76,7 +76,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
   useEffect(() => {
     loadCollaborationData('center_meta.json').then(meta => {
       setCenterMeta(meta);
-    });
+    }).catch(e => console.error('[DataTable] 加载中心元数据失败:', e));
   }, []);
 
   // 获取中心负责人（优先使用协作数据）

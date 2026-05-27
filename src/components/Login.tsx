@@ -43,7 +43,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-100/80 backdrop-blur-sm">
-      <form className="login-form relative" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-2.5 bg-white py-10 px-8 rounded-3xl shadow-lg hover:shadow-xl transition-shadow relative" onSubmit={handleSubmit}>
         {/* 管理员入口齿轮按钮 */}
         <button
           type="button"
@@ -58,12 +58,12 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           <Settings size={16} className={showAdminInput ? 'animate-spin' : ''} />
         </button>
 
-        <p className="login-heading">登录看板</p>
-        <div className="login-field">
-          <label className="login-label">姓名</label>
+        <p className="text-black text-center font-bold text-lg pb-8">登录看板</p>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-zinc-700">姓名</label>
           <input
             type="text"
-            className="login-input"
+            className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300"
             placeholder="请输入姓名"
             value={name}
             onChange={e => {
@@ -71,13 +71,13 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               setErrors(prev => ({ ...prev, name: undefined }));
             }}
           />
-          {errors.name && <p className="login-error">{errors.name}</p>}
+          {errors.name && <p className="text-xs text-red-600 mt-0">{errors.name}</p>}
         </div>
-        <div className="login-field">
-          <label className="login-label">工号</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-zinc-700">工号</label>
           <input
             type="text"
-            className="login-input"
+            className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300"
             placeholder="8位数字，以0开头"
             maxLength={8}
             value={empId}
@@ -87,15 +87,15 @@ export default function Login({ onLoginSuccess }: LoginProps) {
               setErrors(prev => ({ ...prev, empId: undefined }));
             }}
           />
-          {errors.empId && <p className="login-error">{errors.empId}</p>}
+          {errors.empId && <p className="text-xs text-red-600 mt-0">{errors.empId}</p>}
         </div>
 
         {showAdminInput && (
-          <div className="login-field">
-            <label className="login-label">管理员密码</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-zinc-700">管理员密码</label>
             <input
               type="password"
-              className="login-input"
+              className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300"
               placeholder="输入管理员密码"
               value={adminPassword}
               onChange={e => {
@@ -103,11 +103,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 setAdminError('');
               }}
             />
-            {adminError && <p className="login-error">{adminError}</p>}
+            {adminError && <p className="text-xs text-red-600 mt-0">{adminError}</p>}
             <button
               type="button"
               onClick={handleAdminLogin}
-              className="login-btn"
+              className="text-center py-2.5 px-8 rounded-lg bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-none transition-all"
               style={{ marginTop: '0.75em', backgroundColor: '#b45309' }}
             >
               管理员登录
@@ -115,7 +115,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           </div>
         )}
 
-        {!showAdminInput && <button type="submit" className="login-btn">进入看板</button>}
+        {!showAdminInput && <button type="submit" className="text-center py-2.5 px-8 rounded-lg bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-none transition-all">进入看板</button>}
       </form>
     </div>
   );

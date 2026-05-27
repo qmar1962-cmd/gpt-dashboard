@@ -4,6 +4,7 @@ import { X, TrendingUp, Clock, ChevronDown, Edit3 } from 'lucide-react';
 import { WorkHoursLowWeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
+import ConfirmModal from './ConfirmModal';
 
 // ── 日工时低原因选项 ──
 const REASON_OPTIONS = [
@@ -233,19 +234,20 @@ export default function WorkHoursLowDetailModal({
   }, [collaborationData, centerName, weeklyData, reasonMap]);
 
   // 处理关闭弹窗（检查未保存修改）
-  const handleClose = useCallback(async () => {
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+
+  const handleClose = useCallback(() => {
     if (hasUnsavedChanges) {
-      const confirmed = confirm('日工时低原因已修改，是否保存到远端？\n保存后其他用户刷新页面即可看到最新数据。');
-      if (confirmed) {
-        const saved = await handleSave();
-        if (saved) onClose();
-      } else {
-        onClose();
-      }
+      setShowSaveConfirm(true);
     } else {
       onClose();
     }
-  }, [hasUnsavedChanges, handleSave, onClose]);
+  }, [hasUnsavedChanges, onClose]);
+
+  const handleConfirmSave = () => {
+    setShowSaveConfirm(false);
+    handleSave().then(saved => { if (saved) onClose(); });
+  };
 
   // 获取每个原因对应的颜色标签样式
   const getReasonStyle = (reason: string | undefined) => {
@@ -260,6 +262,7 @@ export default function WorkHoursLowDetailModal({
   };
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -516,5 +519,16 @@ export default function WorkHoursLowDetailModal({
         </>
       )}
     </AnimatePresence>
+    <ConfirmModal
+      isOpen={showSaveConfirm}
+      title="保存日工时低原因"
+      message="日工时低原因已修改，是否保存到远端？保存后其他用户刷新页面即可看到最新数据。"
+      confirmText="保存并关闭"
+      cancelText="不保存，直接关闭"
+      destructive
+      onConfirm={handleConfirmSave}
+      onCancel={() => { setShowSaveConfirm(false); onClose(); }}
+    />
+    </>
   );
 }

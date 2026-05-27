@@ -4,6 +4,7 @@ import { X, TrendingUp, AlertCircle, ChevronDown, Edit3, User } from 'lucide-rea
 import { Attendance7WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
+import ConfirmModal from './ConfirmModal';
 
 // ── 未出勤原因选项 ──
 const REASON_OPTIONS = [
@@ -265,20 +266,21 @@ export default function Attendance7DetailModal({
     }
   }, [collaborationData, centerName, responsiblePerson, weeklyData, reasonMap]);
 
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+
   // 处理关闭弹窗（检查未保存修改）
-  const handleClose = useCallback(async () => {
+  const handleClose = useCallback(() => {
     if (hasUnsavedChanges) {
-      const confirmed = confirm('未出勤原因已修改，是否保存到远端？\n保存后其他用户刷新页面即可看到最新数据。');
-      if (confirmed) {
-        const saved = await handleSave();
-        if (saved) onClose();
-      } else {
-        onClose();
-      }
+      setShowSaveConfirm(true);
     } else {
       onClose();
     }
-  }, [hasUnsavedChanges, handleSave, onClose]);
+  }, [hasUnsavedChanges, onClose]);
+
+  const handleConfirmSave = () => {
+    setShowSaveConfirm(false);
+    handleSave().then(saved => { if (saved) onClose(); });
+  };
 
   // 保存考勤负责人
   const handleSaveResponsible = useCallback(async () => {
@@ -304,6 +306,7 @@ export default function Attendance7DetailModal({
   };
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -598,5 +601,16 @@ export default function Attendance7DetailModal({
         </>
       )}
     </AnimatePresence>
+    <ConfirmModal
+      isOpen={showSaveConfirm}
+      title="保存未出勤原因"
+      message="未出勤原因已修改，是否保存到远端？保存后其他用户刷新页面即可看到最新数据。"
+      confirmText="保存并关闭"
+      cancelText="不保存，直接关闭"
+      destructive
+      onConfirm={handleConfirmSave}
+      onCancel={() => { setShowSaveConfirm(false); onClose(); }}
+    />
+    </>
   );
 }

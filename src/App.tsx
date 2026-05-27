@@ -44,7 +44,7 @@ export default function App() {
     loading, customData, rawDataState, salaryDataState,
     attendance15DataState, attendance7DataState, rosterDataState,
     workHoursHighDataState, workHoursLowDataState,
-    dataFileName, handleDataLoaded: rawHandleDataLoaded,
+    dataFileName, handleDataLoaded: rawHandleDataLoaded, initError,
   } = useDataInit();
 
   // ── 局部状态 ──
@@ -88,6 +88,18 @@ export default function App() {
         message={loading.message}
         progress={loading.progress}
       />
+
+      {initError && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[300] bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+          <span className="text-sm font-bold">数据加载失败：{initError}</span>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-3 py-1 bg-white text-red-600 text-xs font-bold rounded hover:bg-red-50"
+          >
+            刷新重试
+          </button>
+        </div>
+      )}
 
       {!isLoggedIn ? (
         <Login onLoginSuccess={handleLoginSuccess} />

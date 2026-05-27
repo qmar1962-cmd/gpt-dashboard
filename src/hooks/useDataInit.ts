@@ -35,6 +35,7 @@ export function useDataInit() {
     message: '正在初始化...',
     progress: undefined,
   });
+  const [initError, setInitError] = useState<string | null>(null);
 
   // ── 数据状态 ──
   const [customData, setCustomData] = useState<any[] | null>(null);
@@ -132,6 +133,7 @@ export function useDataInit() {
         }
       } catch (error) {
         console.error('[初始化] 加载存储数据失败:', error);
+        setInitError(error instanceof Error ? error.message : '数据加载失败，请检查浏览器存储空间或刷新重试');
       } finally {
         setLoading({ isLoading: true, message: '完成', progress: 100 });
         setTimeout(() => {
@@ -250,5 +252,6 @@ export function useDataInit() {
     dataFileName,
     dataDate,
     handleDataLoaded,
+    initError,
   };
 }
