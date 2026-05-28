@@ -99,7 +99,10 @@ Excel 上传 → IndexedDB（原始数据）
 ## 关键设计决策
 
 - **详情弹窗独立**：6 个弹窗表面相似但内部交互不同（排休日历 vs 原因下拉 vs 纯显示），不合并不合并
-- **继承用 savedAt**：排休/原因的自动继承基于真实保存日期而非窗口日期，间隔 ≤1 天
+- **继承用 savedAt**：排休/原因/工时低原因的自动继承基于真实保存日期（savedAt），间隔 ≤1 天。保存时强制更新 savedAt 为当天。继承匹配按姓名，不是工号
+- **继承存储**：absence_reasons 用 `record_date`、leave_plans 用 `set_date`、work_hours_low_reasons 用 `created_at` 存储 savedAt。加载时统一恢复为 savedAt 字段
+- **employeeId 动态匹配**：`dataProcessor.ts` 提取工号需覆盖 `['工号', '员工编号', '代号']`。`getKeyForType` 使用 `colFinder` 缓存列名避免每行正则
+- **花名册过滤**：九级单位=转运中心 + 二级部门包含"中心操作"，双重条件统计操作在职人数
 - **小组判定**：连续出勤弹窗用花名册九级单位取中心 + 七级部门取组别，T-2 出勤率 ≥85% 为"无法排休"
 - **弹窗折叠**：6 个详情弹窗默认只展示 T-2 最新一天，可展开近 7 天
 - **评分常量**：SCORE/PENALTY/THRESH/SPAN 命名常量替代魔法数字
@@ -107,11 +110,24 @@ Excel 上传 → IndexedDB（原始数据）
 ## 数据管道
 
 ```
-Downloads/ → process_data.py → 过滤省区 + 合并岗位 → public/database/ → git push
+Downloads/ → process_data.py → dtype=str 保留工号前导零 → public/database/ → git push
                                                                     ↓
                                                             GitHub Actions
-                                                          build:data (xlsx→json)
+                                                          build:data (raw:true 保留文本)
                                                           vite build (部署)
 ```
 
 脚本位置：`C:\Users\0347\data-pipeline\process_data.py`
+
+## 继承数据流
+
+```
+用户选原因 → savedAt = 今天 → record_date 写入 Supabase
+                ↓
+次日打开弹窗 → 加载 record_date → gapDays ≤ 1 → 自动继承到当前窗口
+                ↓
+原因非永久标记：断天（人不在异常列表）自动清理，再出现需重新填写
+
+⚠️ 旧数据 savedAt=窗口日期，需重新保存一次才能启用继承
+⚠️ Office 锁文件 ~$*.xlsx 已加入 .gitignore
+⚠️ roster_0525.json 153MB 超大不入库，依赖 Excel 源文件 CI 生成
