@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, Check, Edit3, User } from 'lucide-react';
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
@@ -243,7 +243,8 @@ export default function Attendance15DetailModal({
   const [isEditingResponsible, setIsEditingResponsible] = useState(false);
   const [responsibleInput, setResponsibleInput] = useState('');
   // 小组出勤率与排休判定：工号 → { group, rate, judgment }
-  const [groupInfo, setGroupInfo] = useState<Map<string, { group: string; rate: number; judgment: string }>>(new Map());
+  const [empGroupObj, setEmpGroupObj] = useState<Record<string, string>>({}); // 工号→组别
+  const [t2PresentList, setT2PresentList] = useState<string[]>([]); // T-2出勤工号列表
 
   // 加载远端协作数据
   useEffect(() => {
@@ -307,7 +308,7 @@ export default function Attendance15DetailModal({
       if (centerMeta['考勤负责人']) {
         setResponsiblePerson(centerMeta['考勤负责人']);
       }
-      // 4. 加载小组出勤率数据（计算排休判定）
+      // 4. 加载花名册和考勤原始数据（只存原始数据，计算结果在渲染时用 useMemo）
       try {
         const t2Date = weeklyData[weeklyData.length - 1]?.date || '';
         const [rosterStored, dailyStored] = await Promise.all([
@@ -315,16 +316,15 @@ export default function Attendance15DetailModal({
           idbGetRawData('center_daily_attendance'),
         ]);
 
-        // ── 工具：动态列名匹配 ──
         const colVal = (row: any, patterns: string[]): string => {
           const keys = Object.keys(row);
           for (const p of patterns) { const k = keys.find(k => k.includes(p)); if (k) return String(row[k] || '').trim(); }
           return '';
         };
 
-        // ── Step 1: 从花名册构建 工号→组别 映射（仅当前中心） ──
-        const empGroupMap = new Map<string, string>(); // 工号→组别
-        const centerEmpIds = new Set<string>();
+        // 收集花名册 → {工号: 组别}（仅当前中心）
+        const eg: Record<string, string> = {};
+        const centerEids = new Set<string>();
         if (rosterStored?.rawData) {
           for (const row of rosterStored.rawData) {
             const eid = colVal(row, ['工号', '员工ID', '员工编号']);
@@ -332,47 +332,23 @@ export default function Attendance15DetailModal({
             const c = colVal(row, ['九级单位', '六级单位', '所在单位']);
             if (!eid || !g) continue;
             if (!c.includes(centerName) && !centerName.includes(c)) continue;
-            empGroupMap.set(eid, g);
-            centerEmpIds.add(eid);
+            eg[eid] = g;
+            centerEids.add(eid);
           }
         }
+        setEmpGroupObj(eg);
 
-        // ── Step 2: 从考勤明细找出 T-2 出勤工号 ──
-        const t2Present = new Set<string>();
+        // 收集 T-2 出勤工号
+        const tp: string[] = [];
         if (dailyStored?.rawData) {
           for (const row of dailyStored.rawData) {
             const eid = colVal(row, ['代号', '工号']);
-            if (!eid || !centerEmpIds.has(eid)) continue;
-            if (colVal(row, ['日期', '数据日期']) === t2Date) t2Present.add(eid);
+            if (!eid || !centerEids.has(eid)) continue;
+            if (colVal(row, ['日期', '数据日期']) === t2Date) tp.push(eid);
           }
         }
-
-        // ── Step 3: 统计 组→总人数/出勤人数 ──
-        const gTotal = new Map<string, number>();
-        const gPresent = new Map<string, number>();
-        for (const [eid, g] of empGroupMap) {
-          gTotal.set(g, (gTotal.get(g) || 0) + 1);
-          if (t2Present.has(eid)) gPresent.set(g, (gPresent.get(g) || 0) + 1);
-        }
-
-        // ── Step 4: 为每个连续出勤员工生成判定 ──
-        const info = new Map<string, { group: string; rate: number; judgment: string }>();
-        const seen = new Set<string>();
-        for (const day of weeklyData) {
-          for (const p of day.details) {
-            if (seen.has(p.employeeId)) continue;
-            seen.add(p.employeeId);
-            const g = empGroupMap.get(p.employeeId) || '未知';
-            const t = gTotal.get(g) || 0;
-            const pr = gPresent.get(g) || 0;
-            const rate = t > 0 ? Math.round((pr / t) * 100) : 0;
-            const judgment = t > 0 ? (rate >= 85 ? '无法排休' : '没排休') : '数据不足';
-            info.set(p.employeeId, { group: g, rate, judgment });
-            p.group = g;
-          }
-        }
-        setGroupInfo(info);
-        console.log('[排休判定] 花名册:', empGroupMap.size, '人, 出勤:', t2Present.size, '人, 组:', gTotal.size, '个, 连续出勤:', seen.size, '人');
+        setT2PresentList(tp);
+        console.log('[排休判定] 花名册:', Object.keys(eg).length, '人, T-2出勤:', tp.length, '人');
       } catch (e) { console.warn('[排休判定] 小组数据加载失败:', e); }
 
       // 加载完成后才重置未保存标记
@@ -381,6 +357,33 @@ export default function Attendance15DetailModal({
 
     loadData();
   }, [isOpen, weeklyData, centerName]);
+
+  // ════ 渲染时同步计算 groupInfo（避免异步 setState 时序问题） ════
+  const groupInfo = useMemo(() => {
+    const t2Set = new Set(t2PresentList);
+    // 统计每组的 总人数 / T-2出勤人数
+    const gTotal: Record<string, number> = {};
+    const gPresent: Record<string, number> = {};
+    for (const [eid, g] of Object.entries(empGroupObj)) {
+      gTotal[g] = (gTotal[g] || 0) + 1;
+      if (t2Set.has(eid)) gPresent[g] = (gPresent[g] || 0) + 1;
+    }
+    // 为每个连续出勤员工生成判定
+    const info = new Map<string, { group: string; rate: number; judgment: string }>();
+    for (const day of weeklyData) {
+      for (const p of day.details) {
+        if (info.has(p.employeeId)) continue;
+        const g = empGroupObj[p.employeeId] || '未知';
+        const t = gTotal[g] || 0;
+        const pr = gPresent[g] || 0;
+        const rate = t > 0 ? Math.round((pr / t) * 100) : 0;
+        const judgment = t > 0 ? (rate >= 85 ? '无法排休' : '没排休') : '数据不足';
+        info.set(p.employeeId, { group: g, rate, judgment });
+      }
+    }
+    console.log('[排休判定] 组:', Object.keys(gTotal).length, '个, 连续出勤:', info.size, '人');
+    return info;
+  }, [empGroupObj, t2PresentList, weeklyData]);
 
   // 格式化显示：4/27-4/30
   const formatPlanDisplay = (plan?: LeavePlanRecord | null) => {
