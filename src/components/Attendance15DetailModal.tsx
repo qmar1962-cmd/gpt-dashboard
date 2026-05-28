@@ -322,7 +322,7 @@ export default function Attendance15DetailModal({
           return '';
         };
 
-        // 收集花名册 → {工号: 组别}（仅当前中心）
+        // 收集花名册 → {工号: 组别}（仅当前中心 + 中心操作部门）
         const eg: Record<string, string> = {};
         const centerEids = new Set<string>();
         if (rosterStored?.rawData) {
@@ -330,8 +330,10 @@ export default function Attendance15DetailModal({
             const eid = colVal(row, ['工号', '员工ID', '员工编号']);
             const g = colVal(row, ['七级部门', '组别']);
             const c = colVal(row, ['九级单位', '六级单位', '所在单位']);
+            const dept = colVal(row, ['二级部门']);
             if (!eid || !g) continue;
             if (!c.includes(centerName) && !centerName.includes(c)) continue;
+            if (dept && !dept.includes('中心操作')) continue;
             eg[eid] = g;
             centerEids.add(eid);
           }

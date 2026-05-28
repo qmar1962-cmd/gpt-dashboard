@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-28T06:15:06.851Z",
+  "generated_at": "2026-05-28T06:24:36.355Z",
   "files": {
     "attendance15_0527.xlsx": {
       "mtime": "2026-05-28T06:01:48.655Z",
@@ -63,6 +63,10 @@
     },
     "~$center_attendance_0528.xlsx": {
       "mtime": "2026-05-28T06:10:37.146Z",
+      "size": 165
+    },
+    "~$roster_0528.xlsx": {
+      "mtime": "2026-05-28T06:19:01.504Z",
       "size": 165
     }
   }
