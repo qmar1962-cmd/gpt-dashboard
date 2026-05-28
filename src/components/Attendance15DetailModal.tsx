@@ -316,32 +316,41 @@ export default function Attendance15DetailModal({
           for (const p of patterns) { const k = keys.find(k => k.includes(p)); if (k) return row[k]; }
           return '';
         };
-        // 花名册 → 工号→{组别(九级单位), 中心} 映射
+        // 花名册 → 工号→{组别, 中心} 映射（仅保留当前中心的人员）
         const empInfoMap = new Map<string, { group: string; center: string }>();
+        const centerEmpIds = new Set<string>(); // 当前中心的所有工号
         if (rosterStored?.rawData) {
           rosterStored.rawData.forEach((row: any) => {
             const eid = String(findKey(row, ['工号', '员工ID', '员工编号']) || '').trim();
             const g = findKey(row, ['七级部门', '组别']) || '';
             const c = findKey(row, ['九级单位', '六级单位', '所在单位']) || '';
-            if (eid && g) empInfoMap.set(eid, { group: g, center: c });
+            if (!eid || !g) return;
+            if (!c.includes(centerName) && !centerName.includes(c)) return;
+            empInfoMap.set(eid, { group: g, center: c });
+            centerEmpIds.add(eid);
           });
         }
-        // 中心日出勤明细 → T-2当天出勤的工号集合
+        // 中心日出勤明细 → T-2 出勤工号（只需匹配当前中心的工号）
         const dailyStored = await idbGetRawData('center_daily_attendance');
         const presentEmployees = new Set<string>();
         if (dailyStored?.rawData) {
+          // 诊断日志
+          const sampleRows = dailyStored.rawData.slice(0, 2);
+          console.log('[排休判定] 考勤明细行数:', dailyStored.rawData.length, '中心工号数:', centerEmpIds.size, 't2Date:', t2Date);
+          console.log('[排休判定] 前2行列名:', sampleRows.map(r => Object.keys(r)));
+          let matchedId = 0, matchedDate = 0;
           dailyStored.rawData.forEach((row: any) => {
-            const c = findKey(row, ['中心名称', '中心']);
-            const d = String(findKey(row, ['日期', '数据日期']) || '').trim();
-            if (!c.includes(centerName) && !centerName.includes(c)) return;
             const eid = String(findKey(row, ['代号', '工号']) || '').trim();
-            if (d === t2Date && eid) presentEmployees.add(eid);
+            if (!eid || !centerEmpIds.has(eid)) return;
+            matchedId++;
+            const d = String(findKey(row, ['日期', '数据日期']) || '').trim();
+            if (d === t2Date) { presentEmployees.add(eid); matchedDate++; }
           });
+          console.log('[排休判定] 工号匹配行:', matchedId, 'T-2匹配行:', matchedDate);
         }
-        // 统计各组总人数（仅当前中心）
+        // 统计各组总人数
         const groupTotal = new Map<string, number>();
-        empInfoMap.forEach(({ group, center }) => {
-          if (!center.includes(centerName) && !centerName.includes(center)) return;
+        empInfoMap.forEach(({ group }) => {
           groupTotal.set(group, (groupTotal.get(group) || 0) + 1);
         });
         // 统计各组 T-2 出勤人数（工号→组别→计数）
