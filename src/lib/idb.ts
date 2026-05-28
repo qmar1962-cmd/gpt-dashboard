@@ -101,12 +101,26 @@ export async function idbSaveRawData(rawData: any[], dataType: string, getKey?: 
       if (existing && existing.rawData && existing.rawData.length > 0) {
         if (getKey) {
           // 业务键去重：同键覆盖（新数据覆盖旧数据），不同键追加
-          const map = new Map(existing.rawData.map((row: any) => [getKey(row), row]));
+          const map = new Map<string, any>();
+          const orphans: any[] = [];
+          for (const row of existing.rawData) {
+            const key = getKey(row);
+            if (key) map.set(key, row);
+            else orphans.push(row);
+          }
           for (const row of rawData) {
             const key = getKey(row);
             if (key) map.set(key, row);
+            else orphans.push(row);
           }
-          mergedData = Array.from(map.values());
+          // 空键行用 JSON 去重，避免因列名问题导致数据丢失
+          const seen = new Set<string>();
+          const dedupOrphans: any[] = [];
+          for (const row of orphans) {
+            const k = JSON.stringify(row);
+            if (!seen.has(k)) { seen.add(k); dedupOrphans.push(row); }
+          }
+          mergedData = [...Array.from(map.values()), ...dedupOrphans];
         } else {
           // 回退：JSON.stringify 去重
           mergedData = [...existing.rawData, ...rawData];
