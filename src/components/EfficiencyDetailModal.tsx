@@ -160,17 +160,19 @@ export default function EfficiencyDetailModal({
                     {day.abnormalCount > 0 ? (
                       <div className="space-y-1">
                         {/* 表头 */}
-                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 px-3 pb-1 border-b border-red-50">
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide">岗位名称</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-16">实际值</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-16">目标值</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-16">偏离度</span>
+                        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-2 px-3 pb-1 border-b border-red-50">
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide">岗位</span>
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-14">实际</span>
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-14">目标</span>
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-14">偏离</span>
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-14">全网均值</span>
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-14">均值偏离</span>
                         </div>
                         {/* 数据行 */}
                         {day.details.map((detail, idx) => (
                           <div
                             key={idx}
-                            className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-red-50"
+                            className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-2 items-center bg-white rounded-md px-3 py-2 border border-red-50"
                           >
                             {/* 岗位名称 */}
                             <div className="flex items-center gap-1.5 min-w-0">
@@ -178,16 +180,16 @@ export default function EfficiencyDetailModal({
                               <span className="text-[11px] font-bold text-zinc-700 truncate">{detail.jobName}</span>
                             </div>
                             {/* 实际值 */}
-                            <span className="text-[11px] font-mono font-black text-zinc-800 text-right w-16">
+                            <span className="text-[11px] font-mono font-black text-zinc-800 text-right w-14">
                               {detail.actualValue > 0 ? detail.actualValue.toFixed(1) : '—'}
                             </span>
                             {/* 目标值 */}
-                            <span className="text-[11px] font-mono text-zinc-500 text-right w-16">
+                            <span className="text-[11px] font-mono text-zinc-500 text-right w-14">
                               {detail.targetValue > 0 ? detail.targetValue.toFixed(1) : '—'}
                             </span>
-                            {/* 偏离度 */}
+                            {/* 目标偏离 */}
                             <span className={cn(
-                              "text-[11px] font-black font-mono text-right w-16 px-1.5 py-0.5 rounded",
+                              "text-[11px] font-black font-mono text-right w-14 px-1 py-0.5 rounded",
                               detail.deviation >= 30
                                 ? "bg-red-100 text-red-600"
                                 : detail.deviation >= 20
@@ -195,6 +197,21 @@ export default function EfficiencyDetailModal({
                                   : "bg-amber-100 text-amber-600"
                             )}>
                               +{detail.deviation.toFixed(1)}%
+                            </span>
+                            {/* 全网同岗均值 */}
+                            <span className="text-[11px] font-mono text-zinc-500 text-right w-14">
+                              {detail.avgValue > 0 ? detail.avgValue.toFixed(1) : '—'}
+                            </span>
+                            {/* 均值偏离 */}
+                            <span className={cn(
+                              "text-[11px] font-mono text-right w-14 px-1 py-0.5 rounded",
+                              detail.avgDeviation > 0
+                                ? detail.avgDeviation >= 20
+                                  ? "bg-red-100 text-red-600 font-black"
+                                  : "bg-amber-100 text-amber-600 font-bold"
+                                : "text-zinc-300"
+                            )}>
+                              {detail.avgDeviation > 0 ? `+${detail.avgDeviation.toFixed(1)}%` : '—'}
                             </span>
                           </div>
                         ))}
