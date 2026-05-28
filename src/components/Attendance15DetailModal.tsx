@@ -341,6 +341,7 @@ export default function Attendance15DetailModal({
             if (d === t2Date) presentEmployees.add(eid);
           });
         }
+        console.log('[排休判定] centerName:', centerName, '中心工号:', centerEmpIds.size, 'T-2出勤:', presentEmployees.size, 'empInfoMap:', empInfoMap.size);
         // 统计各组总人数
         const groupTotal = new Map<string, number>();
         empInfoMap.forEach(({ group }) => {
