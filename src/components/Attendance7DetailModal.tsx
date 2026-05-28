@@ -85,6 +85,7 @@ export default function Attendance7DetailModal({
       }
 
       // 3. 自动继承：用最近一次保存的真实日期（savedAt）跟今天比，≤ 1 天才继承
+      const matchedKeysBefore = new Set(Object.keys(matched));
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
       const today = new Date().toISOString().slice(0, 10);
       for (const personName of allPeopleInWindow) {
@@ -110,6 +111,35 @@ export default function Attendance7DetailModal({
             }
           }
         }
+      }
+
+      // 4. 自动保存继承的条目（新出现的 key 写回 Supabase）
+      const inheritedKeys = Object.keys(matched).filter(k => !matchedKeysBefore.has(k));
+      if (inheritedKeys.length > 0) {
+        const updatedReasons = JSON.parse(JSON.stringify(reasons));
+        if (!updatedReasons[centerName]) updatedReasons[centerName] = {};
+        for (const key of inheritedKeys) {
+          const underscoreIdx = key.indexOf('_');
+          const date = key.substring(0, underscoreIdx);
+          const name = key.substring(underscoreIdx + 1);
+          // 从 weeklyData 里找 employeeId
+          let employeeId = '';
+          for (const day of weeklyData) {
+            const person = day.details.find(p => p.name === name);
+            if (person) { employeeId = person.employeeId || ''; break; }
+          }
+          if (!updatedReasons[centerName][date]) updatedReasons[centerName][date] = {};
+          updatedReasons[centerName][date][name] = {
+            reason: matched[key],
+            date,
+            savedAt: today,
+            employeeId,
+            name,
+          };
+        }
+        setCollaborationData(updatedReasons);
+        const saveResult = await saveCollaborationData('absence_reasons.json', updatedReasons, `自动继承未出勤原因: ${centerName}`);
+        console.log('[继承] 自动保存结果:', saveResult);
       }
 
       setReasonMap(matched);

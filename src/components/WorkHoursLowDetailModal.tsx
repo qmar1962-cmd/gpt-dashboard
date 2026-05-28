@@ -79,6 +79,7 @@ export default function WorkHoursLowDetailModal({
       }
 
       // 3. 自动继承：用最近一次保存的真实日期（savedAt）跟今天比，≤ 1 天才继承
+      const matchedKeysBefore = new Set(Object.keys(matched));
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
       const today = new Date().toISOString().slice(0, 10);
       for (const personName of allPeopleInWindow) {
@@ -104,6 +105,34 @@ export default function WorkHoursLowDetailModal({
             }
           }
         }
+      }
+
+      // 4. 自动保存继承的条目
+      const inheritedKeys = Object.keys(matched).filter(k => !matchedKeysBefore.has(k));
+      if (inheritedKeys.length > 0) {
+        const updatedReasons = JSON.parse(JSON.stringify(reasons));
+        if (!updatedReasons[centerName]) updatedReasons[centerName] = {};
+        for (const key of inheritedKeys) {
+          const underscoreIdx = key.indexOf('_');
+          const date = key.substring(0, underscoreIdx);
+          const name = key.substring(underscoreIdx + 1);
+          let employeeId = '';
+          for (const day of weeklyData) {
+            const person = day.details.find(p => p.name === name);
+            if (person) { employeeId = person.employeeId || ''; break; }
+          }
+          if (!updatedReasons[centerName][date]) updatedReasons[centerName][date] = {};
+          updatedReasons[centerName][date][name] = {
+            reason: matched[key],
+            date,
+            savedAt: today,
+            employeeId,
+            name,
+          };
+        }
+        setCollaborationData(updatedReasons);
+        const saveResult = await saveCollaborationData('work_hours_low_reasons.json', updatedReasons, `自动继承工时低原因: ${centerName}`);
+        console.log('[工时低原因] 自动保存结果:', saveResult);
       }
 
       setReasonMap(matched);
