@@ -310,67 +310,69 @@ export default function Attendance15DetailModal({
       // 4. 加载小组出勤率数据（计算排休判定）
       try {
         const t2Date = weeklyData[weeklyData.length - 1]?.date || '';
-        const rosterStored = await idbGetRawData('employee_roster');
-        const findKey = (row: any, patterns: string[]) => {
+        const [rosterStored, dailyStored] = await Promise.all([
+          idbGetRawData('employee_roster'),
+          idbGetRawData('center_daily_attendance'),
+        ]);
+
+        // ── 工具：动态列名匹配 ──
+        const colVal = (row: any, patterns: string[]): string => {
           const keys = Object.keys(row);
-          for (const p of patterns) { const k = keys.find(k => k.includes(p)); if (k) return row[k]; }
+          for (const p of patterns) { const k = keys.find(k => k.includes(p)); if (k) return String(row[k] || '').trim(); }
           return '';
         };
-        // 花名册 → 工号→{组别, 中心} 映射（仅保留当前中心的人员）
-        const empInfoMap = new Map<string, { group: string; center: string }>();
-        const centerEmpIds = new Set<string>(); // 当前中心的所有工号
+
+        // ── Step 1: 从花名册构建 工号→组别 映射（仅当前中心） ──
+        const empGroupMap = new Map<string, string>(); // 工号→组别
+        const centerEmpIds = new Set<string>();
         if (rosterStored?.rawData) {
-          rosterStored.rawData.forEach((row: any) => {
-            const eid = String(findKey(row, ['工号', '员工ID', '员工编号']) || '').trim();
-            const g = findKey(row, ['七级部门', '组别']) || '';
-            const c = findKey(row, ['九级单位', '六级单位', '所在单位']) || '';
-            if (!eid || !g) return;
-            if (!c.includes(centerName) && !centerName.includes(c)) return;
-            empInfoMap.set(eid, { group: g, center: c });
+          for (const row of rosterStored.rawData) {
+            const eid = colVal(row, ['工号', '员工ID', '员工编号']);
+            const g = colVal(row, ['七级部门', '组别']);
+            const c = colVal(row, ['九级单位', '六级单位', '所在单位']);
+            if (!eid || !g) continue;
+            if (!c.includes(centerName) && !centerName.includes(c)) continue;
+            empGroupMap.set(eid, g);
             centerEmpIds.add(eid);
-          });
+          }
         }
-        // 中心日出勤明细 → T-2 出勤工号（只需匹配当前中心的工号）
-        const dailyStored = await idbGetRawData('center_daily_attendance');
-        const presentEmployees = new Set<string>();
+
+        // ── Step 2: 从考勤明细找出 T-2 出勤工号 ──
+        const t2Present = new Set<string>();
         if (dailyStored?.rawData) {
-          dailyStored.rawData.forEach((row: any) => {
-            const eid = String(findKey(row, ['代号', '工号']) || '').trim();
-            if (!eid || !centerEmpIds.has(eid)) return;
-            const d = String(findKey(row, ['日期', '数据日期']) || '').trim();
-            if (d === t2Date) presentEmployees.add(eid);
-          });
+          for (const row of dailyStored.rawData) {
+            const eid = colVal(row, ['代号', '工号']);
+            if (!eid || !centerEmpIds.has(eid)) continue;
+            if (colVal(row, ['日期', '数据日期']) === t2Date) t2Present.add(eid);
+          }
         }
-        // 统计各组总人数
-        const groupTotal = new Map<string, number>();
-        empInfoMap.forEach(({ group }) => {
-          groupTotal.set(group, (groupTotal.get(group) || 0) + 1);
-        });
-        // 统计各组 T-2 出勤人数（工号→组别→计数）
-        const groupPresent = new Map<string, number>();
-        presentEmployees.forEach(eid => {
-          const entry = empInfoMap.get(eid);
-          if (entry) groupPresent.set(entry.group, (groupPresent.get(entry.group) || 0) + 1);
-        });
-        // 组装 groupInfo
+
+        // ── Step 3: 统计 组→总人数/出勤人数 ──
+        const gTotal = new Map<string, number>();
+        const gPresent = new Map<string, number>();
+        for (const [eid, g] of empGroupMap) {
+          gTotal.set(g, (gTotal.get(g) || 0) + 1);
+          if (t2Present.has(eid)) gPresent.set(g, (gPresent.get(g) || 0) + 1);
+        }
+
+        // ── Step 4: 为每个连续出勤员工生成判定 ──
         const info = new Map<string, { group: string; rate: number; judgment: string }>();
-        let att15Matched = 0, att15Unmatched = 0;
-        weeklyData.forEach(day => day.details.forEach(p => {
-          if (info.has(p.employeeId)) return;
-          const entry = empInfoMap.get(p.employeeId);
-          const group = entry?.group || '未知';
-          const total = groupTotal.get(group) || 0;
-          const present = groupPresent.get(group) || 0;
-          const rate = total > 0 ? Math.round((present / total) * 100) : 0;
-          const judgment = total > 0 ? (rate >= 85 ? '无法排休' : '没排休') : '数据不足';
-          info.set(p.employeeId, { group, rate, judgment });
-          p.group = group;
-          if (entry) att15Matched++; else att15Unmatched++;
-        }));
-        const allAtt15Eids = new Set<string>();
-        weeklyData.forEach(d => d.details.forEach(p => allAtt15Eids.add(p.employeeId)));
+        const seen = new Set<string>();
+        for (const day of weeklyData) {
+          for (const p of day.details) {
+            if (seen.has(p.employeeId)) continue;
+            seen.add(p.employeeId);
+            const g = empGroupMap.get(p.employeeId) || '未知';
+            const t = gTotal.get(g) || 0;
+            const pr = gPresent.get(g) || 0;
+            const rate = t > 0 ? Math.round((pr / t) * 100) : 0;
+            const judgment = t > 0 ? (rate >= 85 ? '无法排休' : '没排休') : '数据不足';
+            info.set(p.employeeId, { group: g, rate, judgment });
+            p.group = g;
+          }
+        }
         setGroupInfo(info);
-        console.log('[排休判定] 连续出勤:', allAtt15Eids.size, '人, 匹配花名册:', att15Matched, '人, 未匹配:', att15Unmatched, '人, 组:', groupTotal.size, '个, T-2出勤:', presentEmployees.size, '人');
+        console.log('[排休判定] 花名册:', empGroupMap.size, '人, 出勤:', t2Present.size, '人, 组:', gTotal.size, '个, 连续出勤:', seen.size, '人');
       } catch (e) { console.warn('[排休判定] 小组数据加载失败:', e); }
 
       // 加载完成后才重置未保存标记
