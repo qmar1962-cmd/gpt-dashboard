@@ -66,7 +66,7 @@ function buildJsonData() {
         continue;
       }
 
-      const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+      const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: true });
 
       // 写入 JSON 文件
       const jsonFilename = file.replace('.xlsx', '.json');
