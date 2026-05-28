@@ -188,8 +188,7 @@ export default function WorkHoursLowDetailModal({
           const person = day.details.find(p => p.name === name);
           if (person) { employeeId = person.employeeId || ''; break; }
         }
-        let savedAt = collaborationData[centerName]?.[date]?.[name]?.savedAt;
-        if (!savedAt) savedAt = new Date().toISOString().slice(0, 10);
+        const savedAt = new Date().toISOString().slice(0, 10);
         rebuiltData[centerName][date][name] = { employeeId, name, reason, date, savedAt };
       }
 

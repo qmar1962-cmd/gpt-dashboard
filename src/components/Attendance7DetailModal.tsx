@@ -204,9 +204,8 @@ export default function Attendance7DetailModal({
           const person = day.details.find(p => p.name === name);
           if (person) { employeeId = person.employeeId || ''; break; }
         }
-        // 保留已有的 savedAt，没有则用今天
-        let savedAt = collaborationData[centerName]?.[date]?.[name]?.savedAt;
-        if (!savedAt) savedAt = new Date().toISOString().slice(0, 10);
+        // 保存时始终更新 savedAt 为今天（确保下次能继承）
+        const savedAt = new Date().toISOString().slice(0, 10);
         rebuiltData[centerName][date][name] = { employeeId, name, reason, date, savedAt };
       }
 

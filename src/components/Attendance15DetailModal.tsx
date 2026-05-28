@@ -463,7 +463,7 @@ export default function Attendance15DetailModal({
         const date = key.substring(0, underscoreIdx);
         const name = key.substring(underscoreIdx + 1);
         if (!rebuiltData[centerName][date]) rebuiltData[centerName][date] = {};
-        if (!plan.savedAt) plan.savedAt = new Date().toISOString().slice(0, 10);
+        plan.savedAt = new Date().toISOString().slice(0, 10);
         // 附上小组排休判定
         const gi = groupInfo.get(plan.employeeId);
         if (gi) { plan.groupRate = gi.rate; plan.restJudgment = gi.judgment; }
