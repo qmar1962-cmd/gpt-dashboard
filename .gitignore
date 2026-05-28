@@ -34,4 +34,5 @@ npm-debug.log*
 # Backup
 backup-*.zip
 .env.local
-public/database/json/
+# public/database/json/ — 改由 git 跟踪以保留历史数据
+public/database/json/roster_0525.json

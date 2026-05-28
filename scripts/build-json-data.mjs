@@ -43,11 +43,23 @@ function buildJsonData() {
     console.log(`[构建 JSON 数据] 创建目录: ${JSON_DIR}`);
   }
 
-  // 3. 处理每个文件
+  // 3. 先保留已有的历史 JSON 文件（防止 Excel 源文件缺失时丢失历史数据）
   const fileList = {
     generated_at: new Date().toISOString(),
     files: {}
   };
+  if (existsSync(JSON_DIR)) {
+    const existingJsons = readdirSync(JSON_DIR).filter(f => f.endsWith('.json') && f !== 'filelist.json');
+    for (const jf of existingJsons) {
+      const jpath = join(JSON_DIR, jf);
+      try {
+        const stats = statSync(jpath);
+        const hash = createHash('md5').update(readFileSync(jpath)).digest('hex');
+        fileList.files[jf] = { mtime: stats.mtime.toISOString(), size: stats.size, hash: hash };
+      } catch (e) { /* skip corrupted files */ }
+    }
+    console.log(`[构建 JSON 数据] 保留已有 ${existingJsons.length} 个 JSON 文件`);
+  }
 
   let successCount = 0;
   let failCount = 0;
@@ -73,7 +85,7 @@ function buildJsonData() {
       const jsonFilepath = join(JSON_DIR, jsonFilename);
       writeFileSync(jsonFilepath, JSON.stringify(data, null, 2));
 
-      // 获取 JSON 文件信息（用于 filelist.json）
+      // 更新 filelist.json
       const stats = statSync(jsonFilepath);
       const hash = createHash('md5').update(readFileSync(jsonFilepath)).digest('hex');
 
@@ -81,7 +93,7 @@ function buildJsonData() {
         mtime: stats.mtime.toISOString(),
         size: stats.size,
         hash: hash,
-        source: file  // 记录源 Excel 文件
+        source: file
       };
 
       console.log(`  ✅ ${file} -> ${jsonFilename} (${data.length} 行)`);
@@ -97,8 +109,7 @@ function buildJsonData() {
   writeFileSync(filelistPath, JSON.stringify(fileList, null, 2));
 
   console.log(`\n[构建 JSON 数据] 完成：`);
-  console.log(`  成功: ${successCount} 个文件`);
-  console.log(`  失败: ${failCount} 个文件`);
+  console.log(`  转换: ${successCount} 个, 失败: ${failCount} 个, 总计: ${Object.keys(fileList.files).length} 个`);
   console.log(`  filelist.json: ${filelistPath}`);
 }
 
