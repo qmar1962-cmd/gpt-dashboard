@@ -585,6 +585,10 @@ export default function Attendance15DetailModal({
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
                 </h3>
+                <p className="text-[10px] text-zinc-400 mt-0.5">
+                  操作在职 {Object.keys(empGroupObj).length}人 · T-2出勤 {t2PresentList.length}人 · 出勤率 {Object.keys(empGroupObj).length > 0 ? Math.round(t2PresentList.length / Object.keys(empGroupObj).length * 100) : 0}%
+                  （{weeklyData[weeklyData.length - 1]?.date?.slice(5) || ''}）
+                </p>
                 {/* 考勤负责人编辑 */}
                 <div className="mt-1 flex items-center gap-2">
                   {isEditingResponsible ? (
