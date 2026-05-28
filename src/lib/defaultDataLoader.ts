@@ -91,7 +91,7 @@ function getKeyForType(dataType: DataType): ((row: any) => string) | undefined {
       return (row) => {
         const keys = Object.keys(row);
         const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k)) || '工号';
-        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '日期';
+        const dateCol = keys.find(k => /日期|数据日期|出勤日期|打卡日期/i.test(k)) || '日期';
         return `${row[idCol] || ''}_${row[dateCol] || ''}`;
       };
     }
