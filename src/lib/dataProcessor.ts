@@ -484,7 +484,7 @@ export function getWeeklyAttendance15Detail(
       name: row.姓名 || '',
       jobName: row.岗位 || '',
       continuousDays: parseInt(row.连续出勤天数 || 0) || 0,
-      employeeId: String(row.工号 || row['员工编号'] || '').trim(),
+      employeeId: String(row.工号 || row['员工编号'] || row['代号'] || '').trim(),
     }));
 
     days.push({
@@ -544,7 +544,7 @@ export function getWeeklyAttendance7Detail(
       name: row.姓名 || '',
       jobName: row.岗位 || '',
       continuousDays: parseInt(row.连续未出勤天数 || 0) || 0,
-      employeeId: String(row.工号 || row['员工编号'] || '').trim(),
+      employeeId: String(row.工号 || row['员工编号'] || row['代号'] || '').trim(),
     }));
 
     days.push({
@@ -607,7 +607,7 @@ export function getWorkHoursHighDetail(
       jobName: row.岗位 || '',
       workHours: parseFloat(row.出勤工时 || 0) || 0,
       overHoursDays: parseInt(row['超过12.5h天数'] || 0) || 0,
-      employeeId: String(row.工号 || row['员工编号'] || '').trim(),
+      employeeId: String(row.工号 || row['员工编号'] || row['代号'] || '').trim(),
     }));
 
     days.push({
@@ -670,7 +670,7 @@ export function getWorkHoursLowDetail(
       jobName: row.岗位 || '',
       workHours: parseFloat(row.出勤工时 || 0) || 0,
       underHoursDays: parseInt(row['低于8h天数'] || 0) || 0,
-      employeeId: String(row.工号 || row['员工编号'] || '').trim(),
+      employeeId: String(row.工号 || row['员工编号'] || row['代号'] || '').trim(),
     }));
 
     days.push({
