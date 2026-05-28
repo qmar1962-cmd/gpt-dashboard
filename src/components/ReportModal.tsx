@@ -161,7 +161,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         twoLine(`综合: ${row.compositeScope.toFixed(1)}`, `组长: ${row.leaderScope.toFixed(1)}`, xPos, colWidths[2], '#333', '#71717a'); xPos += colWidths[2];
         twoLine(`综合: ${(row.compOverTarget > 0 ? '+' : '') + row.compOverTarget.toFixed(1)}`, `组长: ${(row.leadOverTarget > 0 ? '+' : '') + row.leadOverTarget.toFixed(1)}`, xPos, colWidths[3], row.compOverTarget > 0 ? '#dc2626' : '#16a34a', row.leadOverTarget > 0 ? '#dc2626' : '#16a34a'); xPos += colWidths[3];
         [row.jobAbnormal, row.salaryCoverage, row.att15Rate, String(row.att7Count), row.workHoursHighRate, String(row.workHoursLowCount)].forEach((v, vi) => {
-          const n = parseFloat(v); const warn = vi < 2 ? n > 3 : vi === 2 ? parseFloat(row.att7Rate || '0') > 3 : n > 0;
+          const n = parseFloat(v); const warn = vi <= 2 ? n > 3 : vi === 3 ? n > 0 : vi === 4 ? n > 10 : n > 0;
           ctx.font = warn ? 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif' : '11px -apple-system, BlinkMacSystemFont, sans-serif';
           cell(v, xPos, colWidths[4 + vi], warn ? '#dc2626' : '#16a34a');
           xPos += colWidths[4 + vi];
