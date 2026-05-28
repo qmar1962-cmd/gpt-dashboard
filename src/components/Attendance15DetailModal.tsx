@@ -334,19 +334,12 @@ export default function Attendance15DetailModal({
         const dailyStored = await idbGetRawData('center_daily_attendance');
         const presentEmployees = new Set<string>();
         if (dailyStored?.rawData) {
-          // 诊断日志
-          const sampleRows = dailyStored.rawData.slice(0, 2);
-          console.log('[排休判定] 考勤明细行数:', dailyStored.rawData.length, '中心工号数:', centerEmpIds.size, 't2Date:', t2Date);
-          console.log('[排休判定] 前2行列名:', sampleRows.map(r => Object.keys(r)));
-          let matchedId = 0, matchedDate = 0;
           dailyStored.rawData.forEach((row: any) => {
             const eid = String(findKey(row, ['代号', '工号']) || '').trim();
             if (!eid || !centerEmpIds.has(eid)) return;
-            matchedId++;
             const d = String(findKey(row, ['日期', '数据日期']) || '').trim();
-            if (d === t2Date) { presentEmployees.add(eid); matchedDate++; }
+            if (d === t2Date) presentEmployees.add(eid);
           });
-          console.log('[排休判定] 工号匹配行:', matchedId, 'T-2匹配行:', matchedDate);
         }
         // 统计各组总人数
         const groupTotal = new Map<string, number>();
@@ -373,14 +366,6 @@ export default function Attendance15DetailModal({
           p.group = group;
         }));
         setGroupInfo(info);
-        // 诊断日志
-        const sampleAtt15Eids = new Set<string>();
-        weeklyData.forEach(d => d.details.forEach(p => { if (sampleAtt15Eids.size < 5) sampleAtt15Eids.add(p.employeeId); }));
-        const rosterEids = Array.from(empInfoMap.keys()).slice(0, 5);
-        console.log('[排休判定] 完成, 工号→组别:', empInfoMap.size, '人, 组出勤:', groupTotal.size, '组, T-2出勤人数:', presentEmployees.size);
-        console.log('[排休判定] 连续出勤工号示例:', Array.from(sampleAtt15Eids));
-        console.log('[排休判定] 花名册工号示例:', rosterEids);
-        console.log('[排休判定] 组出勤率:', Array.from(groupTotal.entries()).slice(0, 5).map(([g, t]) => ({ g, t, p: groupPresent.get(g) || 0 })));
       } catch (e) { console.warn('[排休判定] 小组数据加载失败:', e); }
 
       // 加载完成后才重置未保存标记
