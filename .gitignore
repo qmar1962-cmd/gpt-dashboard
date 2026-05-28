@@ -31,6 +31,9 @@ Desktop.ini
 *.log
 npm-debug.log*
 
+# Office lock files
+~$*
+
 # Backup
 backup-*.zip
 .env.local

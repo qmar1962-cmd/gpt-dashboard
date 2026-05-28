@@ -57,61 +57,56 @@ const FILE_TYPE_MAP: Record<string, DataType> = {
 
 // ── 工具函数 ───────────────────────────────────────────────
 
-/** 根据数据类型生成业务键函数（用于 IndexedDB 去重，同键覆盖） */
+/** 根据数据类型生成业务键函数（用于 IndexedDB 去重，同键覆盖）。列名只在第一行查找并缓存 */
 function getKeyForType(dataType: DataType): ((row: any) => string) | undefined {
+  // 辅助：创建缓存列名查找器（避免每行都 Object.keys + 正则搜索）
+  const colFinder = (patterns: string[], fallback: string) => {
+    let cached = '';
+    let done = false;
+    return (row: any) => {
+      if (!done) {
+        const keys = Object.keys(row);
+        const found = keys.find(k => patterns.some(p => new RegExp(p, 'i').test(k)));
+        cached = found || fallback;
+        done = true;
+      }
+      return String(row[cached] || '').trim();
+    };
+  };
+
   switch (dataType) {
     case 'employee_roster': {
-      // 花名册只取工号去重（同一工号 = 同一个人）
-      return (row) => {
-        const keys = Object.keys(row);
-        const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k));
-        if (!idCol) return String(row['工号'] || row['员工ID'] || '').trim();
-        return String(row[idCol] || '').trim();
-      };
+      const getId = colFinder(['工号', '员工ID', '编号', '代号'], '工号');
+      return (row) => { const v = getId(row); return v || String(row['工号'] || row['员工ID'] || '').trim(); };
     }
     case 'salary_performance': {
-      return (row) => {
-        const keys = Object.keys(row);
-        const nameCol = keys.find(k => /姓名|名字/i.test(k)) || '姓名';
-        const jobCol = keys.find(k => /岗位/i.test(k)) || '岗位';
-        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '数据日期';
-        return `${row[nameCol] || ''}_${row[jobCol] || ''}_${row[dateCol] || ''}`;
-      };
+      const getName = colFinder(['姓名', '名字'], '姓名');
+      const getJob = colFinder(['岗位'], '岗位');
+      const getDate = colFinder(['日期', '数据日期'], '数据日期');
+      return (row) => `${getName(row)}_${getJob(row)}_${getDate(row)}`;
     }
     case 'attendance_15days':
     case 'attendance_7days': {
-      return (row) => {
-        const keys = Object.keys(row);
-        const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k)) || '工号';
-        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '数据日期';
-        return `${row[idCol] || ''}_${row[dateCol] || ''}`;
-      };
+      const getId = colFinder(['工号', '员工ID', '编号', '代号'], '工号');
+      const getDate = colFinder(['日期', '数据日期'], '数据日期');
+      return (row) => `${getId(row)}_${getDate(row)}`;
     }
     case 'center_daily_attendance': {
-      return (row) => {
-        const keys = Object.keys(row);
-        const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k)) || '工号';
-        const dateCol = keys.find(k => /日期|数据日期|出勤日期|打卡日期/i.test(k)) || '日期';
-        return `${row[idCol] || ''}_${row[dateCol] || ''}`;
-      };
+      const getId = colFinder(['工号', '员工ID', '编号', '代号'], '工号');
+      const getDate = colFinder(['日期', '数据日期', '出勤日期', '打卡日期'], '日期');
+      return (row) => `${getId(row)}_${getDate(row)}`;
     }
     case 'job_performance': {
-      return (row) => {
-        const keys = Object.keys(row);
-        const jobCol = keys.find(k => /岗位名称|岗位/i.test(k)) || '岗位名称';
-        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '数据日期';
-        const centerCol = keys.find(k => /中心|中心名称/i.test(k)) || '中心';
-        return `${row[jobCol] || ''}_${row[dateCol] || ''}_${row[centerCol] || ''}`;
-      };
+      const getJob = colFinder(['岗位名称', '岗位'], '岗位名称');
+      const getDate = colFinder(['日期', '数据日期'], '数据日期');
+      const getCenter = colFinder(['中心', '中心名称'], '中心');
+      return (row) => `${getJob(row)}_${getDate(row)}_${getCenter(row)}`;
     }
     case 'work_hours_high':
     case 'work_hours_low': {
-      return (row) => {
-        const keys = Object.keys(row);
-        const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k)) || '工号';
-        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '数据日期';
-        return `${row[idCol] || ''}_${row[dateCol] || ''}`;
-      };
+      const getId = colFinder(['工号', '员工ID', '编号', '代号'], '工号');
+      const getDate = colFinder(['日期', '数据日期'], '数据日期');
+      return (row) => `${getId(row)}_${getDate(row)}`;
     }
     default:
       return undefined;
