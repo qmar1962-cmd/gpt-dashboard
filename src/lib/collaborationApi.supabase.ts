@@ -189,7 +189,8 @@ function absenceReasonsRowsToJson(rows: any[]): any {
     if (!result[row.center][row.date]) result[row.center][row.date] = {};
     result[row.center][row.date][row.name] = {
       reason: row.reason,
-      date: row.record_date,
+      date: row.date,
+      savedAt: row.record_date,
     };
   }
   return result;
@@ -206,7 +207,7 @@ function absenceReasonsJsonToRows(data: any): any[] {
           date,
           name,
           reason: item.reason,
-          record_date: item.date,
+          record_date: item.savedAt || item.date,
         });
       }
     }
