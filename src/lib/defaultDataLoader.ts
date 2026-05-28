@@ -60,25 +60,59 @@ const FILE_TYPE_MAP: Record<string, DataType> = {
 /** 根据数据类型生成业务键函数（用于 IndexedDB 去重，同键覆盖） */
 function getKeyForType(dataType: DataType): ((row: any) => string) | undefined {
   switch (dataType) {
-    case 'salary_performance':
-      return (row) => `${row['姓名'] || ''}_${row['岗位'] || ''}_${row['数据日期'] || row['日期'] || row['date'] || ''}`;
-    case 'attendance_15days':
-    case 'attendance_7days':
-      return (row) => `${row['工号'] || ''}_${row['数据日期'] || row['日期'] || row['date'] || ''}`;
-    case 'employee_roster':
-      return (row) => String(row['工号'] || row['员工ID'] || '').trim();
-    case 'center_daily_attendance':
+    case 'employee_roster': {
+      // 花名册只取工号去重（同一工号 = 同一个人）
       return (row) => {
         const keys = Object.keys(row);
-        const idCol = keys.find(k => /工号|员工ID|编号/i.test(k)) || '工号';
+        const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k));
+        if (!idCol) return String(row['工号'] || row['员工ID'] || '').trim();
+        return String(row[idCol] || '').trim();
+      };
+    }
+    case 'salary_performance': {
+      return (row) => {
+        const keys = Object.keys(row);
+        const nameCol = keys.find(k => /姓名|名字/i.test(k)) || '姓名';
+        const jobCol = keys.find(k => /岗位/i.test(k)) || '岗位';
+        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '数据日期';
+        return `${row[nameCol] || ''}_${row[jobCol] || ''}_${row[dateCol] || ''}`;
+      };
+    }
+    case 'attendance_15days':
+    case 'attendance_7days': {
+      return (row) => {
+        const keys = Object.keys(row);
+        const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k)) || '工号';
+        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '数据日期';
+        return `${row[idCol] || ''}_${row[dateCol] || ''}`;
+      };
+    }
+    case 'center_daily_attendance': {
+      return (row) => {
+        const keys = Object.keys(row);
+        const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k)) || '工号';
         const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '日期';
         return `${row[idCol] || ''}_${row[dateCol] || ''}`;
       };
-    case 'job_performance':
-      return (row) => `${row['岗位名称'] || row['jobName'] || ''}_${row['数据日期'] || row['日期'] || row['date'] || ''}_${row['中心'] || row['center'] || ''}`;
+    }
+    case 'job_performance': {
+      return (row) => {
+        const keys = Object.keys(row);
+        const jobCol = keys.find(k => /岗位名称|岗位/i.test(k)) || '岗位名称';
+        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '数据日期';
+        const centerCol = keys.find(k => /中心|中心名称/i.test(k)) || '中心';
+        return `${row[jobCol] || ''}_${row[dateCol] || ''}_${row[centerCol] || ''}`;
+      };
+    }
     case 'work_hours_high':
-    case 'work_hours_low':
-      return (row) => `${row['工号'] || ''}_${row['数据日期'] || row['日期'] || row['date'] || ''}`;
+    case 'work_hours_low': {
+      return (row) => {
+        const keys = Object.keys(row);
+        const idCol = keys.find(k => /工号|员工ID|编号|代号/i.test(k)) || '工号';
+        const dateCol = keys.find(k => /日期|数据日期/i.test(k)) || '数据日期';
+        return `${row[idCol] || ''}_${row[dateCol] || ''}`;
+      };
+    }
     default:
       return undefined;
   }
