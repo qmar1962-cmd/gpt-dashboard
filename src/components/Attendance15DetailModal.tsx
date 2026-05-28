@@ -341,7 +341,6 @@ export default function Attendance15DetailModal({
             if (d === t2Date) presentEmployees.add(eid);
           });
         }
-        console.log('[排休判定] centerName:', centerName, '中心工号:', centerEmpIds.size, 'T-2出勤:', presentEmployees.size, 'empInfoMap:', empInfoMap.size);
         // 统计各组总人数
         const groupTotal = new Map<string, number>();
         empInfoMap.forEach(({ group }) => {
@@ -355,6 +354,7 @@ export default function Attendance15DetailModal({
         });
         // 组装 groupInfo
         const info = new Map<string, { group: string; rate: number; judgment: string }>();
+        let att15Matched = 0, att15Unmatched = 0;
         weeklyData.forEach(day => day.details.forEach(p => {
           if (info.has(p.employeeId)) return;
           const entry = empInfoMap.get(p.employeeId);
@@ -365,8 +365,12 @@ export default function Attendance15DetailModal({
           const judgment = total > 0 ? (rate >= 85 ? '无法排休' : '没排休') : '数据不足';
           info.set(p.employeeId, { group, rate, judgment });
           p.group = group;
+          if (entry) att15Matched++; else att15Unmatched++;
         }));
+        const allAtt15Eids = new Set<string>();
+        weeklyData.forEach(d => d.details.forEach(p => allAtt15Eids.add(p.employeeId)));
         setGroupInfo(info);
+        console.log('[排休判定] 连续出勤:', allAtt15Eids.size, '人, 匹配花名册:', att15Matched, '人, 未匹配:', att15Unmatched, '人, 组:', groupTotal.size, '个, T-2出勤:', presentEmployees.size, '人');
       } catch (e) { console.warn('[排休判定] 小组数据加载失败:', e); }
 
       // 加载完成后才重置未保存标记
