@@ -385,8 +385,8 @@ export async function loadDefaultData(
           onProgress(idx + 1, filesToReload.length, file);
         }
       } catch (err) {
-        console.error(`[默认数据] 加载文件失败 ${file}:`, err);
         failCount++;
+        console.error(`[默认数据] 加载文件失败 ${file}:`, err, '（请检查该文件是否存在或格式正确）');
       }
     });
 
