@@ -144,8 +144,9 @@ function jsonToRows(fileName: string, data: any): any[] {
   }
 }
 
-// leave_plans: JSON { 中心: { 日期: { 姓名: { start, end, setDate } } } }
+// leave_plans: JSON { 中心: { 日期: { 姓名: { start, end, setDate, savedAt } } } }
 // leave_plans 表列: id, center, date, name, start_date, end_date, set_date, created_at
+// 注：savedAt 复用 set_date 列存储（两者始终相等）
 function leavePlansRowsToJson(rows: any[]): any {
   const result: any = {};
   for (const row of rows) {
@@ -155,6 +156,7 @@ function leavePlansRowsToJson(rows: any[]): any {
       start: row.start_date,
       end: row.end_date,
       setDate: row.set_date,
+      savedAt: row.set_date,       // 继承用：set_date 即为保存日期
     };
   }
   return result;
@@ -172,7 +174,7 @@ function leavePlansJsonToRows(data: any): any[] {
           name,
           start_date: item.start,
           end_date: item.end,
-          set_date: item.setDate,
+          set_date: item.savedAt || item.setDate,
         });
       }
     }
@@ -264,8 +266,9 @@ function groupLeadersJsonToRows(data: any): any[] {
   return rows;
 }
 
-// work_hours_low_reasons: JSON { 中心: { 日期: { 姓名: { reason } } } }
+// work_hours_low_reasons: JSON { 中心: { 日期: { 姓名: { reason, savedAt } } } }
 // work_hours_low_reasons 表列: id, center, date, name, reason, created_at
+// 注：savedAt 复用 created_at 列，DELETE+INSERT 时自动更新
 function workHoursLowReasonsRowsToJson(rows: any[]): any {
   const result: any = {};
   for (const row of rows) {
@@ -273,6 +276,8 @@ function workHoursLowReasonsRowsToJson(rows: any[]): any {
     if (!result[row.center][row.date]) result[row.center][row.date] = {};
     result[row.center][row.date][row.name] = {
       reason: row.reason,
+      date: row.date,                                          // 窗口日期（兼容旧代码）
+      savedAt: (row.created_at || row.date || '').slice(0, 10), // 保存日期（用于继承）
     };
   }
   return result;
