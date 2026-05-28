@@ -580,8 +580,8 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
-                          <span className="opacity-40 truncate">触发人数</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whHighCount || 0}</span>
+                          <span className="opacity-40 truncate">触发率</span>
+                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whHighRate || '0%'}</span>
                         </div>
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">新增</span>
