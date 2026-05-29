@@ -9,197 +9,147 @@ import ConfirmModal from './ConfirmModal';
 
 // ── 排休数据结构 ──
 
-interface LeavePlanRecord {
+interface DateRange {
   start: string;      // YYYY-MM-DD 排休开始
   end: string;        // YYYY-MM-DD 排休结束
-  setDate: string;    // YYYY-MM-DD 设置日期（用于判断过期）
-  savedAt: string;    // 真实保存日期（YYYY-MM-DD），用于继承判断
-  name: string;       // 姓名（显示用）
-  employeeId: string; // 工号（主键）
-  groupRate?: number; // 小组出勤率（%）
-  restJudgment?: string; // 排休判定：无法排休 / 没排休
 }
 
-// ── 日期范围选择器弹窗 ──
+interface LeavePlanRecord {
+  ranges: DateRange[];   // 多段日期
+  setDate: string;       // YYYY-MM-DD 设置日期
+  savedAt: string;       // 真实保存日期（YYYY-MM-DD），用于继承判断
+  name: string;
+  employeeId: string;
+  groupRate?: number;
+  restJudgment?: string;
+}
+
+// ── 多段日期选择器弹窗 ──
 interface DatePickerPopoverProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (start: string, end: string) => void;
+  onSelect: (ranges: DateRange[]) => void;
   onClear: () => void;
-  currentPlan?: LeavePlanRecord | null;
+  currentRanges?: DateRange[];
 }
 
-function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentPlan }: DatePickerPopoverProps) {
+const fmtMD = (d: string) => { const p = d.split('-'); return `${parseInt(p[1])}/${parseInt(p[2])}`; };
+
+function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }: DatePickerPopoverProps) {
+  const [ranges, setRanges] = useState<DateRange[]>([]);
+  const [mode, setMode] = useState<'view' | 'add'>('view');
   const [viewDate, setViewDate] = useState(() => new Date());
+  const [pickStart, setPickStart] = useState<string | null>(null);
+  const [pickEnd, setPickEnd] = useState<string | null>(null);
   const [selectingStart, setSelectingStart] = useState(true);
-  const [rangeStart, setRangeStart] = useState<string | null>(currentPlan?.start || null);
-  const [rangeEnd, setRangeEnd] = useState<string | null>(currentPlan?.end || null);
   const [hoverDate, setHoverDate] = useState<string | null>(null);
 
-  // 当弹窗打开时重置状态
   useEffect(() => {
     if (isOpen) {
-      const today = new Date();
-      setViewDate(today);
-      setSelectingStart(true);
-      setRangeStart(currentPlan?.start || null);
-      setRangeEnd(currentPlan?.end || null);
-      setHoverDate(null);
+      setRanges(currentRanges ? [...currentRanges] : []);
+      setMode('view');
+      setPickStart(null); setPickEnd(null); setSelectingStart(true);
+      setViewDate(new Date());
     }
-  }, [isOpen, currentPlan]);
+  }, [isOpen, currentRanges]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
-
-  const firstDay = new Date(year, month, 1).getDay(); // 0=周日
-  const daysInMonth = new Date(year, month + 1,0).getDate();
-
-  const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
-  const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
-
-  const formatDateShort = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
 
   const isInRange = (d: string) => {
-    if (!rangeStart) return false;
-    if (rangeEnd) return d >= rangeStart && d <= rangeEnd;
-    // 只选了开始日期，显示 hover 范围
-    if (hoverDate && selectingStart === false) {
-      const [s, h] = rangeStart < hoverDate ? [rangeStart, hoverDate] : [hoverDate, rangeStart];
-      return d >= s && d <= h;
+    if (pickStart && pickEnd) return d >= pickStart && d <= pickEnd;
+    if (pickStart && hoverDate && !selectingStart) {
+      const [a, b] = pickStart < hoverDate ? [pickStart, hoverDate] : [hoverDate, pickStart];
+      return d >= a && d <= b;
     }
-    return d === rangeStart;
+    return d === pickStart;
   };
 
-  const isStart = (d: string) => d === rangeStart;
-  const isEnd = (d: string) => d === rangeEnd;
-
-  const handleDayClick = (dayStr: string) => {
-    if (selectingStart || !rangeStart) {
-      // 选择开始日期
-      setRangeStart(dayStr);
-      setRangeEnd(null);
-      setSelectingStart(false);
-    } else {
-      // 选择结束日期
-      const start = rangeStart < dayStr ? rangeStart : dayStr;
-      const end = rangeStart < dayStr ? dayStr : rangeStart;
-      setRangeStart(start);
-      setRangeEnd(end);
-    }
+  const handleDayClick = (d: string) => {
+    if (selectingStart || !pickStart) { setPickStart(d); setPickEnd(null); setSelectingStart(false); }
+    else { setPickStart(pickStart < d ? pickStart : d); setPickEnd(pickStart < d ? d : pickStart); }
   };
 
-  const handleConfirm = () => {
-    if (rangeStart && rangeEnd) {
-      onSelect(rangeStart, rangeEnd);
-    } else if (rangeStart) {
-      // 单日选择，起止同一天
-      onSelect(rangeStart, rangeStart);
-    }
-    onClose();
+  const addRange = () => {
+    if (!pickStart) return;
+    const r: DateRange = { start: pickStart, end: pickEnd || pickStart };
+    setRanges(prev => [...prev, r].sort((a, b) => a.start.localeCompare(b.start)));
+    setMode('view'); setPickStart(null); setPickEnd(null); setSelectingStart(true);
   };
 
-  const handleClear = () => {
-    setRangeStart(null);
-    setRangeEnd(null);
-    setSelectingStart(true);
-    onClear(); // 通知外层清除 localStorage 和状态
-  };
-
-  const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+  const removeRange = (i: number) => { setRanges(prev => prev.filter((_, idx) => idx !== i)); };
 
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
         transition={{ duration: 0.15 }}
         className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-zinc-200 z-50 w-[300px] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* 头部：月份导航 */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100">
-          <button onClick={prevMonth} className="p-1 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600">
-            <ChevronLeft size={14} />
-          </button>
-          <span className="text-xs font-bold text-zinc-700">{year}年{month + 1}月</span>
-          <button onClick={nextMonth} className="p-1 rounded hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600">
-            <ChevronRight size={14} />
-          </button>
-        </div>
-
-        {/* 星期头 */}
-        <div className="grid grid-cols-7 px-2 py-1 border-b border-zinc-50">
-          {weekDays.map(d => (
-            <div key={d} className="text-center text-[10px] font-bold text-zinc-400 py-0.5">{d}</div>
-          ))}
-        </div>
-
-        {/* 日期格子 */}
-        <div className="grid grid-cols-7 p-2 gap-0.5">
-          {/* 前导空格 */}
-          {Array.from({ length: (firstDay + 6) % 7 }, (_, i) => (
-            <div key={`empty-${i}`} className="h-7" />
-          ))}
-          {/* 实际日期 */}
-          {Array.from({ length: daysInMonth }, (_, i) => {
-            const day = i + 1;
-            const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const inRange = isInRange(dayStr);
-            const isStartDate = isStart(dayStr);
-            const isEndDate = isEnd(dayStr);
-
-            return (
-              <button
-                key={day}
-                onClick={() => handleDayClick(dayStr)}
-                onMouseEnter={() => setHoverDate(dayStr)}
-                className={cn(
-                  "h-7 text-[11px] font-medium rounded-md flex items-center justify-center transition-all",
-                  inRange ? "bg-blue-50 text-blue-700" : "hover:bg-zinc-100 text-zinc-600",
-                  (isStartDate || isEndDate) && "bg-blue-500 text-white font-bold hover:bg-blue-600 ring-2 ring-blue-200"
-                )}
-              >
-                {day}
+        {mode === 'view' ? (
+          <>
+            {/* 已选日期段列表 */}
+            <div className="px-3 py-2 max-h-[160px] overflow-y-auto space-y-1">
+              {ranges.length === 0 && <p className="text-[10px] text-zinc-400 text-center py-3">暂未选择排休日期</p>}
+              {ranges.map((r, i) => (
+                <div key={i} className="flex items-center justify-between bg-blue-50 rounded px-2 py-1.5">
+                  <span className="text-[11px] font-bold text-blue-700">{fmtMD(r.start)} ~ {fmtMD(r.end)}</span>
+                  <button onClick={() => removeRange(i)} className="p-0.5 text-blue-400 hover:text-red-500 hover:bg-red-50 rounded"><X size={12} /></button>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2.5 border-t border-zinc-100 bg-zinc-50/50">
+              <button onClick={() => setMode('add')} className="flex-1 px-2 py-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center justify-center gap-1">
+                <CalendarDays size={10} /> 添加日期段
               </button>
-            );
-          })}
-        </div>
-
-        {/* 已选范围提示 + 操作按钮 */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-zinc-100 bg-zinc-50/50">
-          <span className="text-[10px] font-bold text-zinc-500 truncate max-w-[180px]">
-            {rangeStart && rangeEnd
-              ? `${formatDateShort(new Date(rangeStart))} - ${formatDateShort(new Date(rangeEnd))}`
-              : rangeStart
-                ? `已选 ${formatDateShort(new Date(rangeStart))}，再点结束日`
-                : '点击选择起始日期'}
-          </span>
-          <div className="flex gap-1.5">
-            {(rangeStart || rangeEnd) && (
-              <button
-                onClick={handleClear}
-                className="px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-50 rounded"
-              >
-                清除
-              </button>
-            )}
-            <button
-              onClick={handleConfirm}
-              disabled={!rangeStart}
-              className={cn(
-                "px-2.5 py-1 text-[10px] font-bold rounded flex items-center gap-1",
-                rangeStart
-                  ? "bg-blue-500 text-white hover:bg-blue-600"
-                  : "bg-zinc-200 text-zinc-400 cursor-not-allowed"
+              {ranges.length > 0 && (
+                <button onClick={() => { setRanges([]); onClear(); }} className="px-2 py-1.5 text-[10px] font-bold text-red-500 hover:bg-red-50 rounded">清空</button>
               )}
-            >
-              <Check size={10} /> 确定
-            </button>
-          </div>
-        </div>
+              <button onClick={() => { if (ranges.length > 0) onSelect(ranges); onClose(); }} className="px-3 py-1.5 text-[10px] font-bold bg-blue-500 text-white hover:bg-blue-600 rounded">确定</button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* 日期选择模式 */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100">
+              <button onClick={() => { setViewDate(new Date(year, month - 1, 1)); }} className="p-1 rounded hover:bg-zinc-100 text-zinc-400"><ChevronLeft size={14} /></button>
+              <span className="text-xs font-bold text-zinc-700">{year}年{month + 1}月</span>
+              <button onClick={() => { setViewDate(new Date(year, month + 1, 1)); }} className="p-1 rounded hover:bg-zinc-100 text-zinc-400"><ChevronRight size={14} /></button>
+            </div>
+            <div className="grid grid-cols-7 px-2 py-1 border-b border-zinc-50">
+              {weekDays.map(d => <div key={d} className="text-center text-[10px] font-bold text-zinc-400 py-0.5">{d}</div>)}
+            </div>
+            <div className="grid grid-cols-7 p-2 gap-0.5">
+              {Array.from({ length: (firstDay + 6) % 7 }, (_, i) => <div key={`e-${i}`} className="h-7" />)}
+              {Array.from({ length: daysInMonth }, (_, i) => {
+                const d = i + 1;
+                const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const inR = isInRange(ds);
+                const isS = ds === pickStart; const isE = ds === pickEnd;
+                return <button key={d} onClick={() => handleDayClick(ds)} onMouseEnter={() => setHoverDate(ds)}
+                  className={cn("h-7 text-[11px] font-medium rounded-md flex items-center justify-center transition-all",
+                    inR ? "bg-blue-50 text-blue-700" : "hover:bg-zinc-100 text-zinc-600",
+                    (isS || isE) && "bg-blue-500 text-white font-bold")}>{d}</button>;
+              })}
+            </div>
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-zinc-100 bg-zinc-50/50">
+              <span className="text-[10px] font-bold text-zinc-500 truncate max-w-[160px]">
+                {pickStart ? (pickEnd ? `${fmtMD(pickStart)} ~ ${fmtMD(pickEnd)}` : `起点 ${fmtMD(pickStart)}，选终点`) : '点击选择起始日期'}
+              </span>
+              <div className="flex gap-1.5">
+                <button onClick={() => { setMode('view'); setPickStart(null); setPickEnd(null); }} className="px-2 py-1 text-[10px] font-bold text-zinc-400 hover:bg-zinc-100 rounded">返回</button>
+                <button onClick={addRange} disabled={!pickStart}
+                  className={cn("px-2.5 py-1 text-[10px] font-bold rounded", pickStart ? "bg-blue-500 text-white" : "bg-zinc-200 text-zinc-400")}>添加</button>
+              </div>
+            </div>
+          </>
+        )}
       </motion.div>
     </AnimatePresence>
   );
@@ -255,6 +205,17 @@ export default function Attendance15DetailModal({
       // 1. 加载排休计划
       const plans = await loadCollaborationData('leave_plans.json');
       console.log('[加载] leave_plans.json 加载结果:', plans);
+      // 兼容旧数据：start/end → ranges
+      for (const c of Object.keys(plans)) {
+        for (const d of Object.keys(plans[c] || {})) {
+          for (const n of Object.keys(plans[c][d] || {})) {
+            const rec = plans[c][d][n];
+            if (rec && !rec.ranges && rec.start) {
+              rec.ranges = [{ start: rec.start, end: rec.end || rec.start }];
+            }
+          }
+        }
+      }
       setCollaborationData(plans);
 
       // 2. 按中心名和日期匹配到当前列表
@@ -408,19 +369,19 @@ export default function Attendance15DetailModal({
     return info;
   }, [empGroupObj, t2PresentList, weeklyData]);
 
-  // 格式化显示：4/27-4/30
+  // 格式化显示：5/20~5/22, 5/28~5/30
   const formatPlanDisplay = (plan?: LeavePlanRecord | null) => {
-    if (!plan || !plan.start) return '';
-    const s = new Date(plan.start);
-    const e = new Date(plan.end);
-    const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
-    if (plan.start === plan.end) return fmt(s);
-    return `${fmt(s)}-${fmt(e)}`;
+    if (!plan?.ranges?.length) return '';
+    return plan.ranges.map(r => {
+      const s = new Date(r.start); const e = new Date(r.end);
+      const f = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+      return r.start === r.end ? f(s) : `${f(s)}~${f(e)}`;
+    }).join(', ');
   };
 
-  const handleSelectDate = useCallback((date: string, name: string, employeeId: string, start: string, end: string) => {
+  const handleSelectDate = useCallback((date: string, name: string, employeeId: string, ranges: DateRange[]) => {
     const todayStr = new Date().toISOString().slice(0, 10);
-    const newPlan: LeavePlanRecord = { employeeId, name, start, end, setDate: todayStr, savedAt: todayStr };
+    const newPlan: LeavePlanRecord = { employeeId, name, ranges, setDate: todayStr, savedAt: todayStr };
 
     // 更新远端协作数据结构（只更新当前日期，保存时统一清理）
     setCollaborationData(prev => {
@@ -821,9 +782,9 @@ export default function Attendance15DetailModal({
                                 <DatePickerPopover
                                   isOpen={isPickerOpen}
                                   onClose={() => setPickerFor(null)}
-                                  onSelect={(start, end) => handleSelectDate(day.date, detail.name, detail.employeeId || '', start, end)}
+                                  onSelect={(ranges) => handleSelectDate(day.date, detail.name, detail.employeeId || '', ranges)}
                                   onClear={() => handleClearPlan(day.date, detail.name, detail.employeeId || '')}
-                                  currentPlan={plan}
+                                  currentRanges={plan?.ranges}
                                 />
                               </div>
                             </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, AlertCircle, ChevronDown, Edit3, User } from 'lucide-react';
+import { X, TrendingUp, AlertCircle, ChevronDown } from 'lucide-react';
 import { Attendance7WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
@@ -55,10 +55,6 @@ export default function Attendance7DetailModal({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   // 保存中状态
   const [isSaving, setIsSaving] = useState(false);
-  // 考勤负责人
-  const [responsiblePerson, setResponsiblePerson] = useState('');
-  const [isEditingResponsible, setIsEditingResponsible] = useState(false);
-  const [responsibleInput, setResponsibleInput] = useState('');
 
   // 加载远端协作数据
   useEffect(() => {
@@ -145,13 +141,6 @@ export default function Attendance7DetailModal({
       setReasonMap(matched);
       console.log('[加载] 匹配到的原因:', matched);
 
-      // 3. 加载中心元数据（负责人）
-      const meta = await loadCollaborationData('center_meta.json');
-      console.log('[加载] center_meta.json 加载结果:', meta);
-      const centerMeta = meta[centerName] || {};
-      if (centerMeta['考勤负责人']) {
-        setResponsiblePerson(centerMeta['考勤负责人']);
-      }
       // 加载完成后才重置未保存标记
       setHasUnsavedChanges(false);
     };
@@ -269,20 +258,6 @@ export default function Attendance7DetailModal({
       if (result.success) {
         setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);
-        // 同时保存中心元数据（负责人）
-        if (responsiblePerson) {
-          console.log('[保存] 开始保存 center_meta.json');
-          const meta = await loadCollaborationData('center_meta.json');
-          const updatedMeta = { ...meta };
-          if (!updatedMeta[centerName]) updatedMeta[centerName] = {};
-          updatedMeta[centerName]['考勤负责人'] = responsiblePerson;
-          updatedMeta[centerName]['updatedAt'] = new Date().toISOString();
-          const metaResult = await saveCollaborationData('center_meta.json', updatedMeta, `Update responsible for ${centerName}`);
-          console.log('[保存] center_meta.json 保存结果:', metaResult);
-          if (!metaResult.success) {
-            alert(`负责人保存失败: ${metaResult.error}`);
-          }
-        }
         return true;
       } else {
         alert(`保存失败: ${result.error}`);
@@ -295,7 +270,7 @@ export default function Attendance7DetailModal({
     } finally {
       setIsSaving(false);
     }
-  }, [collaborationData, centerName, responsiblePerson, weeklyData, reasonMap]);
+  }, [collaborationData, centerName, weeklyData, reasonMap]);
 
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
@@ -312,13 +287,6 @@ export default function Attendance7DetailModal({
     setShowSaveConfirm(false);
     handleSave().then(saved => { if (saved) onClose(); });
   };
-
-  // 保存考勤负责人
-  const handleSaveResponsible = useCallback(async () => {
-    setResponsiblePerson(responsibleInput);
-    setIsEditingResponsible(false);
-    setHasUnsavedChanges(true);
-  }, [responsibleInput]);
 
   // 获取每个原因对应的颜色标签样式
   const getReasonStyle = (reason: string | undefined) => {
@@ -364,50 +332,6 @@ export default function Attendance7DetailModal({
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
                 </h3>
-                {/* 考勤负责人编辑 */}
-                <div className="mt-1 flex items-center gap-2">
-                  {isEditingResponsible ? (
-                    <div className="flex items-center gap-1.5">
-                      <User size={11} className="text-zinc-400" />
-                      <input
-                        type="text"
-                        value={responsibleInput}
-                        onChange={e => setResponsibleInput(e.target.value)}
-                        placeholder="输入负责人姓名"
-                        className="text-[11px] px-2 py-0.5 border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
-                        autoFocus
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') handleSaveResponsible();
-                          if (e.key === 'Escape') setIsEditingResponsible(false);
-                        }}
-                      />
-                      <button
-                        onClick={handleSaveResponsible}
-                        className="text-[10px] px-1.5 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 font-bold"
-                      >
-                        保存
-                      </button>
-                      <button
-                        onClick={() => setIsEditingResponsible(false)}
-                        className="text-[10px] px-1.5 py-0.5 text-zinc-400 hover:text-zinc-600"
-                      >
-                        取消
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setResponsibleInput(responsiblePerson);
-                        setIsEditingResponsible(true);
-                      }}
-                      className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-700 transition-colors group"
-                    >
-                      <User size={11} className="text-zinc-400 group-hover:text-zinc-600" />
-                      <span>考勤负责人：{responsiblePerson || '未设置'}</span>
-                      <Edit3 size={10} className="text-zinc-300 group-hover:text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  )}
-                </div>
                 <p className="text-[11px] font-bold text-zinc-400 mt-0.5 flex items-center gap-2">
                   <TrendingUp size={11} />
                   近7天连续未出勤趋势（T-2 = 今天 - 2天）
