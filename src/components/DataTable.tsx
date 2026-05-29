@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Ban, CheckCircle2, ExternalLink } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Ban, CheckCircle2, ExternalLink, X } from 'lucide-react';
 import { RegionalData } from '../types';
 import { cn, formatNumber } from '../lib/utils';
 import { getWeeklyEfficiencyDetail, WeeklyDetail, getWeeklySalaryDetail, SalaryWeeklyDetail, getWeeklyAttendance15Detail, Attendance15WeeklyDetail, getWeeklyAttendance7Detail, Attendance7WeeklyDetail, getWorkHoursHighDetail, WorkHoursHighWeeklyDetail, getWorkHoursLowDetail, WorkHoursLowWeeklyDetail } from '../lib/dataProcessor';
@@ -131,6 +131,8 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     currentCount: 0,
     prevCount: 0,
   });
+  // 非操明细弹窗
+  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number } | null>(null);
 
   const toggleRow = (id: string, e: React.MouseEvent) => {
     // Avoid double trigger if clicking on something that also selects
@@ -348,7 +350,11 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     currentSelection?.id === center.id ? "opacity-100" : "opacity-40"
                   )}>
                     {center.nonOpRatio !== undefined
-                      ? <span className="font-black text-sm tracking-tighter">{center.nonOpRatio.toFixed(2)}%</span>
+                      ? <button
+                          onClick={(e) => { e.stopPropagation(); setNonOpDetail({ centerName: center.name, nonOpCount: center.nonOpCount ?? 0, rosterTotal: center.rosterInService ?? 0, outsourced: center.outsourced ?? 0, nonOpRatio: center.nonOpRatio }); }}
+                          className="font-black text-sm tracking-tighter hover:text-red-500 hover:underline underline-offset-2 transition-colors cursor-pointer"
+                          title="点击查看非操明细"
+                        >{center.nonOpRatio.toFixed(2)}%</button>
                       : <span className="text-xs font-bold text-zinc-300">—</span>
                     }
                   </div>
@@ -731,6 +737,44 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
         currentCount={workHoursLowModal.currentCount}
         prevCount={workHoursLowModal.prevCount}
       />
+
+      {/* 非操明细弹窗 */}
+      <AnimatePresence>
+        {nonOpDetail && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]" onClick={() => setNonOpDetail(null)} />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[360px]">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-black text-sm">{nonOpDetail.centerName}中心 · 非操明细</h3>
+                <button onClick={() => setNonOpDetail(null)} className="p-1 hover:bg-zinc-100 rounded text-zinc-400"><X size={14} /></button>
+              </div>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1.5 border-b border-zinc-100">
+                  <span className="text-zinc-500">花名册在职</span>
+                  <span className="font-bold font-mono">{nonOpDetail.rosterTotal}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-zinc-100">
+                  <span className="text-zinc-500">非操作人数</span>
+                  <span className="font-bold font-mono">{nonOpDetail.nonOpCount}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-zinc-100">
+                  <span className="text-zinc-500">外包人数</span>
+                  <span className="font-bold font-mono">{nonOpDetail.outsourced}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-zinc-300">
+                  <span className="text-zinc-700 font-bold">总人数（在职+外包）</span>
+                  <span className="font-black font-mono text-sm">{nonOpDetail.rosterTotal + nonOpDetail.outsourced}</span>
+                </div>
+                <div className="flex justify-between py-2 bg-zinc-50 -mx-2 px-2 rounded">
+                  <span className="text-zinc-700 font-bold">非操占比</span>
+                  <span className="font-black font-mono text-base text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</span>
+                </div>
+                <p className="text-[10px] text-zinc-400 pt-1">非操作 = 花名册中二级部门非"中心操作"且岗位非安检员/仓库管理员/环保袋维修员的人数。非操占比 = 非操作 ÷ 总人数。</p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Scoring Rules Footer */}
       <div className="p-8 bg-zinc-50 border-t border-zinc-200 mt-4">
