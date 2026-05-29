@@ -132,7 +132,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     prevCount: 0,
   });
   // 非操明细弹窗
-  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; staffingStandard?: number } | null>(null);
+  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; staffingStandard?: { departments: { dept: string; standard: number; actual: number; diff: number }[]; totalStandard: number; totalActual: number } } | null>(null);
 
   const toggleRow = (id: string, e: React.MouseEvent) => {
     // Avoid double trigger if clicking on something that also selects
@@ -743,65 +743,46 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
         {nonOpDetail && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]" onClick={() => setNonOpDetail(null)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[420px] max-h-[80vh] overflow-y-auto">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[560px] max-h-[80vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-black text-sm">{nonOpDetail.centerName}中心 · 非操明细</h3>
                 <button onClick={() => setNonOpDetail(null)} className="p-1 hover:bg-zinc-100 rounded text-zinc-400"><X size={14} /></button>
               </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                  <span className="text-zinc-500">花名册在职</span>
-                  <span className="font-bold font-mono">{nonOpDetail.rosterTotal}</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                  <span className="text-zinc-500">外包人数</span>
-                  <span className="font-bold font-mono">{nonOpDetail.outsourced}</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-zinc-300">
-                  <span className="text-zinc-700 font-bold">总人数</span>
-                  <span className="font-black font-mono text-sm">{nonOpDetail.rosterTotal + nonOpDetail.outsourced}</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                  <span className="text-zinc-500">花名册非操作（去中心操作+特殊岗位）</span>
-                  <span className="font-bold font-mono">{nonOpDetail.nonOpCount - nonOpDetail.outsourced}</span>
-                </div>
-                {nonOpDetail.staffingStandard !== undefined && (
-                  <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                    <span className="text-zinc-500">配置标准（编制）</span>
-                    <span className="font-bold font-mono">{nonOpDetail.staffingStandard}</span>
-                  </div>
-                )}
-                {nonOpDetail.staffingStandard !== undefined && (() => {
-                  const diff = (nonOpDetail.nonOpCount - nonOpDetail.outsourced) - nonOpDetail.staffingStandard;
-                  return (
-                    <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                      <span className="text-zinc-500">差额（实际-标准）</span>
-                      <span className={diff > 0 ? "font-bold font-mono text-red-600" : "font-bold font-mono text-emerald-600"}>
-                        {diff > 0 ? '+' : ''}{diff}
-                      </span>
-                    </div>
-                  );
-                })()}
-                <div className="flex justify-between py-2 bg-zinc-50 -mx-2 px-2 rounded">
-                  <span className="text-zinc-700 font-bold">非操占比（含外包）</span>
-                  <span className="font-black font-mono text-base text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</span>
-                </div>
-                {/* 各部门明细 */}
-                {nonOpDetail.departments && Object.keys(nonOpDetail.departments).length > 0 && (
-                  <div className="pt-2">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide mb-2">各部门非操作人数</p>
-                    <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
-                      {Object.entries(nonOpDetail.departments).sort((a, b) => b[1] - a[1]).map(([dept, count]) => (
-                        <div key={dept} className="flex justify-between py-1 px-2 bg-zinc-50 rounded text-[11px]">
-                          <span className="text-zinc-600">{dept || '(空)'}</span>
-                          <span className="font-bold font-mono text-zinc-800">{count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <p className="text-[10px] text-zinc-400 pt-1">非操作 = 花名册(排除中心操作+特殊岗位) + 外包。非操占比 = 非操作 ÷ 总人数。</p>
+              {/* 汇总行 */}
+              <div className="flex items-center gap-4 mb-4 text-[11px]">
+                <span className="text-zinc-500">在职 <b className="text-zinc-800">{nonOpDetail.rosterTotal}</b></span>
+                <span className="text-zinc-500">外包 <b className="text-zinc-800">{nonOpDetail.outsourced}</b></span>
+                <span className="text-zinc-500">总人数 <b className="text-zinc-800">{nonOpDetail.rosterTotal + nonOpDetail.outsourced}</b></span>
+                <span className="text-zinc-500">非操占比 <b className="text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</b></span>
               </div>
+              {/* 部门配置标准对照表 */}
+              {nonOpDetail.staffingStandard && (
+                <div className="border border-zinc-200 rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                    <div>部门</div><div className="text-right">配置标准</div><div className="text-right">现有人数</div><div className="text-right">差额</div>
+                  </div>
+                  {nonOpDetail.staffingStandard.departments.map(d => (
+                    <div key={d.dept} className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50">
+                      <div className="font-medium text-zinc-700">{d.dept}</div>
+                      <div className="text-right font-mono text-zinc-500">{d.standard}</div>
+                      <div className="text-right font-mono font-bold text-zinc-800">{d.actual || '—'}</div>
+                      <div className={d.diff > 0 ? "text-right font-mono font-bold text-red-600" : d.diff < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-zinc-400"}>
+                        {d.diff > 0 ? '+' : ''}{d.diff !== 0 ? d.diff : '0'}
+                      </div>
+                    </div>
+                  ))}
+                  {/* 合计行 */}
+                  <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-zinc-50 text-[11px] font-bold">
+                    <div className="text-zinc-700">合计</div>
+                    <div className="text-right font-mono text-zinc-700">{nonOpDetail.staffingStandard.totalStandard}</div>
+                    <div className="text-right font-mono text-zinc-800">{nonOpDetail.staffingStandard.totalActual}</div>
+                    <div className={nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard > 0 ? "text-right font-mono text-red-600" : "text-right font-mono text-emerald-600"}>
+                      {(() => { const d = nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard; return (d > 0 ? '+' : '') + d; })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <p className="text-[10px] text-zinc-400 pt-2">* 配置标准含可自动计算岗位（部长/人资/行政/财务/调度/质控/工程/安全），不含需额外数据的岗位（帮厨/宿管/运能专员/锅炉工等）。</p>
             </motion.div>
           </>
         )}

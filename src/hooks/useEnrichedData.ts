@@ -68,45 +68,39 @@ function findCount(map: Map<string, number>, centerName: string, provinceName: s
   return 0;
 }
 
-// ── 各岗位配置标准计算 ──
+// ── 各岗位配置标准计算（按部门）──
 const CENTER_CLASS: Record<string, string> = {
   '武汉':'A','郑州':'A','长沙':'A','漯河':'A','南昌':'A',
   '武昌':'B','荆州':'B','衡阳':'B','新乡':'B',
   '襄阳':'C','常德':'C','赣州':'C','横峰':'C','商丘':'C',
 };
 
-function computeStaffingStandard(centerName: string, rosterTotal: number): number {
+interface StaffingDept { dept: string; standard: number; actual: number; positions?: Record<string, number>; }
+interface StaffingStandard { departments: StaffingDept[]; totalStandard: number; totalActual: number; }
+
+function computeStaffingStandard(centerName: string, rosterTotal: number, deptActual: Record<string, number>): StaffingStandard {
   const cls = CENTER_CLASS[centerName] || 'B';
-  let t = 0;
-  // 转运中心
-  t += 1; // 部长
-  if (cls !== 'C') t += 1; // 副部长
-  // 中心人资
-  t += 1; // 人资主管
   const x = rosterTotal;
-  if (x <= 500) t += 2; else if (x <= 800) t += 3; else if (x <= 1100) t += 4; else if (x <= 1400) t += 5; else if (x <= 1700) t += 6; else t += 7; // 人资专员
-  // 环保袋
-  if (centerName === '武汉' || centerName === '漯河') t += 1; // 主管
-  // 行政保障
-  t += 1; // 负责人
-  t += cls === 'A' ? 2 : 1; // 行政专员
-  t += 1; // 水电维修工
-  if (x <= 900) t += 2; else if (x <= 1400) t += 3; else if (x <= 1800) t += 4; else t += 5; // 主厨
-  t += 2; // 保安(门岗最低)
-  t += 2; // 消防中控员
-  // 财务
-  t += 1; // 财务专员
-  // 运能调度
-  t += 1; // 主管
-  // 质量监督控制
-  t += 1; // 主管
-  t += cls === 'A' ? 2 : 1; // 质控专员
-  // 工艺工程
-  t += 1; // 主管
-  // 安全监察
-  if (cls !== 'C') { t += 1; t += cls === 'A' ? 2 : 1; } // 主管 + 安全管理员
-  else t += 1; // C类共用1个编制
-  return t;
+  const depts: StaffingDept[] = [];
+
+  function add(dept: string, standard: number) {
+    const actual = deptActual[dept] || 0;
+    depts.push({ dept, standard, actual, diff: actual - standard });
+  }
+
+  add('转运中心', (cls !== 'C' ? 2 : 1)); // 部长+副部长
+  add('中心人资', 1 + (x<=500?2:x<=800?3:x<=1100?4:x<=1400?5:x<=1700?6:7)); // 主管+专员(分档)
+  add('中心环保袋管理', (centerName==='武汉'||centerName==='漯河'?1:0)); // 主管(仅维修工厂所在地)
+  add('中心行政保障', 1 + (cls==='A'?2:1) + 1 + (x<=900?2:x<=1400?3:x<=1800?4:5) + 2 + 2); // 负责人+专员+水电+主厨+保安+消防
+  add('中心财务', 1);
+  add('中心运能调度', 1); // 主管（专员需日均发车量数据，暂不计）
+  add('中心质量监督控制', 1 + (cls==='A'?2:1)); // 主管+专员
+  add('中心工艺工程', 1); // 主管（工程师需维养工时数据，暂不计）
+  add('中心安全监察', (cls!=='C'?1:0) + (cls==='A'?2:cls==='B'?1:0) + (cls==='C'?1:0)); // 主管+管理员(C类共用1)
+
+  const totalStandard = depts.reduce((s, d) => s + d.standard, 0);
+  const totalActual = depts.reduce((s, d) => s + d.actual, 0);
+  return { departments: depts, totalStandard, totalActual };
 }
 
 export function useEnrichedData(
@@ -388,7 +382,7 @@ export function useEnrichedData(
           enrichedCenter.outsourced = outsourced;
           enrichedCenter.rosterInService = nonOpStats.total;
           enrichedCenter.nonOpDepartments = nonOpStats.departments; // 各部门人数明细
-          enrichedCenter.staffingStandard = computeStaffingStandard(center.name, nonOpStats.total);
+          enrichedCenter.staffingStandard = computeStaffingStandard(center.name, nonOpStats.total, nonOpStats.departments);
         }
 
         // === 中心总分 = 六项之和 ===
