@@ -104,6 +104,29 @@ function buildJsonData() {
     }
   }
 
+  // 特殊处理：outsourcing.xlsx → outsourcing.json（中心名称 → 行政外包人数映射）
+  const outsourcingFile = files.find(f => f.startsWith('outsourcing'));
+  if (outsourcingFile) {
+    try {
+      const filepath = join(DATABASE_DIR, outsourcingFile);
+      const workbook = XLSX.read(readFileSync(filepath), { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: true });
+      const outMap = {};
+      rows.forEach(r => {
+        const name = String(r['中心名称'] || '').replace('转运中心', '').trim();
+        if (name) outMap[name] = parseInt(r['行政外包人数']) || 0;
+      });
+      const outPath = join(JSON_DIR, 'outsourcing.json');
+      writeFileSync(outPath, JSON.stringify(outMap, null, 2));
+      console.log(`  ✅ ${outsourcingFile} -> outsourcing.json (${Object.keys(outMap).length} 中心)`);
+      successCount++;
+    } catch (error) {
+      console.error(`[构建 JSON 数据] 错误：处理 ${outsourcingFile} 失败:`, error.message);
+      failCount++;
+    }
+  }
+
   // 4. 写入 filelist.json
   const filelistPath = join(JSON_DIR, 'filelist.json');
   writeFileSync(filelistPath, JSON.stringify(fileList, null, 2));
