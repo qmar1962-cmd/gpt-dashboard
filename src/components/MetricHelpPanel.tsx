@@ -31,6 +31,7 @@ const DATA_SOURCES = [
   { id: 'work_hours_low', name: '日工时低（≤8h）', rows: '出勤工时≤8h的员工', dedup: '工号 + 数据日期' },
   { id: 'employee_roster', name: '中心在职花名册', rows: '全部在职人员（含非操作部门）', dedup: '工号' },
   { id: 'center_daily_attendance', name: '中心日出勤明细', rows: '每人每天一条（有记录=出勤）', dedup: '工号 + 数据日期' },
+  { id: 'outsourcing', name: '转运中心外包人数', rows: '14个转运中心的外包人数', dedup: '中心名称' },
 ];
 
 // ── 操作规范 ──
@@ -43,14 +44,15 @@ const OPERATION_SPEC = {
     { type: '日工时高（>12.5h）', pattern: 'work_hours_high_YYYYMMDD.xlsx', example: 'work_hours_high_20260514.xlsx' },
     { type: '日工时低（≤8h）', pattern: 'work_hours_low_YYYYMMDD.xlsx', example: 'work_hours_low_20260514.xlsx' },
     { type: '中心在职花名册', pattern: 'roster_YYYYMMDD.xlsx', example: 'roster_20260514.xlsx' },
+    { type: '外包人数', pattern: 'outsourcing.xlsx', example: 'outsourcing.xlsx（固定文件名，覆盖更新）' },
     { type: '中心日出勤明细', pattern: 'center_attendance_YYYYMMDD.xlsx', example: 'center_attendance_20260514.xlsx' },
   ],
   uploadSteps: [
-    '1. 将 Excel 文件放入项目 public/database/ 目录',
-    '2. 文件命名必须为英文，遵循"类型_日期"格式（如：job_performance_20260514.xlsx）',
-    '3. 前端会自动扫描 public/database/ 目录，按英文前缀匹配文件，无需手动维护文件列表',
-    '4. 浏览器中点击"数据管理" → "清除缓存并重新加载"，强制刷新数据',
-    '5. 或直接 Ctrl+F5 强制刷新页面，系统会自动加载新文件',
+    '1. 从 TMS 导出 Excel 到 Downloads，双击运行 process_data.py',
+    '2. 脚本自动过滤省区、合并岗位、输出Excel、转JSON、git push',
+    '3. 花名册和外包文件手动放到 public/database/ 目录',
+    '4. 等待 GitHub Actions 自动部署（约 1-2 分钟）',
+    '5. 线上 Ctrl+F5 强制刷新页面即可看到新数据',
   ],
   updateFreq: [
     { item: '岗位效能异常 / 薪资绩效异常', freq: '每日', note: 'T-2 数据，每天更新' },
@@ -58,6 +60,7 @@ const OPERATION_SPEC = {
     { item: '日工时高 / 日工时低', freq: '每日', note: 'T-2 数据，每天更新，基于中心日出勤明细计算' },
     { item: '中心日出勤明细', freq: '每日', note: '用于考勤模块和工时统计，可按需上传多天数据' },
     { item: '中心在职花名册', freq: '每周或按需', note: '人员变动时更新，影响管幅和覆盖率分母' },
+    { item: '外包人数', freq: '每周或按需', note: '外包人员变动时更新，影响非操占比计算' },
   ],
   codeUpdate: [
     '1. 本地修改代码后，运行 npm run build 确认无报错',
@@ -76,6 +79,7 @@ const AGGREGATION_SPEC = {
     { name: '省区绩效得分', formula: '下属参与考核中心得分的算术平均值（取整）' },
     { name: '全区平均分', formula: '各省区总分的算术平均值（取整）' },
     { name: '省区排名', formula: '按省区总分降序排列' },
+    { name: '非操占比', formula: '非操作人数 ÷ 总人数 × 100%\n非操作人数 = 花名册(九级单位=xx转运中心, 排除中心操作+特殊岗位) + 外包人数\n总人数 = 花名册在职人数 + 外包人数\n特殊岗位: 安检员/仓库管理员/环保袋管理维修员' },
   ],
   exemptions: '管理员模式可豁免中心（不计入省区得分），豁免后省区得分仅基于参与考核的中心重新计算',
 };
@@ -95,9 +99,9 @@ const MATCHING_SPEC = {
 const DETAIL_FIELDS = {
   job: [
     { col: '岗位名称', desc: '异常岗位名（卸车/装车/倒包/供件/封包/分拣/扫描）' },
-    { col: '当月人均日绩效', desc: '实际人均日绩效值' },
-    { col: '目标值', desc: '岗位日绩效目标值' },
-    { col: '目标偏离(%)', desc: '(实际-目标)/目标 × 100，≥10% 判为异常' },
+    { col: '当月人均日绩效', desc: '实际人均日绩效值（弹窗列名：实际）' },
+    { col: '目标值', desc: '岗位日绩效目标值（弹窗列名：目标）' },
+    { col: '目标偏离(%)', desc: '(实际-目标)/目标 × 100，≥10% 判为异常（弹窗列名：偏离）' },
     { col: '全网同岗均值', desc: '全网同一岗位的平均绩效' },
     { col: '均值偏离(%)', desc: '(实际-全网均值)/全网均值 × 100' },
   ],
@@ -312,25 +316,19 @@ const ATTENDANCE_SPEC = {
   ],
   leavePlanSpec: {
     trigger: '连续出勤 ≥ 15天的人员',
-    storage: '存储于 GitHub 仓库 leave_plans.json，多人协作编辑，一人修改全员可见；本地 localStorage 作为缓存',
-    autoMatch: '花名册重新上传后，按工号自动匹配已有排休计划',
+    storage: '存储于 Supabase leave_plans 表，多人协作编辑，一人修改全员可见',
+    autoMatch: '按姓名自动匹配已有排休计划，savedAt 间隔 ≤1 天自动继承',
     fields: [
-      { col: '排休开始', desc: '选择排休开始日期' },
-      { col: '排休结束', desc: '选择排休结束日期' },
-      { col: '设置日期', desc: '记录创建日期，用于判断15天过期' },
+      { col: '排休日期段', desc: '支持多段不连续日期，显示如 5/20~5/22, 5/28~5/30' },
+      { col: '小组出勤率', desc: 'T-2 花名册+出勤明细计算，≥85% 标"无法排休"' },
+      { col: 'savedAt', desc: '真实保存日期（YYYY-MM-DD），用于继承判断，保存时强制更新为当天' },
     ],
   },
   absenceReasonSpec: {
     trigger: '连续未出勤 ≥ 7天的人员',
     options: '工伤 / 事假 / 病假 / 纠纷 / 挂编 / 出差 / 离职未清 / 已返岗',
-    storage: '存储于 GitHub 仓库 absence_reasons.json，多人协作编辑，一人修改全员可见；本地 localStorage 作为缓存',
+    storage: '存储于 Supabase absence_reasons 表，多人协作编辑，一人修改全员可见',
     autoClean: '不在当前视图中的工号记录自动删除（断天 = 该人不再是连续未出勤≥7天）',
-  },
-  centerMetaSpec: {
-    storage: '存储于 GitHub 仓库 center_meta.json，多人协作编辑，一人修改全员可见',
-    fields: [
-      { col: '考勤负责人', desc: '中心级考勤负责人姓名，在弹窗标题栏和中心卡片中显示' },
-    ],
   },
   groupLeadersSpec: {
     storage: '存储于 GitHub 仓库 group_leaders.json，多人协作编辑，一人修改全员可见；修改后需点击"保存到云端"',
@@ -409,6 +407,48 @@ export default function MetricHelpPanel() {
 
           {/* 版本历史内容 */}
           <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+            {/* V3.2.0 - 2026-05-29 */}
+            <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V3.2.0</span>
+                <span className="text-[9px] text-zinc-400">2026-05-29</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">非操占比列：花名册(排除中心操作+特殊岗位) + 外包人数，点击查看各部门明细</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">排休计划多段日期选择：一个人可选多个不连续日期段</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">效能异常弹窗新增全网同岗均值、均值偏离两列</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-zinc-600">数据管道自动化：process_data.py 推送前自动 Excel→JSON</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">继承逻辑自动保存到 Supabase：三个弹窗（排休/未出勤/工时低）打开即继承</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-zinc-600">协作数据存储从 GitHub API 迁移到 Supabase，解决多人并发冲突</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-zinc-600">0527/0528 数据不显示（JSON 未生成），Office 锁文件入库，非操占比分子漏加外包</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">删除</span>
+                  <span className="text-zinc-600">移除长期未出勤弹窗的考勤负责人编辑功能</span>
+                </div>
+              </div>
+            </div>
+
             {/* V3.1.0 - 2026-05-27 */}
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
@@ -750,7 +790,7 @@ function OverviewSection() {
 
       {/* 数据源总览 */}
       <div className="space-y-1.5">
-        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">数据源总览（8种上传类型）</div>
+        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">数据源总览（9种上传类型）</div>
         <div className="grid gap-1">
           {DATA_SOURCES.map(ds => (
             <div key={ds.id} className="bg-zinc-50 rounded-md px-3 py-2 flex items-center gap-3">
@@ -1012,22 +1052,6 @@ function AttendanceSection() {
           <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">原因选项</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.options}</span></div>
           <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.storage}</span></div>
           <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">自动清理</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.autoClean}</span></div>
-        </div>
-      </div>
-
-      {/* 中心元数据口径 */}
-      <div className="bg-teal-50/40 rounded-lg p-3 space-y-2">
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-teal-600 uppercase tracking-wider"><Building2 size={10} /> 中心考勤负责人（中心卡片/弹窗标题）</div>
-        <div className="space-y-1 text-[9px]">
-          <div className="flex gap-1"><span className="font-bold text-teal-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.centerMetaSpec.storage}</span></div>
-        </div>
-        <div className="grid grid-cols-1 gap-0.5 mt-1">
-          {ATTENDANCE_SPEC.centerMetaSpec.fields.map((f: { col: string; desc: string }) => (
-            <div key={f.col} className="flex items-start gap-1 text-[9px]">
-              <span className="font-mono font-bold text-zinc-600">{f.col}</span>
-              <span className="text-zinc-400">{f.desc}</span>
-            </div>
-          ))}
         </div>
       </div>
 
