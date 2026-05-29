@@ -137,7 +137,7 @@ async function loadAndParseFile(filename: string, isJson: boolean): Promise<{ da
     const baseUrl = isJson ? JSON_FILE_BASE_URL : EXCEL_FILE_BASE_URL;
     const url = `${baseUrl}/${filename}`;
     
-    const response = await fetch(url, { cache: 'no-cache' });  // 强制获取最新版本
+    const response = await fetch(url, { cache: 'no-cache', signal: AbortSignal.timeout(15000) });
     if (!response.ok) {
       console.warn(`[默认数据] 无法加载文件(${response.status})：${filename}`);
       return null;
