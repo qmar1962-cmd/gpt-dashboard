@@ -132,7 +132,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     prevCount: 0,
   });
   // 非操明细弹窗
-  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number> } | null>(null);
+  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; staffingStandard?: number } | null>(null);
 
   const toggleRow = (id: string, e: React.MouseEvent) => {
     // Avoid double trigger if clicking on something that also selects
@@ -351,7 +351,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   )}>
                     {center.nonOpRatio !== undefined
                       ? <button
-                          onClick={(e) => { e.stopPropagation(); setNonOpDetail({ centerName: center.name, nonOpCount: center.nonOpCount ?? 0, rosterTotal: center.rosterInService ?? 0, outsourced: center.outsourced ?? 0, nonOpRatio: center.nonOpRatio, departments: center.nonOpDepartments }); }}
+                          onClick={(e) => { e.stopPropagation(); setNonOpDetail({ centerName: center.name, nonOpCount: center.nonOpCount ?? 0, rosterTotal: center.rosterInService ?? 0, outsourced: center.outsourced ?? 0, nonOpRatio: center.nonOpRatio, departments: center.nonOpDepartments, staffingStandard: center.staffingStandard }); }}
                           className="font-black text-sm tracking-tighter hover:text-red-500 hover:underline underline-offset-2 transition-colors cursor-pointer"
                           title="点击查看非操明细"
                         >{center.nonOpRatio.toFixed(2)}%</button>
@@ -765,6 +765,23 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   <span className="text-zinc-500">花名册非操作（去中心操作+特殊岗位）</span>
                   <span className="font-bold font-mono">{nonOpDetail.nonOpCount - nonOpDetail.outsourced}</span>
                 </div>
+                {nonOpDetail.staffingStandard !== undefined && (
+                  <div className="flex justify-between py-1.5 border-b border-zinc-100">
+                    <span className="text-zinc-500">配置标准（编制）</span>
+                    <span className="font-bold font-mono">{nonOpDetail.staffingStandard}</span>
+                  </div>
+                )}
+                {nonOpDetail.staffingStandard !== undefined && (() => {
+                  const diff = (nonOpDetail.nonOpCount - nonOpDetail.outsourced) - nonOpDetail.staffingStandard;
+                  return (
+                    <div className="flex justify-between py-1.5 border-b border-zinc-100">
+                      <span className="text-zinc-500">差额（实际-标准）</span>
+                      <span className={diff > 0 ? "font-bold font-mono text-red-600" : "font-bold font-mono text-emerald-600"}>
+                        {diff > 0 ? '+' : ''}{diff}
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="flex justify-between py-2 bg-zinc-50 -mx-2 px-2 rounded">
                   <span className="text-zinc-700 font-bold">非操占比（含外包）</span>
                   <span className="font-black font-mono text-base text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</span>
