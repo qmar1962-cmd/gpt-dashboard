@@ -3,12 +3,13 @@ import { HelpCircle, X, Table2, ArrowRight, Hash, FileSpreadsheet, CalendarDays,
 import { cn } from '../lib/utils';
 
 // ── 章节定义 ──
-type SectionId = 'overview' | 'operation' | 'metrics' | 'scope' | 'attendance' | 'matching';
+type SectionId = 'overview' | 'operation' | 'metrics' | 'staffing' | 'scope' | 'attendance' | 'matching';
 
 const SECTIONS: { id: SectionId; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: '概览', icon: <Table2 size={12} /> },
   { id: 'operation', label: '操作规范', icon: <Upload size={12} /> },
   { id: 'metrics', label: '指标口径', icon: <ArrowRight size={12} /> },
+  { id: 'staffing', label: '配置标准', icon: <Users size={12} /> },
   { id: 'scope', label: '管幅', icon: <Hash size={12} /> },
   { id: 'attendance', label: '中心考勤', icon: <CalendarDays size={12} /> },
   { id: 'matching', label: '匹配逻辑', icon: <GitBranch size={12} /> },
@@ -386,6 +387,7 @@ export default function MetricHelpPanel() {
             {activeSection === 'overview' && <OverviewSection />}
             {activeSection === 'operation' && <OperationSection />}
             {activeSection === 'metrics' && <MetricsSection />}
+            {activeSection === 'staffing' && <StaffingSection />}
             {activeSection === 'scope' && <ScopeSection />}
             {activeSection === 'attendance' && <AttendanceSection />}
             {activeSection === 'matching' && <MatchingSection />}
@@ -946,6 +948,119 @@ function MetricsSection() {
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── 配置标准章节 ──
+const STAFFING_STANDARDS = [
+  { dept: '转运中心', positions: [
+    { pos: '部长', rule: 'A/B/C类均配置1人' },
+    { pos: '副部长', rule: 'A/B类标配1人，C类不配置' },
+  ]},
+  { dept: '中心人资', positions: [
+    { pos: '中心人资主管', rule: '标配1人（省区驻地>1350人可配主管1人，≤1350不配负责人）' },
+    { pos: '人资专员（薪酬/招聘/人才/基础）', rule: '按中心在职人数分档——\n≤500人: 2人 | 500~800: 3人 | 800~1100: 4人\n1100~1400: 5人 | 1400~1700: 6人 | >1700: 7人' },
+  ]},
+  { dept: '中心环保袋管理', positions: [
+    { pos: '中心环保袋管理主管', rule: '仅维修工厂所在地设主管岗（漯河、武汉）' },
+    { pos: '环保袋仓库管理员', rule: '按维修量+出入库量计算（需数据暂不计入）' },
+  ]},
+  { dept: '中心行政保障', positions: [
+    { pos: '中心行政负责人', rule: '标配1人' },
+    { pos: '行政事务专员', rule: 'A类2人，B/C类1人' },
+    { pos: '主厨', rule: '按在职人数近似——\n≤900人: 2名 | 900~1400: 3名\n1400~1800: 4名 | >1800: 5名\n四餐中心加1名，上限5人' },
+    { pos: '帮厨', rule: '就餐人次服务比1:135（需数据暂不计入）' },
+    { pos: '水电维修工', rule: 'A/B类1-2人，C类1人（软件按1人计）' },
+    { pos: '宿舍管理员', rule: '按入住人数/房间数分档（需数据暂不计入）' },
+    { pos: '锅炉工', rule: '标准2人，冬季使用，北方城市（需数据暂不计入）' },
+    { pos: '保洁', rule: '按楼层数配置（需数据暂不计入）' },
+    { pos: '保安', rule: '门岗每班次1人（白晚班最低2人）' },
+    { pos: '消防中控员', rule: '标准配置2人（白晚班各1）' },
+    { pos: '行政车驾驶员', rule: '省总/区域总配置1个（需数据暂不计入）' },
+  ]},
+  { dept: '中心财务', positions: [
+    { pos: '财务支持专员', rule: '配置1人（A类独立中心最高可申请2人）' },
+  ]},
+  { dept: '中心运能调度', positions: [
+    { pos: '中心运能调度主管', rule: '标配1人' },
+    { pos: '运力/配载/运行质量专员', rule: '按日均发车量分6档（需数据暂不计入）' },
+  ]},
+  { dept: '中心质量监督控制', positions: [
+    { pos: '中心质量监督控制主管', rule: '标配1人' },
+    { pos: '中心质量监督控制专员', rule: 'A类2人，B/C类1人' },
+    { pos: '异常件管理员', rule: '日处理量135单/人（需数据暂不计入）' },
+    { pos: '中心客服员', rule: '日均工单处理量135单/人（需数据暂不计入）' },
+  ]},
+  { dept: '中心工艺工程', positions: [
+    { pos: '中心工艺工程主管', rule: '标配1人' },
+    { pos: 'IT运维/自动化/设备工程师', rule: '按设备维养工时配置（需数据暂不计入）' },
+  ]},
+  { dept: '中心安全监察', positions: [
+    { pos: '中心安全监察主管', rule: 'A/B类标配1人，C类与安全管理员共用1个编制' },
+    { pos: '安全管理员', rule: 'A类2人，B类1人，C类与主管共用编制' },
+    { pos: '安检员', rule: '按安检机数量+班次配置，1台2人，2台以上1.5倍（需数据暂不计入）' },
+  ]},
+];
+
+const CENTER_CLASS_LIST = [
+  { cls: 'A类', centers: '武汉、郑州、长沙、漯河、南昌' },
+  { cls: 'B类', centers: '武昌、荆州、衡阳、新乡' },
+  { cls: 'C类', centers: '襄阳、常德、赣州、横峰、商丘' },
+];
+
+function StaffingSection() {
+  return (
+    <div className="space-y-5">
+      {/* 中心分类 */}
+      <div className="bg-blue-50/40 rounded-lg p-3 space-y-2">
+        <div className="text-[10px] font-black text-blue-600 uppercase tracking-wider">中心分类</div>
+        <div className="grid gap-1">
+          {CENTER_CLASS_LIST.map(c => (
+            <div key={c.cls} className="flex items-start gap-2 text-[10px]">
+              <span className="font-bold text-blue-600 shrink-0">{c.cls}</span>
+              <span className="text-zinc-500">{c.centers}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 各部门配置标准 */}
+      <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">各部门岗位配置标准（2025年暂定版）</div>
+      <div className="space-y-4">
+        {STAFFING_STANDARDS.map(dept => (
+          <div key={dept.dept} className="bg-zinc-50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-zinc-700">{dept.dept}</span>
+              <span className="text-[8px] text-zinc-400">({dept.positions.length}个岗位)</span>
+            </div>
+            <div className="space-y-1.5">
+              {dept.positions.map(p => (
+                <div key={p.pos} className="bg-white rounded-md px-3 py-2 border border-zinc-100">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-bold text-zinc-700">{p.pos}</span>
+                    {p.rule.includes('暂不计入') && <span className="text-[8px] font-bold text-amber-500 bg-amber-50 px-1 py-0.5 rounded">暂估</span>}
+                  </div>
+                  <pre className="text-[9px] leading-relaxed text-zinc-400 whitespace-pre-wrap font-sans">{p.rule}</pre>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 自动计算说明 */}
+      <div className="bg-amber-50/40 rounded-lg p-3 space-y-2">
+        <div className="text-[10px] font-black text-amber-600 uppercase tracking-wider">自动计算口径</div>
+        <div className="text-[10px] text-zinc-600 leading-relaxed space-y-1">
+          <p>1. 中心分类：A/B/C类按上表固定</p>
+          <p>2. 人资专员分档：花名册在职人数（九级单位=xx转运中心）</p>
+          <p>3. 主厨分档：按在职人数近似（≤900/1400/1800分档）</p>
+          <p>4. 环保袋主管：仅武汉、漯河</p>
+          <p>5. 安全监察：A类=1主管+2管理员，B类=1+1，C类=共用1个编制</p>
+          <p className="text-amber-600">6. 标注"暂估"的岗位不参与自动计算，表示人数达标不超额</p>
+        </div>
+      </div>
     </div>
   );
 }
