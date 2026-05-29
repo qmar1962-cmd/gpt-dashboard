@@ -132,7 +132,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     prevCount: 0,
   });
   // 非操明细弹窗
-  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number } | null>(null);
+  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number> } | null>(null);
 
   const toggleRow = (id: string, e: React.MouseEvent) => {
     // Avoid double trigger if clicking on something that also selects
@@ -351,7 +351,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   )}>
                     {center.nonOpRatio !== undefined
                       ? <button
-                          onClick={(e) => { e.stopPropagation(); setNonOpDetail({ centerName: center.name, nonOpCount: center.nonOpCount ?? 0, rosterTotal: center.rosterInService ?? 0, outsourced: center.outsourced ?? 0, nonOpRatio: center.nonOpRatio }); }}
+                          onClick={(e) => { e.stopPropagation(); setNonOpDetail({ centerName: center.name, nonOpCount: center.nonOpCount ?? 0, rosterTotal: center.rosterInService ?? 0, outsourced: center.outsourced ?? 0, nonOpRatio: center.nonOpRatio, departments: center.nonOpDepartments }); }}
                           className="font-black text-sm tracking-tighter hover:text-red-500 hover:underline underline-offset-2 transition-colors cursor-pointer"
                           title="点击查看非操明细"
                         >{center.nonOpRatio.toFixed(2)}%</button>
@@ -743,7 +743,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
         {nonOpDetail && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]" onClick={() => setNonOpDetail(null)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[360px]">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[420px] max-h-[80vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-black text-sm">{nonOpDetail.centerName}中心 · 非操明细</h3>
                 <button onClick={() => setNonOpDetail(null)} className="p-1 hover:bg-zinc-100 rounded text-zinc-400"><X size={14} /></button>
@@ -754,22 +754,36 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   <span className="font-bold font-mono">{nonOpDetail.rosterTotal}</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                  <span className="text-zinc-500">非操作人数</span>
-                  <span className="font-bold font-mono">{nonOpDetail.nonOpCount}</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-zinc-100">
                   <span className="text-zinc-500">外包人数</span>
                   <span className="font-bold font-mono">{nonOpDetail.outsourced}</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-zinc-300">
-                  <span className="text-zinc-700 font-bold">总人数（在职+外包）</span>
+                  <span className="text-zinc-700 font-bold">总人数</span>
                   <span className="font-black font-mono text-sm">{nonOpDetail.rosterTotal + nonOpDetail.outsourced}</span>
                 </div>
+                <div className="flex justify-between py-1.5 border-b border-zinc-100">
+                  <span className="text-zinc-500">花名册非操作（去中心操作+特殊岗位）</span>
+                  <span className="font-bold font-mono">{nonOpDetail.nonOpCount - nonOpDetail.outsourced}</span>
+                </div>
                 <div className="flex justify-between py-2 bg-zinc-50 -mx-2 px-2 rounded">
-                  <span className="text-zinc-700 font-bold">非操占比</span>
+                  <span className="text-zinc-700 font-bold">非操占比（含外包）</span>
                   <span className="font-black font-mono text-base text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</span>
                 </div>
-                <p className="text-[10px] text-zinc-400 pt-1">非操作 = 花名册中二级部门非"中心操作"且岗位非安检员/仓库管理员/环保袋维修员的人数。非操占比 = 非操作 ÷ 总人数。</p>
+                {/* 各部门明细 */}
+                {nonOpDetail.departments && Object.keys(nonOpDetail.departments).length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide mb-2">各部门非操作人数</p>
+                    <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
+                      {Object.entries(nonOpDetail.departments).sort((a, b) => b[1] - a[1]).map(([dept, count]) => (
+                        <div key={dept} className="flex justify-between py-1 px-2 bg-zinc-50 rounded text-[11px]">
+                          <span className="text-zinc-600">{dept || '(空)'}</span>
+                          <span className="font-bold font-mono text-zinc-800">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <p className="text-[10px] text-zinc-400 pt-1">非操作 = 花名册(排除中心操作+特殊岗位) + 外包。非操占比 = 非操作 ÷ 总人数。</p>
               </div>
             </motion.div>
           </>

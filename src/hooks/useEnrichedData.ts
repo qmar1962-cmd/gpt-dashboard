@@ -180,7 +180,7 @@ export function useEnrichedData(
     }
 
     // 非操作人数统计（九级单位 + 排除中心操作/特殊岗位）
-    const nonOpByCenter = new Map<string, { nonOp: number; total: number }>();
+    const nonOpByCenter = new Map<string, { nonOp: number; total: number; departments: Record<string, number> }>();
     const EXCLUDE_POSITIONS = ['安检员', '仓库管理员', '环保袋管理维修员', '中心环保袋管理组长', '环保袋仓库管理员'];
     if (rosterDataState) {
       const firstRow = rosterDataState.find((r: any) => r && typeof r === 'object' && Object.keys(r).length > 0);
@@ -196,12 +196,15 @@ export function useEnrichedData(
           if (!tcMatch) return;
           const centerName = tcMatch[1];
           let entry = nonOpByCenter.get(centerName);
-          if (!entry) { entry = { nonOp: 0, total: 0 }; nonOpByCenter.set(centerName, entry); }
+          if (!entry) { entry = { nonOp: 0, total: 0, departments: {} }; nonOpByCenter.set(centerName, entry); }
           entry.total++;
           const dept = String(row[deptCol] || '').trim();
           const pos = String(row[jobCol] || '').trim();
           const isOps = dept === '中心操作' || EXCLUDE_POSITIONS.includes(pos);
-          if (!isOps) entry.nonOp++;
+          if (!isOps) {
+            entry.nonOp++;
+            entry.departments[dept] = (entry.departments[dept] || 0) + 1;
+          }
         });
       }
     }
@@ -338,10 +341,12 @@ export function useEnrichedData(
         if (nonOpStats && nonOpStats.total > 0) {
           const outsourced = outsourcingData?.[center.name] ?? 0;
           const totalPeople = nonOpStats.total + outsourced;
-          enrichedCenter.nonOpRatio = totalPeople > 0 ? parseFloat(((nonOpStats.nonOp / totalPeople) * 100).toFixed(2)) : 0;
-          enrichedCenter.nonOpCount = nonOpStats.nonOp;
+          const totalNonOp = nonOpStats.nonOp + outsourced; // 非操人数含外包
+          enrichedCenter.nonOpRatio = totalPeople > 0 ? parseFloat(((totalNonOp / totalPeople) * 100).toFixed(2)) : 0;
+          enrichedCenter.nonOpCount = totalNonOp;
           enrichedCenter.outsourced = outsourced;
           enrichedCenter.rosterInService = nonOpStats.total;
+          enrichedCenter.nonOpDepartments = nonOpStats.departments; // 各部门人数明细
         }
 
         // === 中心总分 = 六项之和 ===
