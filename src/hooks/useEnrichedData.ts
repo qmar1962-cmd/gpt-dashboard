@@ -77,6 +77,7 @@ export function useEnrichedData(
   rosterDataState: any[] | null,
   workHoursHighDataState: any[] | null,
   workHoursLowDataState: any[] | null,
+  outsourcingData: Record<string, number> | null,
 ) {
   return useMemo(() => {
     const hasJob = rawDataState && rawDataState.length > 0;
@@ -174,6 +175,33 @@ export function useEnrichedData(
           if (job === '操作组长') stats.leaders++;
           if (job === '操作主管') stats.managers++;
           rosterByCenter.set(key, stats);
+        });
+      }
+    }
+
+    // 非操作人数统计（九级单位 + 排除中心操作/特殊岗位）
+    const nonOpByCenter = new Map<string, { nonOp: number; total: number }>();
+    const EXCLUDE_POSITIONS = ['安检员', '仓库管理员', '环保袋管理维修员', '中心环保袋管理组长', '环保袋仓库管理员'];
+    if (rosterDataState) {
+      const firstRow = rosterDataState.find((r: any) => r && typeof r === 'object' && Object.keys(r).length > 0);
+      if (firstRow) {
+        const cols = Object.keys(firstRow as any);
+        const col9 = cols.find(c => c.includes('九级单位')) || '';
+        const deptCol = cols.find(c => c.includes('二级部门')) || '二级部门';
+        const jobCol = cols.find(c => c.includes('岗位名称')) || '岗位名称';
+        rosterDataState.forEach((row: any) => {
+          if (!row || typeof row !== 'object') return;
+          const unit9 = String(row[col9] || '').trim();
+          const tcMatch = unit9.match(/^(.+)转运中心$/);
+          if (!tcMatch) return;
+          const centerName = tcMatch[1];
+          let entry = nonOpByCenter.get(centerName);
+          if (!entry) { entry = { nonOp: 0, total: 0 }; nonOpByCenter.set(centerName, entry); }
+          entry.total++;
+          const dept = String(row[deptCol] || '').trim();
+          const pos = String(row[jobCol] || '').trim();
+          const isOps = dept === '中心操作' || EXCLUDE_POSITIONS.includes(pos);
+          if (!isOps) entry.nonOp++;
         });
       }
     }
@@ -303,6 +331,17 @@ export function useEnrichedData(
           enrichedCenter.leaderScope = rosterStats.leaders > 0 ? parseFloat((workers / rosterStats.leaders).toFixed(1)) : 0;
           enrichedCenter.compOverTarget = parseFloat((workers / SPAN.COMP_TGT - mgrTotal).toFixed(1));
           enrichedCenter.leadOverTarget = parseFloat((workers / SPAN.LEAD_TGT - rosterStats.leaders).toFixed(1));
+        }
+
+        // === 非操占比 ===
+        const nonOpStats = nonOpByCenter.get(center.name);
+        if (nonOpStats && nonOpStats.total > 0) {
+          const outsourced = outsourcingData?.[center.name] ?? 0;
+          const totalPeople = nonOpStats.total + outsourced;
+          enrichedCenter.nonOpRatio = totalPeople > 0 ? parseFloat(((nonOpStats.nonOp / totalPeople) * 100).toFixed(2)) : 0;
+          enrichedCenter.nonOpCount = nonOpStats.nonOp;
+          enrichedCenter.outsourced = outsourced;
+          enrichedCenter.rosterInService = nonOpStats.total;
         }
 
         // === 中心总分 = 六项之和 ===

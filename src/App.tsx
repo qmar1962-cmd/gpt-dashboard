@@ -5,7 +5,7 @@
  * 版本：2026-05-26 - 重构：拆分组件，提取数据加载逻辑
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays } from 'lucide-react';
 import AttendanceModule from './components/AttendanceModule';
 import Login from './components/Login';
@@ -50,12 +50,22 @@ export default function App() {
   // ── 局部状态 ──
   const [selection, setSelection] = useState<Selection>({ type: 'all', id: null });
   const [reportOpen, setReportOpen] = useState(false);
+  const [outsourcingData, setOutsourcingData] = useState<Record<string, number> | null>(null);
+
+  // 加载外包人数数据
+  useEffect(() => {
+    fetch('./database/outsourcing.json?t=' + Date.now(), { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setOutsourcingData(data); })
+      .catch(() => {});
+  }, []);
 
   // ── 派生数据 ──
   const displayData = customData && customData.length > 0 ? customData : PERFORMANCE_DATA;
   const enrichedData = useEnrichedData(
     displayData, rawDataState, salaryDataState, attendance15DataState,
     attendance7DataState, rosterDataState, workHoursHighDataState, workHoursLowDataState,
+    outsourcingData,
   );
   const filteredData = useFilteredData(enrichedData, exemptCenters);
 
@@ -289,6 +299,7 @@ export default function App() {
                         rosterData={rosterDataState || undefined}
                         workHoursHighData={workHoursHighDataState || undefined}
                         workHoursLowData={workHoursLowDataState || undefined}
+                        outsourcingData={outsourcingData}
                       />
                     </div>
                   </div>

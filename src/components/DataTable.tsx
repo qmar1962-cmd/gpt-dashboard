@@ -28,6 +28,7 @@ interface DataTableProps {
   rosterData?: any[];
   workHoursHighData?: any[];
   workHoursLowData?: any[];
+  outsourcingData?: Record<string, number> | null;
 }
 
 interface DetailModalState {
@@ -66,7 +67,7 @@ interface Attendance7ModalState {
   prevCount: number;
 }
 
-export default function DataTable({ data, onSelect, currentSelection, adminMode, exemptCenters, onToggleExempt, rawData, salaryData, attendance15Data, attendance7Data, rosterData, workHoursHighData, workHoursLowData }: DataTableProps) {
+export default function DataTable({ data, onSelect, currentSelection, adminMode, exemptCenters, onToggleExempt, rawData, salaryData, attendance15Data, attendance7Data, rosterData, workHoursHighData, workHoursLowData, outsourcingData }: DataTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({ 'shanghai-prov': true });
   // 中心元数据（负责人等）
   const [centerMeta, setCenterMeta] = useState<Record<string, Record<string, string>>>({});
@@ -152,10 +153,11 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
   return (
     <div className="w-full border-t border-zinc-200 bg-white" id="performance-data-table">
       {/* Table Header */}
-      <div className="grid grid-cols-[50px_160px_80px_100px_100px_1fr] bg-zinc-50 border-b border-zinc-200 py-3 px-4 sticky top-[95px] z-20">
+      <div className="grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] bg-zinc-50 border-b border-zinc-200 py-3 px-4 sticky top-[95px] z-20">
         <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">排名</div>
         <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">分区 / 负责人</div>
-        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">绩效得分</div>
+        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">得分</div>
+        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">非操</div>
         <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">管幅</div>
         <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">超目标</div>
         <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-center">各维度明细</div>
@@ -171,7 +173,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
               transition={{ delay: idx * 0.05 }}
               onClick={() => handleRegionClick(item)}
               className={cn(
-                "grid grid-cols-[50px_160px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-zinc-100 cursor-pointer group transition-all",
+                "grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-zinc-100 cursor-pointer group transition-all",
                 currentSelection?.id === item.id ? "bg-zinc-900 text-white shadow-[0_0_30px_rgba(0,0,0,0.2)] z-20" : 
                 expandedRows[item.id] ? "bg-white shadow-[0_0_25px_rgba(0,0,0,0.03)] z-10" : "bg-white hover:bg-zinc-50/50"
               )}
@@ -206,6 +208,18 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                 )}>
                   {formatNumber(item.performanceScore)}
                 </div>
+              </div>
+
+              {/* 省区非操占比（各中心平均） */}
+              <div className="text-right flex justify-end items-center pr-4">
+                {(() => {
+                  const centersWithNonOp = (item.subCenters || []).filter((c: any) => c.nonOpRatio !== undefined);
+                  if (centersWithNonOp.length > 0) {
+                    const avg = centersWithNonOp.reduce((s: number, c: any) => s + (c.nonOpRatio || 0), 0) / centersWithNonOp.length;
+                    return <span className="font-black text-base tracking-tighter">{avg.toFixed(2)}%</span>;
+                  }
+                  return <span className="text-sm font-bold text-zinc-300">—</span>;
+                })()}
               </div>
 
               <div className="text-right pr-4 flex flex-col items-end justify-center gap-1">
@@ -277,7 +291,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   exit={{ height: 0, opacity: 0 }}
                   onClick={() => !adminMode && handleCenterClick(center, item)}
                   className={cn(
-                    "grid grid-cols-[50px_160px_80px_100px_100px_1fr] items-center py-3 px-4 border-b border-zinc-50 transition-all",
+                    "grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] items-center py-3 px-4 border-b border-zinc-50 transition-all",
                     adminMode ? "cursor-default" : "cursor-pointer",
                     exempt ? "opacity-40" : "",
                     currentSelection?.id === center.id && !adminMode ? "bg-red-600 text-white" : "bg-zinc-50/20 hover:bg-zinc-100/50 last:border-b-zinc-200"
@@ -327,6 +341,16 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     )}>
                       {center.score ?? 0}
                     </span>
+                  </div>
+                  {/* 非操占比 */}
+                  <div className={cn(
+                    "text-right flex justify-end items-center pr-4",
+                    currentSelection?.id === center.id ? "opacity-100" : "opacity-40"
+                  )}>
+                    {center.nonOpRatio !== undefined
+                      ? <span className="font-black text-sm tracking-tighter">{center.nonOpRatio.toFixed(2)}%</span>
+                      : <span className="text-xs font-bold text-zinc-300">—</span>
+                    }
                   </div>
                   <div className={cn(
                     "text-right pr-4 flex flex-col items-end justify-center gap-1",
