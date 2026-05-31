@@ -4,6 +4,7 @@ import { X, TrendingUp, AlertCircle, ChevronDown } from 'lucide-react';
 import { Attendance7WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
+import { recordAction } from '../lib/everosClient';
 import ConfirmModal from './ConfirmModal';
 
 // ── 未出勤原因选项 ──
@@ -258,6 +259,7 @@ export default function Attendance7DetailModal({
       if (result.success) {
         setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);
+        recordAction('保存未出勤原因', `中心: ${centerName}, 人数: ${Object.keys(reasonMap).length}`);
         return true;
       } else {
         alert(`保存失败: ${result.error}`);
