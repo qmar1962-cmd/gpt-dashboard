@@ -4,7 +4,6 @@ import { X, TrendingUp, Clock, ChevronDown, ChevronUp, Edit3 } from 'lucide-reac
 import { WorkHoursLowWeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
-import { recordAction } from '../lib/everosClient';
 import ConfirmModal from './ConfirmModal';
 
 // ── 日工时低原因选项 ──
@@ -250,7 +249,6 @@ export default function WorkHoursLowDetailModal({
       if (result.success) {
         setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);
-        recordAction('保存日工时低原因', `中心: ${centerName}, 人数: ${Object.keys(reasonMap).length}`);
         return true;
       } else {
         alert(`保存失败: ${result.error}`);

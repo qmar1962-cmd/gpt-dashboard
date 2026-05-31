@@ -5,7 +5,6 @@ import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
 import { idbGetRawData } from '../lib/database';
-import { recordAction } from '../lib/everosClient';
 import ConfirmModal from './ConfirmModal';
 
 // ── 排休数据结构 ──
@@ -483,7 +482,6 @@ export default function Attendance15DetailModal({
       if (result.success) {
         setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);
-        recordAction('保存排休计划', `中心: ${centerName}, 人数: ${Object.keys(leavePlans).length}`);
         // 同时保存中心元数据（负责人）
         if (responsiblePerson) {
           console.log('[保存] 开始保存 center_meta.json');
