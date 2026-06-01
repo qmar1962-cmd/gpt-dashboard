@@ -8,7 +8,7 @@ import ConfirmModal from './ConfirmModal';
 
 // ── 日工时低原因选项 ──
 const REASON_OPTIONS = [
-  '倒班', '临时事假', '脱岗', '其他',
+  '倒班', '临时事假', '脱岗', '临时排休', '其他',
 ];
 
 // ── 原因记录结构 ──
