@@ -181,7 +181,7 @@ export function generateReport(params: {
         // 日工时高
         workHoursHighCount: 0,
         workHoursHighPrevCount: center.whHighPrevCount || 0,
-        workHoursHighRate: center.workHoursHighRate || '0%',
+        workHoursHighRate: center.whHighRate || '0%',
         workHoursHighDetails: [],
 
         // 日工时低
@@ -299,7 +299,7 @@ export function generateReport(params: {
 
       // 填充总览表数据
       const att7Rate = center.rosterTotal > 0 ? ((center.att7Count || 0) / center.rosterTotal * 100).toFixed(1) + '%' : '0%';
-      const whHighRate = center.workHoursHighRate || '0%';
+      const whHighRate = center.whHighRate || '0%';
       overviewTable.push({
         centerName: center.name,
         score: center.score || 0,
@@ -552,7 +552,7 @@ export function renderReportAsText(report: FullReport): string {
       
       // 日工时高
       if (center.workHoursHighCount > 0) {
-        abnormalItems.push(`日工时高：${center.workHoursHighRate}(${center.workHoursHighCount}人)`);
+        abnormalItems.push(`日工时高：${center.whHighRate}(${center.workHoursHighCount}人)`);
       }
       
       // 日工时低
@@ -677,7 +677,7 @@ export function renderReportAsTextCompact(report: FullReport): string {
       
       // 日工时高
       if (center.workHoursHighCount > 0) {
-        lines.push(`日工时高>12.5h：${center.workHoursHighRate}(${center.workHoursHighCount}人)`);
+        lines.push(`日工时高>12.5h：${center.whHighRate}(${center.workHoursHighCount}人)`);
       } else {
         lines.push(`日工时高>12.5h：无`);
       }
