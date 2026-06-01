@@ -4,7 +4,7 @@
  */
 
 const EVEROS_BASE = 'https://api.evermind.ai/v1';
-const API_KEY = '828d02bd-fd16-4f88-8a10-9346c1b2d5eb';
+const API_KEY = typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_EVEROS_API_KEY || '' : '';
 
 interface MemoryMessage {
   role: 'user' | 'assistant' | 'system';
