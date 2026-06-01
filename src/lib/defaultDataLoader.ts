@@ -359,35 +359,31 @@ export async function loadDefaultData(
       return false;
     }
 
-    // 4. 并行加载需要重新加载的文件
-    let successCount = 0;
-    let failCount = 0;
+    // 4. 分批加载，限制并发数 + 失败重试
+    let successCount = 0; let failCount = 0;
+    const BATCH = 3, RETRIES = 1;
 
-    const loadPromises = filesToReload.map(async (file, idx) => {
-      try {
-        const result = await loadAndParseFile(file, isJson);  // 传递 isJson 标志
-        if (!result) {
-          failCount++;
-          return;
+    for (let i = 0; i < filesToReload.length; i += BATCH) {
+      const batch = filesToReload.slice(i, i + BATCH);
+      await Promise.all(batch.map(async (file) => {
+        for (let r = 0; r <= RETRIES; r++) {
+          try {
+            const result = await loadAndParseFile(file, isJson);
+            if (!result) { failCount++; return; }
+            const { data, dataType } = result;
+            await saveRawData(data, dataType, getKeyForType(dataType));
+            successCount++;
+            console.log(`[默认数据] 已加载：${file} -> ${dataType}，共 ${data.length} 条`);
+            return;
+          } catch (err) {
+            if (r < RETRIES) continue;
+            failCount++;
+            console.error(`[默认数据] 加载文件失败 ${file}:`, err);
+          }
         }
-
-        const { data, dataType } = result;
-        await saveRawData(data, dataType, getKeyForType(dataType));
-
-        console.log(`[默认数据] 已加载：${file} -> ${dataType}，共 ${data.length} 条`);
-        successCount++;
-
-        // 进度回调
-        if (onProgress) {
-          onProgress(idx + 1, filesToReload.length, file);
-        }
-      } catch (err) {
-        failCount++;
-        console.error(`[默认数据] 加载文件失败 ${file}:`, err, '（请检查该文件是否存在或格式正确）');
-      }
-    });
-
-    await Promise.all(loadPromises);
+      }));
+      if (onProgress) onProgress(Math.min(i + BATCH, filesToReload.length), filesToReload.length, '');
+    }
 
     // 5. 更新本地文件列表缓存
     saveLocalFileListCache(remoteFileList);
