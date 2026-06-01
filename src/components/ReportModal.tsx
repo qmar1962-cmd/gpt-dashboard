@@ -86,8 +86,14 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
     setImgStatus('generating'); setImgMsg('');
     try {
       const rows = report.overviewTable || [];
-      const headers = ['中心', '得分', '管幅', '超目标', '效能异常', '绩效异常', '连续出勤', '长期未出勤', '日工时高', '日工时低'];
-      const colWidths = [80, 55, 90, 90, 65, 65, 65, 75, 75, 75];
+      const headers = ['中心', '得分', '管幅', '超目标', '非操', '效能异常', '绩效异常', '连续出勤', '长期未出勤', '日工时高', '日工时低'];
+      const colWidths = [80, 50, 85, 85, 55, 55, 60, 60, 70, 70, 70];
+      // 非操标红阈值
+      const nonOpThresholds: Record<string, number> = {
+        '武汉':8,'郑州':8,'长沙':8,'漯河':8,'南昌':8,
+        '武昌':10,'荆州':10,'衡阳':10,'新乡':10,
+        '襄阳':12,'常德':12,'赣州':12,'横峰':12,'商丘':12,
+      };
       const tableWidth = colWidths.reduce((a, b) => a + b, 0);
       const rowHeight = 42, headerHeight = 36, titleHeight = 72, footerHeight = 28, padding = 4;
       const tableHeight = headerHeight + rows.length * rowHeight;
@@ -160,11 +166,17 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         cell(String(row.score), xPos, colWidths[1], row.score >= 80 ? '#16a34a' : row.score >= 50 ? '#ca8a04' : '#dc2626'); xPos += colWidths[1];
         twoLine(`综合: ${row.compositeScope.toFixed(1)}`, `组长: ${row.leaderScope.toFixed(1)}`, xPos, colWidths[2], '#333', '#71717a'); xPos += colWidths[2];
         twoLine(`综合: ${(row.compOverTarget > 0 ? '+' : '') + row.compOverTarget.toFixed(1)}`, `组长: ${(row.leadOverTarget > 0 ? '+' : '') + row.leadOverTarget.toFixed(1)}`, xPos, colWidths[3], row.compOverTarget > 0 ? '#dc2626' : '#16a34a', row.leadOverTarget > 0 ? '#dc2626' : '#16a34a'); xPos += colWidths[3];
+        // 非操占比
+        const nonOpPct = row.nonOpRatio ?? 0;
+        const nonOpThreshold = nonOpThresholds[row.centerName] ?? 10;
+        const nonOpWarn = nonOpPct > nonOpThreshold;
+        ctx.font = nonOpWarn ? 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif' : '11px -apple-system, BlinkMacSystemFont, sans-serif';
+        cell(`${nonOpPct.toFixed(2)}%`, xPos, colWidths[4], nonOpWarn ? '#dc2626' : '#16a34a'); xPos += colWidths[4];
         [row.jobAbnormal, row.salaryCoverage, row.att15Rate, String(row.att7Count), row.workHoursHighRate, String(row.workHoursLowCount)].forEach((v, vi) => {
           const n = parseFloat(v); const warn = vi <= 2 ? n > 3 : vi === 3 ? n > 0 : vi === 4 ? n > 10 : n > 0;
           ctx.font = warn ? 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif' : '11px -apple-system, BlinkMacSystemFont, sans-serif';
-          cell(v, xPos, colWidths[4 + vi], warn ? '#dc2626' : '#16a34a');
-          xPos += colWidths[4 + vi];
+          cell(v, xPos, colWidths[5 + vi], warn ? '#dc2626' : '#16a34a');
+          xPos += colWidths[5 + vi];
         });
       });
 

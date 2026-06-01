@@ -100,6 +100,7 @@ export interface OverviewTableRow {
   workHoursHighCount: number; // 日工时高人数
   workHoursHighRate: string;  // 日工时高触发占比
   workHoursLowCount: number;  // 日工时低人数
+  nonOpRatio?: number;        // 非操占比
 }
 
 export interface FullReport {
@@ -316,6 +317,7 @@ export function generateReport(params: {
         workHoursHighCount: center.t2WhHighCount || 0,
         workHoursHighRate: whHighRate,
         workHoursLowCount: center.t2WhLowCount || 0,
+        nonOpRatio: center.nonOpRatio,
       });
 
       return item;
