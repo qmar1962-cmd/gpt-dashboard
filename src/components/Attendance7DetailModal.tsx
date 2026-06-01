@@ -80,23 +80,24 @@ export default function Attendance7DetailModal({
         }
       }
 
-      // 3. 自动继承：用最近一次保存的真实日期（savedAt）跟今天比，≤ 1 天才继承
+      // 3. 自动继承：用最近一次保存的真实日期（savedAt）与数据日期对比，≤ 1 天才继承
       const matchedKeysBefore = new Set(Object.keys(matched));
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
       const today = new Date().toISOString().slice(0, 10);
+      console.log('[继承检查] today:', today, 'centerReasons keys:', Object.keys(centerReasons).length, 'window people:', allPeopleInWindow.size);
+      let inheritedCount = 0;
       for (const personName of allPeopleInWindow) {
         let mostRecentSavedAt = '';
         let mostRecentReason = '';
         for (const [histDate, histPeople] of Object.entries(centerReasons)) {
           const rec = histPeople[personName];
-          const saveDate = rec?.savedAt || rec?.date; // 兼容旧数据（无 savedAt 字段）
+          const saveDate = rec?.savedAt || rec?.date;
           if (rec && saveDate > mostRecentSavedAt) {
             mostRecentSavedAt = saveDate;
             mostRecentReason = rec.reason;
           }
         }
         if (mostRecentReason && mostRecentSavedAt) {
-          // 找到此人在当前窗口中最早出现的日期，用数据日期而非今天做gap比较
           let earliestDataDate = '';
           for (const d of weeklyData) {
             if (d.details.some(p => p.name === personName)) {
@@ -104,21 +105,24 @@ export default function Attendance7DetailModal({
             }
           }
           const refDate = earliestDataDate || today;
-          const gapDays = Math.abs(
+          const gapDays = Math.round(
             (new Date(refDate).getTime() - new Date(mostRecentSavedAt).getTime()) / (1000 * 60 * 60 * 24)
           );
           if (gapDays <= 1) {
             for (const d of weeklyData) {
               if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
                 matched[`${d.date}_${personName}`] = mostRecentReason;
+                inheritedCount++;
               }
             }
           }
         }
       }
+      console.log('[继承检查] 继承完成, 继承条数:', inheritedCount);
 
       // 4. 自动保存继承的条目（新出现的 key 写回 Supabase）
       const inheritedKeys = Object.keys(matched).filter(k => !matchedKeysBefore.has(k));
+      console.log('[继承检查] matched before:', matchedKeysBefore.size, 'after:', Object.keys(matched).length, 'new:', inheritedKeys.length);
       if (inheritedKeys.length > 0) {
         const updatedReasons = JSON.parse(JSON.stringify(reasons));
         if (!updatedReasons[centerName]) updatedReasons[centerName] = {};
