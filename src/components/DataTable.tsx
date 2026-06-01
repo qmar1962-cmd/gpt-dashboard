@@ -789,7 +789,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     </div>
                   )}
                   {/* 岗位维度 */}
-                  {tab === 'pos' && nonOpDetail.positions && (
+                  {nonOpTab === 'pos' && nonOpDetail.positions && (
                     <div className="border border-zinc-200 rounded-lg overflow-hidden">
                       <div className="grid grid-cols-[1fr_90px_80px_80px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400">
                         <div>岗位（部门）</div><div className="text-right">部门</div><div className="text-right">人数</div><div className="text-right">占比</div>
