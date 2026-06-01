@@ -75,8 +75,8 @@ const CENTER_CLASS: Record<string, string> = {
   '襄阳':'C','常德':'C','赣州':'C','横峰':'C','商丘':'C',
 };
 
-interface StaffingDept { dept: string; standard: number; actual: number; positions?: Record<string, number>; }
-interface StaffingStandard { departments: StaffingDept[]; totalStandard: number; totalActual: number; }
+interface StaffingDept { dept: string; standard: number; actual: number; }
+interface StaffingStandard { departments: StaffingDept[]; totalStandard: number; totalActual: number; posStandards: { pos: string; standard: number; rule: string }[]; }
 
 function computeStaffingStandard(centerName: string, rosterTotal: number, deptActual: Record<string, number>): StaffingStandard {
   const cls = CENTER_CLASS[centerName] || 'B';
@@ -98,9 +98,38 @@ function computeStaffingStandard(centerName: string, rosterTotal: number, deptAc
   add('中心工艺工程', 1); // 主管（工程师需维养工时数据，暂不计）
   add('中心安全监察', (cls!=='C'?1:0) + (cls==='A'?2:cls==='B'?1:0) + (cls==='C'?1:0)); // 主管+管理员(C类共用1)
 
+  const posStandards = getPosStandards(centerName, rosterTotal);
   const totalStandard = depts.reduce((s, d) => s + d.standard, 0);
   const totalActual = depts.reduce((s, d) => s + d.actual, 0);
-  return { departments: depts, totalStandard, totalActual };
+  return { departments: depts, totalStandard, totalActual, posStandards };
+}
+
+// ── 岗位级配置标准(按各岗位配置标准.xlsx顺序) ──
+function getPosStandards(centerName: string, rosterTotal: number): { pos: string; standard: number; rule: string }[] {
+  const cls = CENTER_CLASS[centerName] || 'B'; const x = rosterTotal;
+  const hr = x<=500?2:x<=800?3:x<=1100?4:x<=1400?5:x<=1700?6:7;
+  const chef = x<=900?2:x<=1400?3:x<=1800?4:5;
+  const hasBagSupervisor = centerName === '武汉' || centerName === '漯河';
+  return [
+    { pos: '部长', standard: 1, rule: 'A/B/C类均配置1人' },
+    { pos: '副部长', standard: cls === 'C' ? 0 : 1, rule: 'A/B类标配，C类不配' },
+    { pos: '中心人资主管', standard: 1, rule: '标配1人' },
+    { pos: '人资专员(薪酬/招聘/人才/基础)', standard: hr, rule: `按在职${x}人分档→${hr}人` },
+    { pos: '中心环保袋管理主管', standard: hasBagSupervisor ? 1 : 0, rule: '仅维修工厂所在地' },
+    { pos: '行政保障主管', standard: 1, rule: '标配1人' },
+    { pos: '行政事务专员', standard: cls === 'A' ? 2 : 1, rule: 'A类2人，B/C类1人' },
+    { pos: '主厨', standard: chef, rule: `${chef}名` },
+    { pos: '水电维修工', standard: 1, rule: '至少1人' },
+    { pos: '保安', standard: 2, rule: '门岗最低2人(白晚班各1)' },
+    { pos: '消防中控员', standard: 2, rule: '标准2人(白晚班各1)' },
+    { pos: '财务支持专员', standard: 1, rule: '配置1人' },
+    { pos: '中心运能调度主管', standard: 1, rule: '标配1人' },
+    { pos: '中心质量监督控制主管', standard: 1, rule: '标配1人' },
+    { pos: '中心质量监督控制专员', standard: cls === 'A' ? 2 : 1, rule: 'A类2人，B/C类1人' },
+    { pos: '中心工艺工程主管', standard: 1, rule: '标配1人' },
+    { pos: '安全监察主管', standard: cls === 'C' ? 0 : 1, rule: 'A/B类1人，C类共用' },
+    { pos: '安全管理员', standard: cls === 'A' ? 2 : cls === 'B' ? 1 : 0, rule: 'A类2人，B类1人，C类共用' },
+  ];
 }
 
 export function useEnrichedData(

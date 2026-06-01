@@ -132,7 +132,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     prevCount: 0,
   });
   // 非操明细弹窗
-  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; positions?: Record<string, { dept: string; count: number }>; staffingStandard?: { departments: { dept: string; standard: number; actual: number; diff: number }[]; totalStandard: number; totalActual: number } } | null>(null);
+  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; positions?: Record<string, { dept: string; count: number }>; staffingStandard?: { departments: { dept: string; standard: number; actual: number; diff: number }[]; totalStandard: number; totalActual: number; posStandards: { pos: string; standard: number; rule: string }[] } } | null>(null);
   const [nonOpTab, setNonOpTab] = useState<'dept' | 'pos'>('dept');
 
   const toggleRow = (id: string, e: React.MouseEvent) => {
@@ -791,20 +791,50 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   {/* 岗位维度 */}
                   {nonOpTab === 'pos' && nonOpDetail.positions && (
                     <div className="border border-zinc-200 rounded-lg overflow-hidden">
-                      <div className="grid grid-cols-[1fr_90px_80px_80px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400">
-                        <div>岗位（部门）</div><div className="text-right">部门</div><div className="text-right">人数</div><div className="text-right">占比</div>
+                      <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400">
+                        <div>岗位</div><div className="text-right">标准</div><div className="text-right">实际</div><div className="text-right">差额</div>
                       </div>
-                      {Object.entries(nonOpDetail.positions).sort((a, b) => b[1].count - a[1].count).map(([key, val]) => {
-                        const pos = key.split('|')[1] || key;
-                        return (
-                          <div key={key} className="grid grid-cols-[1fr_90px_80px_80px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50">
-                            <div className="font-medium text-zinc-700 truncate">{pos}</div>
-                            <div className="text-right text-zinc-400 text-[10px] truncate">{val.dept}</div>
-                            <div className="text-right font-mono font-bold text-zinc-800">{val.count}</div>
-                            <div className="text-right font-mono text-zinc-400">{nonOpDetail.rosterTotal > 0 ? (val.count / nonOpDetail.rosterTotal * 100).toFixed(1) + '%' : '—'}</div>
+                      {(() => {
+                        // 按配置标准表顺序排列，匹配实际数据
+                        const actualPos: Record<string, number> = {};
+                        Object.entries(nonOpDetail.positions!).forEach(([key, val]) => {
+                          const pos = key.split('|')[1] || key;
+                          actualPos[pos] = (actualPos[pos] || 0) + val.count;
+                        });
+                        const posStandards = nonOpDetail.staffingStandard?.posStandards || [];
+                        const matched = new Set<string>();
+                        const rows: { pos: string; standard: number; actual: number; rule: string }[] = [];
+                        // 先匹配标准表里的岗位
+                        posStandards.forEach((ps: any) => {
+                          let actual = actualPos[ps.pos] || 0;
+                          // 模糊匹配
+                          if (actual === 0) {
+                            const fuzzyKey = Object.keys(actualPos).find(k => k.includes(ps.pos) || ps.pos.includes(k));
+                            if (fuzzyKey) { actual = actualPos[fuzzyKey]; matched.add(fuzzyKey); }
+                          }
+                          matched.add(ps.pos);
+                          rows.push({ pos: ps.pos, standard: ps.standard, actual, rule: ps.rule });
+                        });
+                        // 补上标准表里没有但实际有的岗位
+                        Object.entries(actualPos).forEach(([pos, count]) => {
+                          if (!matched.has(pos) && ![...matched].some(m => pos.includes(m) || m.includes(pos))) {
+                            rows.push({ pos, standard: 0, actual: count, rule: '无配置标准' });
+                          }
+                        });
+                        return rows.map(r => (
+                          <div key={r.pos} className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50 group">
+                            <div className="font-medium text-zinc-700 truncate flex items-center gap-1">
+                              {r.pos}
+                              {r.rule && <button className="text-zinc-300 hover:text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity text-[9px]" title={r.rule}>ⓘ</button>}
+                            </div>
+                            <div className="text-right font-mono text-zinc-500">{r.standard > 0 ? r.standard : '—'}</div>
+                            <div className="text-right font-mono font-bold text-zinc-800">{r.actual || '—'}</div>
+                            <div className={(r.actual - r.standard) > 0 ? "text-right font-mono font-bold text-red-600" : (r.actual - r.standard) < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-zinc-400"}>
+                              {r.standard > 0 ? ((r.actual - r.standard) > 0 ? '+' : '') + (r.actual - r.standard) : '—'}
+                            </div>
                           </div>
-                        );
-                      })}
+                        ));
+                      })()}
                     </div>
                   )}
                   <p className="text-[10px] text-zinc-400 pt-2">* 非操作 = 花名册(排除中心操作/中心现场管理+特殊岗位) + 外包。部门维度对标配置标准表。</p>
