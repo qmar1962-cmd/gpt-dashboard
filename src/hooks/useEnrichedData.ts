@@ -215,7 +215,8 @@ export function useEnrichedData(
     }
 
     // 非操作人数统计（九级单位 + 排除中心操作/特殊岗位）
-    const nonOpByCenter = new Map<string, { nonOp: number; total: number; departments: Record<string, number> }>();
+    const nonOpByCenter = new Map<string, { nonOp: number; total: number; departments: Record<string, number>; positions: Record<string, { dept: string; count: number }> }>();
+    const EXCLUDE_DEPTS = ['中心操作', '中心现场管理'];
     const EXCLUDE_POSITIONS = ['安检员', '仓库管理员', '环保袋管理维修员', '中心环保袋管理组长', '环保袋仓库管理员'];
     if (rosterDataState) {
       const firstRow = rosterDataState.find((r: any) => r && typeof r === 'object' && Object.keys(r).length > 0);
@@ -231,14 +232,17 @@ export function useEnrichedData(
           if (!tcMatch) return;
           const centerName = tcMatch[1];
           let entry = nonOpByCenter.get(centerName);
-          if (!entry) { entry = { nonOp: 0, total: 0, departments: {} }; nonOpByCenter.set(centerName, entry); }
+          if (!entry) { entry = { nonOp: 0, total: 0, departments: {}, positions: {} }; nonOpByCenter.set(centerName, entry); }
           entry.total++;
           const dept = String(row[deptCol] || '').trim();
           const pos = String(row[jobCol] || '').trim();
-          const isOps = dept === '中心操作' || EXCLUDE_POSITIONS.includes(pos);
+          const isOps = EXCLUDE_DEPTS.includes(dept) || EXCLUDE_POSITIONS.includes(pos);
           if (!isOps) {
             entry.nonOp++;
             entry.departments[dept] = (entry.departments[dept] || 0) + 1;
+            const posKey = `${dept}|${pos}`;
+            if (!entry.positions[posKey]) entry.positions[posKey] = { dept, count: 0 };
+            entry.positions[posKey].count++;
           }
         });
       }
@@ -382,6 +386,7 @@ export function useEnrichedData(
           enrichedCenter.outsourced = outsourced;
           enrichedCenter.rosterInService = nonOpStats.total;
           enrichedCenter.nonOpDepartments = nonOpStats.departments; // 各部门人数明细
+          enrichedCenter.nonOpPositions = nonOpStats.positions;       // 各岗位人数明细
           enrichedCenter.staffingStandard = computeStaffingStandard(center.name, nonOpStats.total, nonOpStats.departments);
         }
 

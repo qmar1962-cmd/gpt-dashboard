@@ -132,7 +132,8 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     prevCount: 0,
   });
   // 非操明细弹窗
-  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; staffingStandard?: { departments: { dept: string; standard: number; actual: number; diff: number }[]; totalStandard: number; totalActual: number } } | null>(null);
+  const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; positions?: Record<string, { dept: string; count: number }>; staffingStandard?: { departments: { dept: string; standard: number; actual: number; diff: number }[]; totalStandard: number; totalActual: number } } | null>(null);
+  const [nonOpTab, setNonOpTab] = useState<'dept' | 'pos'>('dept');
 
   const toggleRow = (id: string, e: React.MouseEvent) => {
     // Avoid double trigger if clicking on something that also selects
@@ -351,7 +352,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   )}>
                     {center.nonOpRatio !== undefined
                       ? <button
-                          onClick={(e) => { e.stopPropagation(); setNonOpDetail({ centerName: center.name, nonOpCount: center.nonOpCount ?? 0, rosterTotal: center.rosterInService ?? 0, outsourced: center.outsourced ?? 0, nonOpRatio: center.nonOpRatio, departments: center.nonOpDepartments, staffingStandard: center.staffingStandard }); }}
+                          onClick={(e) => { e.stopPropagation(); setNonOpDetail({ centerName: center.name, nonOpCount: center.nonOpCount ?? 0, rosterTotal: center.rosterInService ?? 0, outsourced: center.outsourced ?? 0, nonOpRatio: center.nonOpRatio, departments: center.nonOpDepartments, positions: center.nonOpPositions, staffingStandard: center.staffingStandard }); }}
                           className="font-black text-sm tracking-tighter hover:text-red-500 hover:underline underline-offset-2 transition-colors cursor-pointer"
                           title="点击查看非操明细"
                         >{center.nonOpRatio.toFixed(2)}%</button>
@@ -743,47 +744,73 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
         {nonOpDetail && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]" onClick={() => setNonOpDetail(null)} />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[560px] max-h-[80vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-black text-sm">{nonOpDetail.centerName}中心 · 非操明细</h3>
-                <button onClick={() => setNonOpDetail(null)} className="p-1 hover:bg-zinc-100 rounded text-zinc-400"><X size={14} /></button>
-              </div>
-              {/* 汇总行 */}
-              <div className="flex items-center gap-4 mb-4 text-[11px]">
-                <span className="text-zinc-500">在职 <b className="text-zinc-800">{nonOpDetail.rosterTotal}</b></span>
-                <span className="text-zinc-500">外包 <b className="text-zinc-800">{nonOpDetail.outsourced}</b></span>
-                <span className="text-zinc-500">总人数 <b className="text-zinc-800">{nonOpDetail.rosterTotal + nonOpDetail.outsourced}</b></span>
-                <span className="text-zinc-500">非操占比 <b className="text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</b></span>
-              </div>
-              {/* 部门配置标准对照表 */}
-              {nonOpDetail.staffingStandard && (
-                <div className="border border-zinc-200 rounded-lg overflow-hidden">
-                  <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                    <div>部门</div><div className="text-right">配置标准</div><div className="text-right">现有人数</div><div className="text-right">差额</div>
+            {(() => { return (
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-black text-sm">{nonOpDetail.centerName}中心 · 非操明细</h3>
+                    <button onClick={() => setNonOpDetail(null)} className="p-1 hover:bg-zinc-100 rounded text-zinc-400"><X size={14} /></button>
                   </div>
-                  {nonOpDetail.staffingStandard.departments.map(d => (
-                    <div key={d.dept} className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50">
-                      <div className="font-medium text-zinc-700">{d.dept}</div>
-                      <div className="text-right font-mono text-zinc-500">{d.standard}</div>
-                      <div className="text-right font-mono font-bold text-zinc-800">{d.actual || '—'}</div>
-                      <div className={d.diff > 0 ? "text-right font-mono font-bold text-red-600" : d.diff < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-zinc-400"}>
-                        {d.diff > 0 ? '+' : ''}{d.diff !== 0 ? d.diff : '0'}
+                  {/* 汇总行 */}
+                  <div className="flex items-center gap-4 mb-3 text-[11px]">
+                    <span className="text-zinc-500">在职 <b className="text-zinc-800">{nonOpDetail.rosterTotal}</b></span>
+                    <span className="text-zinc-500">外包 <b className="text-zinc-800">{nonOpDetail.outsourced}</b></span>
+                    <span className="text-zinc-500">总人数 <b className="text-zinc-800">{nonOpDetail.rosterTotal + nonOpDetail.outsourced}</b></span>
+                    <span className="text-zinc-500">非操占比 <b className="text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</b></span>
+                  </div>
+                  {/* 维度切换 */}
+                  <div className="flex gap-1 mb-3">
+                    <button onClick={() => setNonOpTab('dept')} className={nonOpTab === 'dept' ? "px-3 py-1 text-[10px] font-bold bg-zinc-900 text-white rounded" : "px-3 py-1 text-[10px] font-bold bg-zinc-100 text-zinc-500 rounded hover:bg-zinc-200"}>部门维度</button>
+                    <button onClick={() => setNonOpTab('pos')} className={nonOpTab === 'pos' ? "px-3 py-1 text-[10px] font-bold bg-zinc-900 text-white rounded" : "px-3 py-1 text-[10px] font-bold bg-zinc-100 text-zinc-500 rounded hover:bg-zinc-200"}>岗位维度</button>
+                  </div>
+                  {/* 部门维度 */}
+                  {nonOpTab === 'dept' && nonOpDetail.staffingStandard && (
+                    <div className="border border-zinc-200 rounded-lg overflow-hidden">
+                      <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400">
+                        <div>部门</div><div className="text-right">标准</div><div className="text-right">实际</div><div className="text-right">差额</div>
+                      </div>
+                      {nonOpDetail.staffingStandard.departments.map(d => (
+                        <div key={d.dept} className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50">
+                          <div className="font-medium text-zinc-700">{d.dept}</div>
+                          <div className="text-right font-mono text-zinc-500">{d.standard}</div>
+                          <div className="text-right font-mono font-bold text-zinc-800">{d.actual || '—'}</div>
+                          <div className={d.diff > 0 ? "text-right font-mono font-bold text-red-600" : d.diff < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-zinc-400"}>
+                            {d.diff > 0 ? '+' : ''}{d.diff !== 0 ? d.diff : '0'}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-zinc-50 text-[11px] font-bold">
+                        <div>合计</div>
+                        <div className="text-right font-mono text-zinc-700">{nonOpDetail.staffingStandard.totalStandard}</div>
+                        <div className="text-right font-mono text-zinc-800">{nonOpDetail.staffingStandard.totalActual}</div>
+                        <div className={nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard > 0 ? "text-right font-mono text-red-600" : "text-right font-mono text-emerald-600"}>
+                          {(() => { const d = nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard; return (d > 0 ? '+' : '') + d; })()}
+                        </div>
                       </div>
                     </div>
-                  ))}
-                  {/* 合计行 */}
-                  <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-zinc-50 text-[11px] font-bold">
-                    <div className="text-zinc-700">合计</div>
-                    <div className="text-right font-mono text-zinc-700">{nonOpDetail.staffingStandard.totalStandard}</div>
-                    <div className="text-right font-mono text-zinc-800">{nonOpDetail.staffingStandard.totalActual}</div>
-                    <div className={nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard > 0 ? "text-right font-mono text-red-600" : "text-right font-mono text-emerald-600"}>
-                      {(() => { const d = nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard; return (d > 0 ? '+' : '') + d; })()}
+                  )}
+                  {/* 岗位维度 */}
+                  {tab === 'pos' && nonOpDetail.positions && (
+                    <div className="border border-zinc-200 rounded-lg overflow-hidden">
+                      <div className="grid grid-cols-[1fr_90px_80px_80px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400">
+                        <div>岗位（部门）</div><div className="text-right">部门</div><div className="text-right">人数</div><div className="text-right">占比</div>
+                      </div>
+                      {Object.entries(nonOpDetail.positions).sort((a, b) => b[1].count - a[1].count).map(([key, val]) => {
+                        const pos = key.split('|')[1] || key;
+                        return (
+                          <div key={key} className="grid grid-cols-[1fr_90px_80px_80px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50">
+                            <div className="font-medium text-zinc-700 truncate">{pos}</div>
+                            <div className="text-right text-zinc-400 text-[10px] truncate">{val.dept}</div>
+                            <div className="text-right font-mono font-bold text-zinc-800">{val.count}</div>
+                            <div className="text-right font-mono text-zinc-400">{nonOpDetail.rosterTotal > 0 ? (val.count / nonOpDetail.rosterTotal * 100).toFixed(1) + '%' : '—'}</div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                </div>
-              )}
-              <p className="text-[10px] text-zinc-400 pt-2">* 配置标准含可自动计算岗位（部长/人资/行政/财务/调度/质控/工程/安全），不含需额外数据的岗位（帮厨/宿管/运能专员/锅炉工等）。</p>
-            </motion.div>
+                  )}
+                  <p className="text-[10px] text-zinc-400 pt-2">* 非操作 = 花名册(排除中心操作/中心现场管理+特殊岗位) + 外包。部门维度对标配置标准表。</p>
+                </motion.div>
+              );
+            })()}
           </>
         )}
       </AnimatePresence>
