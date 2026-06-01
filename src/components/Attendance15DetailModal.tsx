@@ -231,23 +231,24 @@ export default function Attendance15DetailModal({
         }
       }
 
-      // 3. 自动继承：用最近一次保存的真实日期（savedAt）跟今天比，≤ 1 天才继承
+      // 3. 自动继承：用最近一次保存的真实日期（savedAt）跟数据日期比，≤ 1 天才继承
       const matchedKeysBefore = new Set(Object.keys(matched));
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
       const today = new Date().toISOString().slice(0, 10);
+      console.log('[排休继承检查] today:', today, 'centerPlans keys:', Object.keys(centerPlans).length, 'window people:', allPeopleInWindow.size);
+      let planInherited = 0;
       for (const personName of allPeopleInWindow) {
         let mostRecentSavedAt = '';
         let mostRecentPlan: LeavePlanRecord | null = null;
         for (const [histDate, histPeople] of Object.entries(centerPlans)) {
           const rec = histPeople[personName];
-          const saveDate = rec?.savedAt || rec?.setDate; // 兼容旧数据（无 savedAt 字段）
+          const saveDate = rec?.savedAt || rec?.setDate;
           if (rec && saveDate > mostRecentSavedAt) {
             mostRecentSavedAt = saveDate;
             mostRecentPlan = rec;
           }
         }
         if (mostRecentPlan && mostRecentSavedAt) {
-          // 用数据日期而非今天做gap比较
           let earliestDataDate = '';
           for (const d of weeklyData) {
             if (d.details.some(p => p.name === personName)) {
@@ -255,18 +256,21 @@ export default function Attendance15DetailModal({
             }
           }
           const refDate = earliestDataDate || today;
-          const gapDays = Math.abs(
+          const gapDays = Math.round(
             (new Date(refDate).getTime() - new Date(mostRecentSavedAt).getTime()) / (1000 * 60 * 60 * 24)
           );
+          console.log('[排休继承检查]', personName, 'savedAt:', mostRecentSavedAt, 'refDate:', refDate, 'gap:', gapDays);
           if (gapDays <= 1) {
             for (const d of weeklyData) {
               if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
                 matched[`${d.date}_${personName}`] = mostRecentPlan;
+                planInherited++;
               }
             }
           }
         }
       }
+      console.log('[排休继承检查] 继承完成, 继承条数:', planInherited);
 
       // 4. 自动保存继承的排休计划
       const inheritedKeys = Object.keys(matched).filter(k => !matchedKeysBefore.has(k));
