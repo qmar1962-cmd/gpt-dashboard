@@ -26,6 +26,7 @@ function getTableName(fileName: string): string {
  * 查询表中的所有行，转换为原来的 JSON 结构（保持与 GitHub 版本相同的返回值格式）
  */
 export async function loadCollaborationData(fileName: string): Promise<any> {
+  if (!supabase) { console.warn('[Supabase协作] 客户端未初始化，返回空'); return {}; }
   const tableName = getTableName(fileName);
 
   try {
@@ -56,6 +57,7 @@ export async function saveCollaborationData(
   data: any,
   message: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (!supabase) return { success: false, error: 'Supabase 客户端未初始化' };
   const tableName = getTableName(fileName);
   const rows = jsonToRows(fileName, data);
 
