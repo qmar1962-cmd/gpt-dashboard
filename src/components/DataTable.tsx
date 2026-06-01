@@ -134,6 +134,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
   // 非操明细弹窗
   const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; positions?: Record<string, { dept: string; count: number }>; staffingStandard?: { departments: { dept: string; standard: number; actual: number; diff: number }[]; totalStandard: number; totalActual: number; posStandards: { pos: string; standard: number; rule: string }[] } } | null>(null);
   const [nonOpTab, setNonOpTab] = useState<'dept' | 'pos'>('dept');
+  const [expandedRule, setExpandedRule] = useState<string | null>(null);
 
   const toggleRow = (id: string, e: React.MouseEvent) => {
     // Avoid double trigger if clicking on something that also selects
@@ -804,10 +805,8 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                         const posStandards = nonOpDetail.staffingStandard?.posStandards || [];
                         const matched = new Set<string>();
                         const rows: { pos: string; standard: number; actual: number; rule: string }[] = [];
-                        // 先匹配标准表里的岗位
                         posStandards.forEach((ps: any) => {
                           let actual = actualPos[ps.pos] || 0;
-                          // 模糊匹配
                           if (actual === 0) {
                             const fuzzyKey = Object.keys(actualPos).find(k => k.includes(ps.pos) || ps.pos.includes(k));
                             if (fuzzyKey) { actual = actualPos[fuzzyKey]; matched.add(fuzzyKey); }
@@ -815,24 +814,28 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           matched.add(ps.pos);
                           rows.push({ pos: ps.pos, standard: ps.standard, actual, rule: ps.rule });
                         });
-                        // 补上标准表里没有但实际有的岗位
                         Object.entries(actualPos).forEach(([pos, count]) => {
                           if (!matched.has(pos) && ![...matched].some(m => pos.includes(m) || m.includes(pos))) {
                             rows.push({ pos, standard: 0, actual: count, rule: '无配置标准' });
                           }
                         });
                         return rows.map(r => (
-                          <div key={r.pos} className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50 group">
-                            <div className="font-medium text-zinc-700 truncate flex items-center gap-1">
-                              {r.pos}
-                              {r.rule && <button className="text-zinc-300 hover:text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity text-[9px]" title={r.rule}>ⓘ</button>}
+                          <React.Fragment key={r.pos}>
+                            <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50 cursor-pointer" onClick={() => setExpandedRule(expandedRule === r.pos ? null : r.pos)}>
+                              <div className="font-medium text-zinc-700 truncate flex items-center gap-1">
+                                {r.pos}
+                                {r.rule && <span className="text-zinc-300 text-[9px]">ⓘ</span>}
+                              </div>
+                              <div className="text-right font-mono text-zinc-500">{r.standard > 0 ? r.standard : '—'}</div>
+                              <div className="text-right font-mono font-bold text-zinc-800">{r.actual || '—'}</div>
+                              <div className={(r.actual - r.standard) > 0 ? "text-right font-mono font-bold text-red-600" : (r.actual - r.standard) < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-zinc-400"}>
+                                {r.standard > 0 ? ((r.actual - r.standard) > 0 ? '+' : '') + (r.actual - r.standard) : '—'}
+                              </div>
                             </div>
-                            <div className="text-right font-mono text-zinc-500">{r.standard > 0 ? r.standard : '—'}</div>
-                            <div className="text-right font-mono font-bold text-zinc-800">{r.actual || '—'}</div>
-                            <div className={(r.actual - r.standard) > 0 ? "text-right font-mono font-bold text-red-600" : (r.actual - r.standard) < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-zinc-400"}>
-                              {r.standard > 0 ? ((r.actual - r.standard) > 0 ? '+' : '') + (r.actual - r.standard) : '—'}
-                            </div>
-                          </div>
+                            {expandedRule === r.pos && (
+                              <div className="px-3 py-1.5 bg-amber-50 text-[10px] text-amber-700 border-b border-zinc-50">{r.rule}</div>
+                            )}
+                          </React.Fragment>
                         ));
                       })()}
                     </div>
