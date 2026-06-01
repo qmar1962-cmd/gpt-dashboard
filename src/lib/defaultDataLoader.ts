@@ -137,7 +137,7 @@ async function loadAndParseFile(filename: string, isJson: boolean): Promise<{ da
     const baseUrl = isJson ? JSON_FILE_BASE_URL : EXCEL_FILE_BASE_URL;
     const url = `${baseUrl}/${filename}`;
     
-    const response = await fetch(url, { cache: 'no-cache', signal: AbortSignal.timeout(15000) });
+    const response = await fetch(url, { cache: 'no-cache', signal: AbortSignal.timeout(30000) });
     if (!response.ok) {
       console.warn(`[默认数据] 无法加载文件(${response.status})：${filename}`);
       return null;
@@ -181,28 +181,30 @@ async function loadAndParseFile(filename: string, isJson: boolean): Promise<{ da
  * 返回：{ filename: { mtime, size } }
  */
 async function fetchRemoteFileList(): Promise<{ data: FileListData | null; isJson: boolean }> {
-  // 1. 先尝试加载 JSON filelist（快速路径）
-  try {
-    const url = `${JSON_FILE_LIST_URL}?t=${Date.now()}`;
-    const res = await fetch(url, { 
-      cache: 'no-cache',
-      signal: AbortSignal.timeout(5000) // 5秒超时，避免卡住
-    });
-    
-    if (res.ok) {
-      const data: FileListData = await res.json();
-      console.log('[默认数据] 使用 JSON filelist（快速模式）');
-      return { data, isJson: true };
+  // 1. 先尝试加载 JSON filelist（快速路径，重试1次）
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const url = `${JSON_FILE_LIST_URL}?t=${Date.now()}`;
+      const res = await fetch(url, {
+        cache: 'no-cache',
+        signal: AbortSignal.timeout(15000)
+      });
+      if (res.ok) {
+        const data: FileListData = await res.json();
+        console.log('[默认数据] 使用 JSON filelist');
+        return { data, isJson: true };
+      }
+    } catch (err) {
+      if (attempt === 0) { await new Promise(r => setTimeout(r, 1000)); continue; }
+      console.warn('[默认数据] JSON filelist 加载失败，回退到 Excel 模式', err);
     }
-  } catch (err) {
-    console.warn('[默认数据] JSON filelist 加载失败，回退到 Excel 模式', err);
   }
-  
+
   // 2. JSON 失败，回退到 Excel filelist（兼容模式）
   try {
     const url = `${EXCEL_FILE_LIST_URL}?t=${Date.now()}`;
-    const res = await fetch(url, { cache: 'no-cache' });
-    
+    const res = await fetch(url, { cache: 'no-cache', signal: AbortSignal.timeout(15000) });
+
     if (res.ok) {
       const data: FileListData = await res.json();
       console.log('[默认数据] 使用 Excel filelist（兼容模式）');
