@@ -94,8 +94,16 @@ export default function WorkHoursLowDetailModal({
           }
         }
         if (mostRecentReason && mostRecentSavedAt) {
+          // 用数据日期而非今天做gap比较
+          let earliestDataDate = '';
+          for (const d of weeklyData) {
+            if (d.details.some(p => p.name === personName)) {
+              if (!earliestDataDate || d.date < earliestDataDate) earliestDataDate = d.date;
+            }
+          }
+          const refDate = earliestDataDate || today;
           const gapDays = Math.abs(
-            (new Date(today).getTime() - new Date(mostRecentSavedAt).getTime()) / (1000 * 60 * 60 * 24)
+            (new Date(refDate).getTime() - new Date(mostRecentSavedAt).getTime()) / (1000 * 60 * 60 * 24)
           );
           if (gapDays <= 1) {
             for (const d of weeklyData) {
