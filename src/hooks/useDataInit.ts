@@ -132,8 +132,9 @@ export function useDataInit() {
           console.log('[初始化] 数据修复完成');
         }
       } catch (error) {
-        console.error('[初始化] 加载存储数据失败:', error);
-        setInitError(error instanceof Error ? error.message : '数据加载失败，请检查浏览器存储空间或刷新重试');
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error('[初始化] 加载存储数据失败:', msg, error);
+        setInitError(`数据加载失败(${msg.slice(0, 60)})，请Ctrl+F5刷新重试`);
       } finally {
         setLoading({ isLoading: true, message: '完成', progress: 100 });
         setTimeout(() => {
