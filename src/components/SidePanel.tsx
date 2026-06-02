@@ -198,25 +198,6 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
               <KPI label="在册人数" value={overview.rosterTotal + '人'} />
             </div>
 
-            {/* 维度得分条 */}
-            <div className="pt-2 border-t border-slate-100">
-              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">维度评分</span>
-              <div className="mt-2 space-y-1.5">
-                {dimScores.map(dim => (
-                  <div key={dim.key} className="flex items-center gap-2">
-                    <span className="text-[9px] text-slate-500 w-16 shrink-0">{dim.label}</span>
-                    <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                      <motion.div className="h-full rounded-full" style={{ backgroundColor: dim.color }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.max(2, (dim.score / dim.maxScore) * 100)}%` }}
-                        transition={{ duration: 0.5, ease: 'easeOut' }}
-                      />
-                    </div>
-                    <span className="text-[9px] font-bold tabular-nums w-8 text-right" style={{ color: dim.color }}>{dim.score}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
       </div>
@@ -230,10 +211,32 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
         </div>
       )}
 
-      {/* 关键行动 + 告警 */}
-      {(actions.length > 0 || hasAlerts) && (
-        <div className="p-5 pt-3 flex-1">
-          <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+      {/* 底部对齐：维度评分 → 关键行动 */}
+      <div className="mt-auto">
+        {/* 维度得分条 */}
+        {overview && (
+          <div className="px-5 py-3 border-t border-slate-100">
+            <div className="space-y-1.5">
+              {dimScores.map(dim => (
+                <div key={dim.key} className="flex items-center gap-2">
+                  <span className="text-[9px] text-slate-500 w-16 shrink-0">{dim.label}</span>
+                  <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <motion.div className="h-full rounded-full" style={{ backgroundColor: dim.color }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.max(2, (dim.score / dim.maxScore) * 100)}%` }}
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <span className="text-[9px] font-bold tabular-nums w-8 text-right" style={{ color: dim.color }}>{dim.score}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 关键行动 + 告警 */}
+        {(actions.length > 0 || hasAlerts) && (
+          <div className="px-5 py-3 border-t border-slate-100">
             <div className="flex items-center gap-2 mb-3">
               <Zap size={13} className="text-blue-500 fill-blue-500" />
               <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">关键行动</span>
@@ -309,8 +312,8 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
               </>
             )}
           </div>
-        </div>
       )}
+    </div>
       {/* 返回全局 */}
       {selection.type !== 'all' && onResetSelection && (
         <div className="p-5 pt-0">
