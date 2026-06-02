@@ -888,6 +888,10 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
             <div className="rule-item">
+              <span className="text-[9px] font-bold block opacity-50 uppercase">非操占比</span>
+              <p className="text-[11px] font-medium leading-relaxed">非操作人数 ÷ 总人数 × 100%。非操作人数 = 花名册(九级单位=xx转运中心，排除中心操作/安检员/仓库管理员/环保袋管理维修员) + 外包人数。总人数 = 花名册在职人数 + 外包人数。A类中心≤8%，B类≤10%，C类≤12% 为正常。</p>
+            </div>
+            <div className="rule-item">
               <span className="text-[9px] font-bold block opacity-50 uppercase">岗位绩效异常</span>
               <p className="text-[11px] font-medium leading-relaxed">当月最后一天触发的岗位数量，每触发1个岗位扣5分。</p>
             </div>
