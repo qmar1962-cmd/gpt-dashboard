@@ -256,53 +256,46 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
               <>
                 <button onClick={() => setAlertsOpen(!alertsOpen)} className="flex items-center gap-1.5 text-[10px] text-slate-400 hover:text-slate-600 transition-colors">
                   {alertsOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                  {alertsOpen ? '收起变化详情' : `查看变化详情 · ${worsen}项恶化 · ${improve}项改善 · ${warnings.length}项异常`}
+                  {alertsOpen ? '收起' : `展开详情 · ${worsen}恶化 ${improve}改善 ${warnings.length}校验`}
                 </button>
                 {alertsOpen && (
-                  <div className="mt-3 space-y-3 max-h-64 overflow-y-auto">
-                    {/* 恶化项 */}
+                  <div className="mt-3 space-y-2.5 max-h-64 overflow-y-auto text-[10px] leading-relaxed">
                     {alerts.filter(a => a.dir === 'up' && a.type !== '得分↓').length > 0 && (
                       <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <TrendingUp size={11} className="text-red-500" />
-                          <span className="text-[10px] font-bold text-red-600">指标恶化</span>
+                        <div className="flex items-center gap-1 mb-1 text-red-500">
+                          <TrendingUp size={10} /><span className="font-semibold">指标恶化</span>
                         </div>
                         {alerts.filter(a => a.dir === 'up' && a.type !== '得分↓').map((a, i) => (
-                          <div key={i} className="ml-5 pl-3 py-1 border-l-2 border-red-200 text-[10px] text-slate-600 leading-relaxed">
-                            <span className="font-semibold text-slate-800">{a.province} {a.center}</span>
-                            <span className="text-red-500 font-medium"> {a.type}+{a.detail.split('→')[1]?.replace('个','') || a.detail}</span>
-                            <span className="text-slate-400">（前一天{a.detail.split('→')[0]}）</span>
+                          <div key={i} className="text-slate-600 ml-3">
+                            <span className="font-semibold text-slate-800">{a.center}</span>
+                            <span className="text-red-500"> {a.type}+{a.detail.split('→')[1]?.replace('个','') || a.detail}</span>
+                            <span className="text-slate-400">（前{a.detail.split('→')[0]}）</span>
                           </div>
                         ))}
                       </div>
                     )}
-                    {/* 改善项 */}
                     {alerts.filter(a => a.dir === 'down' || a.type === '得分↓').length > 0 && (
                       <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <TrendingDown size={11} className="text-emerald-500" />
-                          <span className="text-[10px] font-bold text-emerald-600">指标改善 / 得分下降</span>
+                        <div className="flex items-center gap-1 mb-1 text-emerald-600">
+                          <TrendingDown size={10} /><span className="font-semibold">改善</span>
                         </div>
                         {alerts.filter(a => a.dir === 'down' || a.type === '得分↓').map((a, i) => (
-                          <div key={i} className="ml-5 pl-3 py-1 border-l-2 border-emerald-200 text-[10px] text-slate-600 leading-relaxed">
-                            <span className="font-semibold text-slate-800">{a.province} {a.center}</span>
-                            <span className="text-emerald-500 font-medium"> {a.type} {a.detail}</span>
+                          <div key={i} className="text-slate-600 ml-3">
+                            <span className="font-semibold text-slate-800">{a.center}</span>
+                            <span className="text-emerald-600"> {a.type} {a.detail}</span>
                           </div>
                         ))}
                       </div>
                     )}
-                    {/* 数据校验异常 */}
                     {warnings.length > 0 && (
                       <div>
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <AlertTriangle size={11} className="text-amber-500" />
-                          <span className="text-[10px] font-bold text-amber-600">数据校验异常</span>
-                          <span className="text-[9px] text-amber-400">可能数据源有误，建议核实</span>
+                        <div className="flex items-center gap-1 mb-1 text-amber-600">
+                          <AlertTriangle size={10} /><span className="font-semibold">数据校验</span>
                         </div>
                         {warnings.map((w, i) => (
-                          <div key={i} className="ml-5 pl-3 py-1 border-l-2 border-amber-200 text-[10px] text-slate-600 leading-relaxed">
-                            <span className="font-semibold text-slate-800">{w.province} {w.center}</span>
-                            <span className="text-amber-600"> {w.msg}</span>
+                          <div key={i} className="text-slate-600 ml-3">
+                            <span className="font-semibold text-slate-800">{w.center}</span>
+                            <span> {w.msg}</span>
                           </div>
                         ))}
                       </div>
