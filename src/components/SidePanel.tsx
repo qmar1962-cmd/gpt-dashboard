@@ -15,10 +15,10 @@ interface Props {
 const DIMS = [
   { key: 'job', label: '效能异常', color: '#ef4444', maxScore: 25 },
   { key: 'salary', label: '绩效异常', color: '#f59e0b', maxScore: 15 },
-  { key: 'att15', label: '连续出勤', color: '#10b981', maxScore: 25 },
-  { key: 'att7', label: '长期未出勤', color: '#8b5cf6', maxScore: 25 },
-  { key: 'whHigh', label: '日工时高', color: '#f97316', maxScore: 5 },
-  { key: 'whLow', label: '日工时低', color: '#06b6d4', maxScore: 5 },
+  { key: 'att15', label: '连续出勤', color: '#3b82f6', maxScore: 25 },
+  { key: 'att7', label: '长期未出勤', color: '#6366f1', maxScore: 25 },
+  { key: 'whHigh', label: '日工时高', color: '#f59e0b', maxScore: 5 },
+  { key: 'whLow', label: '日工时低', color: '#3b82f6', maxScore: 5 },
 ];
 
 export default function SidePanel({ selection, data, filteredData, exemptCenters, onOpenReport, onResetSelection }: Props) {

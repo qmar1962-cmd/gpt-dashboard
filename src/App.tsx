@@ -125,7 +125,7 @@ export default function App() {
       {!isLoggedIn ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex relative border-8 border-white overflow-hidden" id="bold-dashboard">
+        <div className="min-h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden" id="bold-dashboard">
           {/* Vertical Intelligence Sidebar */}
           <nav className="w-16 h-full border-r border-slate-200 flex flex-col items-center justify-center bg-white">
             <div className="flex items-center gap-4 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
@@ -144,7 +144,7 @@ export default function App() {
                 onClick={() => safeSetViewMode('dashboard')}
                 className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                   viewMode === 'dashboard'
-                    ? 'bg-red-600 text-white shadow-lg scale-110'
+                    ? 'bg-blue-600 text-white shadow-lg scale-110'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
                 title="数据看板"
@@ -155,7 +155,7 @@ export default function App() {
                 onClick={() => safeSetViewMode('attendance')}
                 className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                   viewMode === 'attendance'
-                    ? 'bg-red-600 text-white shadow-lg scale-110'
+                    ? 'bg-blue-600 text-white shadow-lg scale-110'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
                 title="中心考勤"
@@ -167,7 +167,7 @@ export default function App() {
                   onClick={() => safeSetViewMode('data')}
                   className={`relative p-3 rounded-lg transition-all flex items-center justify-center ${
                     viewMode === 'data'
-                      ? 'bg-red-600 text-white shadow-lg scale-110'
+                      ? 'bg-blue-600 text-white shadow-lg scale-110'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                   title="数据上传与管理"
@@ -183,7 +183,7 @@ export default function App() {
           <div className="flex-1 flex flex-col overflow-auto h-screen [scrollbar-gutter:stable]">
             <header className="h-24 min-h-[96px] border-b border-slate-200 flex items-center justify-between px-12 bg-white sticky top-0 z-50">
               <div className="flex flex-col">
-                <h1 className="text-5xl font-black tracking-tighter leading-none">GPT 数据通报</h1>
+                <h1 className="text-3xl font-black tracking-tighter leading-none">GPT 数据通报</h1>
                 <p className="text-[10px] uppercase tracking-[0.4em] font-semibold text-slate-400 mt-1">中区绩效指标与数据复盘</p>
               </div>
               <div className="flex flex-col items-end gap-2">
