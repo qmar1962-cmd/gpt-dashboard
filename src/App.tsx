@@ -181,17 +181,14 @@ export default function App() {
 
           {/* Main Stream Area */}
           <div className="flex-1 flex flex-col overflow-auto h-screen [scrollbar-gutter:stable]">
-            <header className="h-24 min-h-[96px] border-b border-slate-200 flex items-center justify-between px-12 bg-white sticky top-0 z-50">
-              <div className="flex flex-col">
-                <h1 className="text-3xl font-black tracking-tighter leading-none">GPT 数据通报</h1>
-                <p className="text-[10px] uppercase tracking-[0.4em] font-semibold text-slate-400 mt-1">中区绩效指标与数据复盘</p>
+            <header className="h-16 min-h-[64px] border-b border-slate-200 flex items-center justify-between px-12 bg-white sticky top-0 z-50">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-black tracking-tighter leading-none">GPT 数据通报</h1>
+                <p className="text-[10px] text-slate-400">华中大区 · 绩效数据复盘</p>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className="text-xs font-mono bg-black text-white px-3 py-1">数据日期：{formattedT2Date}</span>
-                <div className="flex items-center gap-2 mt-2 text-red-500">
-                  <ShieldAlert size={14} className="animate-pulse" />
-                  <span className="text-[10px] font-black border-b-2 border-red-500 uppercase">高风险动态反馈</span>
-                </div>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] font-mono bg-black text-white px-2.5 py-0.5 rounded">数据日期 {formattedT2Date}</span>
+                <span className="text-[10px] text-red-500 font-bold flex items-center gap-1"><ShieldAlert size={12} />高风险动态反馈</span>
                 {loggedInUser && (
                   <div className="flex items-center gap-3 text-[11px] text-slate-500">
                     <span className="font-bold text-slate-700">
