@@ -46,7 +46,9 @@ export function loadDashboardConfig(): DashboardConfig {
         spanTargets: { ...DEFAULT.spanTargets, ...(parsed.spanTargets || {}) },
       };
     }
-  } catch {}
+  } catch (e) {
+    console.warn('[看板配置] 解析失败，使用默认配置', e);
+  }
   return _cache || DEFAULT;
 }
 
