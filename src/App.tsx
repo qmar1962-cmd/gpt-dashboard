@@ -127,7 +127,7 @@ export default function App() {
       ) : (
         <div className="min-h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden px-6 pt-[64px] pb-6" id="bold-dashboard">
           {/* Vertical Intelligence Sidebar */}
-          <nav className="w-16 h-full border-r border-slate-200 flex flex-col items-center justify-center bg-white">
+          <nav className="w-16 h-full border-r border-slate-200 flex flex-col items-center bg-white">
             <div className="flex items-center gap-4 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
               <span className="text-[10px] uppercase tracking-[0.3em] font-bold">报告：刘洋 {formattedDate}</span>
             </div>
