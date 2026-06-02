@@ -265,7 +265,7 @@ export default function App() {
               )}
             </main>
 
-            <footer className="h-20 min-h-[80px] border-t border-slate-200 bg-slate-100 flex items-center px-12 justify-between z-10">
+            <footer className="h-20 min-h-[80px] border-t border-slate-200 bg-white flex items-center px-12 justify-between z-10">
               <div className="flex gap-8 items-center text-[10px] font-bold uppercase tracking-widest">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
