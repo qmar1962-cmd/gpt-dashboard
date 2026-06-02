@@ -125,7 +125,7 @@ export default function App() {
       {!isLoggedIn ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <div className="min-h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden" id="bold-dashboard">
+        <div className="min-h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden p-6" id="bold-dashboard">
           {/* Vertical Intelligence Sidebar */}
           <nav className="w-16 h-full border-r border-slate-200 flex flex-col items-center justify-center bg-white">
             <div className="flex items-center gap-4 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
@@ -180,7 +180,7 @@ export default function App() {
           </nav>
 
           {/* Main Stream Area */}
-          <div className="flex-1 flex flex-col overflow-auto h-screen [scrollbar-gutter:stable]">
+          <div className="flex-1 flex flex-col overflow-auto [scrollbar-gutter:stable]">
             <header className="h-16 min-h-[64px] border-b border-slate-200 flex items-center justify-between px-12 bg-white sticky top-0 z-50">
               <div className="flex items-center gap-4">
                 <h1 className="text-xl font-black tracking-tighter leading-none">GPT 数据通报</h1>
