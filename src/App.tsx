@@ -262,21 +262,12 @@ export default function App() {
               )}
             </main>
 
-            <footer className="h-20 min-h-[80px] border-t border-slate-200 bg-white flex items-center px-12 justify-between z-10">
-              <div className="flex gap-8 items-center text-[10px] font-bold uppercase tracking-widest">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                  <span>实时流：活跃</span>
-                </div>
-                <div className="h-4 w-px bg-slate-300"></div>
-                <span className="opacity-40">内部机密：4级加密</span>
+            <footer className="h-10 min-h-[40px] border-t border-slate-200 bg-white flex items-center px-12 justify-between z-10">
+              <div className="flex gap-6 items-center text-[10px] text-slate-400">
+                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />实时流：活跃</span>
+                <span>内部机密：4级加密</span>
               </div>
-              <div className="flex gap-2">
-                <div className="w-1 h-1 bg-slate-900"></div>
-                <div className="w-1 h-1 bg-slate-900"></div>
-                <div className="w-1 h-1 bg-slate-900"></div>
-                <div className="w-8 h-1 bg-slate-900 ml-4"></div>
-              </div>
+              <span className="text-[10px] text-slate-300">GPT Dashboard</span>
             </footer>
           </div>
           <ConfigPanel
