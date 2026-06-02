@@ -541,6 +541,60 @@ export default function MetricHelpPanel() {
               </div>
             </div>
 
+            {/* V2.9.0 - 2026-06-02 */}
+            <div className="bg-blue-50/60 rounded-lg p-3 space-y-2 border border-blue-100">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-500 text-white">V2.9.0</span>
+                <span className="text-[9px] text-slate-400">2026-06-02（当前）</span>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-slate-600">数据导出 Excel：表头右上角按钮，一键导出 14 中心全维度数据</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-slate-600">历史趋势弹窗：中心名旁的📈按钮，6 维度折线图+时间范围切换+明细表</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-slate-600">智能告警+数据校验：侧栏关键行动内嵌，恶化/改善/异常分组，变化>30%自动标黄</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-slate-600">侧栏综合总览：大号得分+KPI网格（9项）+维度得分进度条，替代雷达图和无效KPI卡片</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-slate-600">看板配置面板：⚙️齿轮打开，中心负责人/ABC分类/评分阈值/豁免管理，保存即生效</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-emerald-600 font-bold shrink-0">新增</span>
+                  <span className="text-slate-600">中心考勤月份切换：左右箭头翻月，自动跳到数据最新月份</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-slate-600">全局色彩升级 zinc→slate，更专业冷调；自定义主题色</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-slate-600">GPU 加速动画：省区行 FLIP 动画 + 中心行 scaleY，选中高亮 CSS transition</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-blue-600 font-bold shrink-0">优化</span>
+                  <span className="text-slate-600">表格列居中、列宽 160→120px、表头毛玻璃、顶部得分区精简、scrollbar 稳定</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-slate-600">花名册 JSON 153MB→12MB（去零宽字符+删无用列，减少92%）</span>
+                </div>
+                <div className="flex items-start gap-1.5 text-[10px]">
+                  <span className="text-red-600 font-bold shrink-0">修复</span>
+                  <span className="text-slate-600">IndexedDB 空数据不加载 bug、自定义域名 base 路径+CNAME、中心考勤日期不匹配</span>
+                </div>
+              </div>
+            </div>
+
             {/* V2.8.0 - 2026-05-22 */}
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
