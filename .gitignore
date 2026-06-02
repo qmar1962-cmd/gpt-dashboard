@@ -39,3 +39,4 @@ backup-*.zip
 .env.local
 # public/database/json/ — 改由 git 跟踪以保留历史数据
 public/database/json/roster_*.json
+.mcp.json
