@@ -62,7 +62,7 @@ function databaseFileListPlugin() {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    base: '/gpt-dashboard/', // GitHub Pages 子路径部署需要指定仓库名
+    base: '/',
     plugins: [react(), tailwindcss(), databaseFileListPlugin()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
