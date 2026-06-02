@@ -157,7 +157,7 @@ export default function CenterTrendModal({ centerName, provinceName, isOpen, onC
                     </tr>
                   </thead>
                   <tbody>
-                    {[...chartData].reverse().map((d: any) => (
+                    {chartData.map((d: any) => (
                       <tr key={d.fullDate} className="border-b border-slate-50 hover:bg-slate-50/50">
                         <td className="px-2 py-1.5 text-slate-600 font-medium">{d.fullDate}</td>
                         {DIMS.map(dd => (

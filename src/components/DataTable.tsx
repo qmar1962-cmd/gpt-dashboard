@@ -188,13 +188,13 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
         <button onClick={handleExportExcel} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"><Download size={12} />导出 Excel</button>
       </div>
       {/* Table Header */}
-      <div className="grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] bg-slate-100/80 backdrop-blur-sm border-b border-slate-200 py-3 px-4 sticky top-[95px] z-20">
+      <div className="grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] bg-slate-100/80 backdrop-blur-sm border-b border-slate-200 py-3 px-4 sticky top-[95px] z-20">
         <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">排名</div>
         <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">分区 / 负责人</div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">得分</div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">非操</div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">管幅</div>
-        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">超目标</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">得分</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">非操</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">管幅</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">超目标</div>
         <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">各维度明细</div>
       </div>
 
@@ -203,13 +203,11 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
           <React.Fragment key={item.id}>
             {/* Province Row */}
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: idx * 0.03 }}
+              layout
               onClick={() => handleRegionClick(item)}
               className={cn(
-                "grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-slate-100 cursor-pointer group transition-all",
-                currentSelection?.id === item.id ? "bg-slate-900 text-white shadow-[0_0_30px_rgba(0,0,0,0.2)] z-20" : 
+                "grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-slate-100 cursor-pointer group transition-colors duration-200",
+                currentSelection?.id === item.id ? "bg-slate-900 text-white shadow-[0_0_30px_rgba(0,0,0,0.2)] z-20" :
                 expandedRows[item.id] ? "bg-white shadow-[0_0_25px_rgba(0,0,0,0.03)] z-10" : "bg-white hover:bg-slate-50/50"
               )}
             >
@@ -236,7 +234,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                 )}
               </div>
 
-              <div className="text-right flex justify-end items-center gap-2 pr-4">
+              <div className="text-center flex justify-center items-center gap-2 pr-4">
                 <div className={cn(
                   "px-3 py-1 font-mono font-black text-sm",
                   item.performanceScore < 0 ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
@@ -246,7 +244,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
               </div>
 
               {/* 省区非操占比（各中心平均） */}
-              <div className="text-right flex justify-end items-center pr-4">
+              <div className="text-center flex justify-center items-center pr-4">
                 {(() => {
                   const centersWithNonOp = (item.subCenters || []).filter((c: any) => c.nonOpRatio !== undefined);
                   if (centersWithNonOp.length > 0) {
@@ -257,7 +255,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                 })()}
               </div>
 
-              <div className="text-right pr-4 flex flex-col items-end justify-center gap-1">
+              <div className="text-center pr-4 flex flex-col items-center justify-center gap-1">
                 {(() => {
                   const centersWithScope = (item.subCenters || []).filter((c: any) => c.compositeScope !== undefined);
                   if (centersWithScope.length > 0) {
@@ -281,7 +279,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
               </div>
 
               {/* 超目标列 */}
-              <div className="text-right pr-4 flex flex-col items-end justify-center gap-1">
+              <div className="text-center pr-4 flex flex-col items-center justify-center gap-1">
                 {(() => {
                   const centersWithScope = (item.subCenters || []).filter((c: any) => c.compositeScope !== undefined);
                   if (centersWithScope.length > 0) {
@@ -321,12 +319,14 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                 return (
                 <motion.div
                   key={center.id}
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
+                  initial={{ scaleY: 0, opacity: 0 }}
+                  animate={{ scaleY: 1, opacity: 1 }}
+                  exit={{ scaleY: 0, opacity: 0 }}
+                  style={{ originY: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
                   onClick={() => !adminMode && handleCenterClick(center, item)}
                   className={cn(
-                    "grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] items-center py-3 px-4 border-b border-slate-50 transition-all",
+                    "grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] items-center py-3 px-4 border-b border-slate-50 transition-all",
                     adminMode ? "cursor-default" : "cursor-pointer",
                     exempt ? "opacity-40" : "",
                     currentSelection?.id === center.id && !adminMode ? "bg-red-600 text-white" : "bg-slate-50/20 hover:bg-slate-100/50 last:border-b-slate-200"
@@ -359,8 +359,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       "flex flex-col pl-4 border-l-4",
                       currentSelection?.id === center.id && !adminMode ? "border-white" : "border-slate-900"
                     )}>
-                      <span className="font-black text-xs uppercase tracking-tight">{center.name}中心</span>
-                            <button onClick={(e) => { e.stopPropagation(); setTrendModal({ centerName: center.name, provinceName: item.province }); }} className="ml-1.5 p-0.5 hover:bg-blue-50 rounded transition-colors" title="历史趋势"><TrendingUp size={11} className="text-blue-400 hover:text-blue-600" /></button>
+                      <div className="flex items-center justify-between gap-2"><span className="font-black text-xs uppercase tracking-tight">{center.name}中心</span><button onClick={(e) => { e.stopPropagation(); setTrendModal({ centerName: center.name, provinceName: item.province }); }} className="p-0.5 hover:bg-blue-50 rounded transition-colors opacity-30 hover:opacity-100" title="历史趋势"><TrendingUp size={11} className="text-blue-400" /></button></div>
                       <span className={cn(
                         "text-[9px] font-bold",
                         currentSelection?.id === center.id && !adminMode ? "opacity-80" : "opacity-30"
@@ -380,7 +379,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   </div>
                   {/* 非操占比 */}
                   <div className={cn(
-                    "text-right flex justify-end items-center pr-4",
+                    "text-center flex justify-center items-center pr-4",
                     currentSelection?.id === center.id ? "opacity-100" : "opacity-40"
                   )}>
                     {center.nonOpRatio !== undefined
@@ -393,7 +392,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     }
                   </div>
                   <div className={cn(
-                    "text-right pr-4 flex flex-col items-end justify-center gap-1",
+                    "text-center pr-4 flex flex-col items-center justify-center gap-1",
                     currentSelection?.id === center.id ? "opacity-100" : "opacity-40"
                   )}>
                     {center.compositeScope !== undefined ? (
@@ -414,7 +413,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
 
                   {/* 超目标列 */}
                   <div className={cn(
-                    "text-right pr-4 flex flex-col items-end justify-center gap-1",
+                    "text-center pr-4 flex flex-col items-center justify-center gap-1",
                     currentSelection?.id === center.id ? "opacity-100" : "opacity-40"
                   )}>
                     {center.compositeScope !== undefined ? (
@@ -799,23 +798,23 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   {nonOpTab === 'dept' && nonOpDetail.staffingStandard && (
                     <div className="border border-slate-200 rounded-lg overflow-hidden">
                       <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-slate-900 text-[10px] font-bold text-slate-400">
-                        <div>部门</div><div className="text-right">标准</div><div className="text-right">实际</div><div className="text-right">差额</div>
+                        <div>部门</div><div className="text-center">标准</div><div className="text-center">实际</div><div className="text-center">差额</div>
                       </div>
                       {nonOpDetail.staffingStandard.departments.map(d => (
                         <div key={d.dept} className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 border-b border-slate-50 text-[11px] hover:bg-slate-50/50">
                           <div className="font-medium text-slate-700">{d.dept}</div>
-                          <div className="text-right font-mono text-slate-500">{d.standard}</div>
-                          <div className="text-right font-mono font-bold text-slate-800">{d.actual || '—'}</div>
-                          <div className={d.diff > 0 ? "text-right font-mono font-bold text-red-600" : d.diff < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-slate-400"}>
+                          <div className="text-center font-mono text-slate-500">{d.standard}</div>
+                          <div className="text-center font-mono font-bold text-slate-800">{d.actual || '—'}</div>
+                          <div className={d.diff > 0 ? "text-center font-mono font-bold text-red-600" : d.diff < 0 ? "text-center font-mono font-bold text-emerald-600" : "text-center font-mono text-slate-400"}>
                             {d.diff > 0 ? '+' : ''}{d.diff !== 0 ? d.diff : '0'}
                           </div>
                         </div>
                       ))}
                       <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-slate-50 text-[11px] font-bold">
                         <div>合计</div>
-                        <div className="text-right font-mono text-slate-700">{nonOpDetail.staffingStandard.totalStandard}</div>
-                        <div className="text-right font-mono text-slate-800">{nonOpDetail.staffingStandard.totalActual}</div>
-                        <div className={nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard > 0 ? "text-right font-mono text-red-600" : "text-right font-mono text-emerald-600"}>
+                        <div className="text-center font-mono text-slate-700">{nonOpDetail.staffingStandard.totalStandard}</div>
+                        <div className="text-center font-mono text-slate-800">{nonOpDetail.staffingStandard.totalActual}</div>
+                        <div className={nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard > 0 ? "text-center font-mono text-red-600" : "text-center font-mono text-emerald-600"}>
                           {(() => { const d = nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard; return (d > 0 ? '+' : '') + d; })()}
                         </div>
                       </div>
@@ -825,7 +824,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   {nonOpTab === 'pos' && nonOpDetail.positions && (
                     <div className="border border-slate-200 rounded-lg overflow-hidden">
                       <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 bg-slate-900 text-[10px] font-bold text-slate-400">
-                        <div>岗位</div><div className="text-right">标准</div><div className="text-right">实际</div><div className="text-right">差额</div>
+                        <div>岗位</div><div className="text-center">标准</div><div className="text-center">实际</div><div className="text-center">差额</div>
                       </div>
                       {(() => {
                         // 按配置标准表顺序排列，匹配实际数据
@@ -858,9 +857,9 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                                 {r.pos}
                                 {r.rule && <span className="text-slate-300 text-[9px]">ⓘ</span>}
                               </div>
-                              <div className="text-right font-mono text-slate-500">{r.standard > 0 ? r.standard : '—'}</div>
-                              <div className="text-right font-mono font-bold text-slate-800">{r.actual || '—'}</div>
-                              <div className={(r.actual - r.standard) > 0 ? "text-right font-mono font-bold text-red-600" : (r.actual - r.standard) < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-slate-400"}>
+                              <div className="text-center font-mono text-slate-500">{r.standard > 0 ? r.standard : '—'}</div>
+                              <div className="text-center font-mono font-bold text-slate-800">{r.actual || '—'}</div>
+                              <div className={(r.actual - r.standard) > 0 ? "text-center font-mono font-bold text-red-600" : (r.actual - r.standard) < 0 ? "text-center font-mono font-bold text-emerald-600" : "text-center font-mono text-slate-400"}>
                                 {r.standard > 0 ? ((r.actual - r.standard) > 0 ? '+' : '') + (r.actual - r.standard) : '—'}
                               </div>
                             </div>

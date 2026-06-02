@@ -5,17 +5,15 @@
  * 版本：2026-05-26 - 重构：拆分组件，提取数据加载逻辑
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays } from 'lucide-react';
 import AttendanceModule from './components/AttendanceModule';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
-import AlertBanner from './components/AlertBanner';
-import DataValidationBar from './components/DataValidationBar';
 import LoadingOverlay from './components/LoadingOverlay';
-import KPICard from './components/KPICard';
 import DataTable from './components/DataTable';
-import SummaryChart from './components/SummaryChart';
+import SidePanel from './components/SidePanel';
+import ConfigPanel from './components/ConfigPanel';
 import DataManagerEnhanced from './components/DataManagerEnhanced';
 import ReportModal from './components/ReportModal';
 import MetricHelpPanel from './components/MetricHelpPanel';
@@ -42,6 +40,17 @@ export default function App() {
   const { isLoggedIn, loggedInUser, isAdminLogin, handleLoginSuccess, handleLogout } = useAuth();
   const { viewMode, setViewMode, safeSetViewMode, showLeaveConfirm, confirmLeave, cancelLeave } = useViewMode();
   const { adminMode, toggleAdmin, exemptCenters, toggleExempt } = useAdminMode();
+  const [configOpen, setConfigOpen] = useState(false);
+  const [dashboardConfig, setDashboardConfig] = useState<any>(null);
+
+  // 配置面板的豁免列表同步到 useAdminMode
+  const handleConfigChange = useCallback((cfg: any) => {
+    setDashboardConfig(cfg);
+    if (cfg.exemptCenters) {
+      localStorage.setItem('gpt_dashboard_exempt_centers', JSON.stringify(cfg.exemptCenters));
+      window.location.reload();
+    }
+  }, []);
   const {
     loading, customData, rawDataState, salaryDataState,
     attendance15DataState, attendance7DataState, rosterDataState,
@@ -125,14 +134,9 @@ export default function App() {
 
             <div className="mt-auto mb-8 flex flex-col gap-4">
               <button
-                onClick={toggleAdmin}
-                className={cn(
-                  "p-3 rounded-lg transition-all flex items-center justify-center",
-                  adminMode
-                    ? "bg-amber-500 text-white shadow-lg scale-110 ring-2 ring-amber-300"
-                    : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                )}
-                title={adminMode ? "退出管理员模式" : "管理员模式（设置考核豁免）"}
+                onClick={() => setConfigOpen(true)}
+                className="p-3 rounded-lg transition-all flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-slate-200"
+                title="看板配置"
               >
                 <Settings size={18} />
               </button>
@@ -176,7 +180,7 @@ export default function App() {
           </nav>
 
           {/* Main Stream Area */}
-          <div className="flex-1 flex flex-col overflow-auto h-screen">
+          <div className="flex-1 flex flex-col overflow-auto h-screen [scrollbar-gutter:stable]">
             <header className="h-24 min-h-[96px] border-b border-slate-200 flex items-center justify-between px-12 bg-white sticky top-0 z-50">
               <div className="flex flex-col">
                 <h1 className="text-5xl font-black tracking-tighter leading-none">GPT 数据通报</h1>
@@ -221,74 +225,18 @@ export default function App() {
                 <ErrorBoundary label="数据看板">
                   {/* Main Visual & Registry */}
                   <div className="col-span-12 xl:col-span-9 border-r border-slate-200 bg-white">
-                    <div className="p-12 border-b border-slate-200 bg-slate-50/50">
-                      <div className="flex justify-between items-end mb-8">
-                        <div className="flex flex-col gap-2">
-                          <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 block">中区加权平均得分统计</label>
-                          <span className="text-6xl font-black leading-none tracking-tighter">{avgTotalScore} 分</span>
-                        </div>
-                        <div className="max-w-2xl text-right">
-                          <p className="text-lg font-bold leading-tight">
-                            {(() => {
-                              const sortedByScore = [...filteredData].sort((a, b) => a.totalScore - b.totalScore);
-                              const worstProv = sortedByScore.slice(0, 2);
-                              if (customData && customData.length > 0) {
-                                const worst = worstProv[0];
-                                const second = worstProv[1];
-                                if (!worst) return `已加载自定义数据：${dataFileName}，共 ${displayData.length} 个区域`;
-                                const dims = worst.dimensions || {};
-                                const dimScores = Object.entries(dims)
-                                  .filter(([key, d]: [string, any]) => d && typeof d.score === 'number' && d.weight > 0)
-                                  .sort((a, b) => a[1].score - b[1].score);
-                                const worstDim = dimScores[0];
-                                let summary = '';
-                                if (second && second.totalScore < 60) {
-                                  summary += `${second.province}（${second.totalScore}分）、`;
-                                }
-                                summary += `${worst.province}（${worst.totalScore}分）`;
-                                if (worstDim) {
-                                  summary += `，需重点关注${worstDim[1].name}指标`;
-                                }
-                                summary += '。';
-                                return summary;
-                              }
-                              return `东区各维度得分已进入核心监控期。${displayData[0]?.province} 和 ${displayData[3]?.province} 的出勤指标触发系统预警。`;
-                            })()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="p-0">
-                      <div className="p-8 pb-4 flex items-center justify-between">
+                      <div className="px-8 py-4 flex items-center justify-between border-b border-slate-100">
                         <div className="flex items-center gap-3">
-                          <h2 className="text-xl font-black uppercase tracking-tighter italic border-b-4 border-black inline-block leading-none">区域注册监控器</h2>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">全区均分</span>
+                          <span className={cn("text-lg font-black tabular-nums", avgTotalScore >= 80 ? "text-emerald-600" : avgTotalScore >= 60 ? "text-blue-600" : "text-amber-600")}>{avgTotalScore} 分</span>
                           <MetricHelpPanel />
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          <span>过滤器：{selection.type === 'all' ? '所有节点' : selection.label}</span>
-                          {customData && customData.length > 0 && (
-                            <span className="text-red-500 font-bold">• 自定义数据</span>
-                          )}
+                        <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          <span>{selection.type === 'all' ? '全部中心' : selection.label}</span>
+                          {customData && customData.length > 0 && <span className="text-red-500 font-bold">• 自定义数据</span>}
                         </div>
                       </div>
-                      {adminMode && (
-                        <div className="mx-8 mb-4 px-4 py-2 bg-amber-50 border border-amber-300 rounded-lg flex items-center gap-3">
-                          <Settings size={14} className="text-amber-600 flex-shrink-0 animate-spin" style={{ animationDuration: '3s' }} />
-                          <span className="text-[11px] font-black text-amber-700 uppercase tracking-wide">
-                            管理员模式已激活 — 点击中心旁的按钮切换考核状态。
-                            {exemptCenters.size > 0 && ` 当前豁免 ${exemptCenters.size} 个中心。`}
-                          </span>
-                          <button
-                            onClick={toggleAdmin}
-                            className="ml-auto text-[10px] font-black text-amber-600 hover:text-amber-800 underline whitespace-nowrap"
-                          >
-                            退出
-                          </button>
-                        </div>
-                      )}
-                      <AlertBanner data={filteredData} />
-                      <DataValidationBar data={filteredData} />
                       <DataTable
                         data={filteredData}
                         onSelect={handleSelect}
@@ -309,91 +257,9 @@ export default function App() {
                   </div>
 
                   {/* Tactical Sidebar */}
-                  <div className="col-span-12 xl:col-span-3 flex flex-col bg-white border-l border-slate-200">
-                    <div className="p-8 border-b border-slate-200">
-                      <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 block mb-6 text-center">多维核心指标分析</span>
-                      <div className="w-full aspect-square">
-                        <SummaryChart selection={selection} data={filteredData} />
-                      </div>
-                      {selection.type !== 'all' && (
-                        <div className="mt-4 flex justify-center">
-                          <button
-                            onClick={() => setSelection({ type: 'all', id: null })}
-                            className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-black transition-colors flex items-center gap-1"
-                          >
-                            重置为全局概览 [CLEAR]
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2">
-                      <KPICard
-                        label="活跃节点"
-                        value={totalUnits}
-                        description={customData && customData.length > 0 ? "自定义数据" : "总上报点位"}
-                        className="border-b border-r"
-                      />
-                      <KPICard
-                        label="数据源"
-                        value={customData && customData.length > 0 ? "上传" : "默认"}
-                        trend={customData && customData.length > 0 ? 100 : 0}
-                        description={customData && customData.length > 0 ? dataFileName : "系统预设"}
-                        className="border-b"
-                      />
-                    </div>
-
-                    <div className="p-8 flex-1 flex flex-col gap-6">
-                      <div className="mt-auto">
-                        <div className="bg-black text-white p-6 shadow-[6px_6px_0px_0px_rgba(239,68,68,0.3)]">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Zap size={14} className="text-red-500 fill-red-500" />
-                            <h5 className="text-[10px] font-bold uppercase tracking-[0.2em]">关键行动指令</h5>
-                          </div>
-                          <p className="text-[11px] font-bold leading-relaxed mb-4 opacity-80">
-                            {(() => {
-                              const allCenters: any[] = [];
-                              filteredData.forEach(prov => {
-                                (prov.subCenters || []).forEach((c: any) => {
-                                  if (!exemptCenters.has(c.id)) {
-                                    allCenters.push({
-                                      province: prov.province,
-                                      center: c.name,
-                                      score: c.score || 0,
-                                      jobCount: c.abnormalCount || 0,
-                                      salaryCount: c.t2SalaryCount || 0,
-                                      att15Count: c.t2Att15Count || 0,
-                                      att7Count: c.t2Att7Count || 0,
-                                    });
-                                  }
-                                });
-                              });
-                              if (customData && customData.length > 0 && allCenters.length > 0) {
-                                const worstCenters = allCenters.sort((a, b) => a.score - b.score).slice(0, 2);
-                                let actions: string[] = [];
-                                worstCenters.forEach(c => {
-                                  if (c.jobCount > 0) actions.push(`改善${c.center}岗位效能异常`);
-                                  if (c.salaryCount > 0) actions.push(`修正${c.center}薪资异常`);
-                                  if (c.att15Count > 0) actions.push(`确定${c.center}对应模块出勤率，落实调休计划`);
-                                  if (c.att7Count > 0) actions.push(`确定${c.center}员工未出勤原因明细，及时清理离职员工`);
-                                });
-                                if (actions.length > 0) {
-                                  return `优先处理：${actions.slice(0, 3).join('、')}。`;
-                                }
-                                return `${worstCenters[0].province}·${worstCenters[0].center}（${worstCenters[0].score}分）排名末尾，建议查看详情报告。`;
-                              }
-                              return '监测到上海及安徽省区出勤指标持续偏低，已触发人力资源风险预警。';
-                            })()}
-                          </p>
-                          <button
-                            onClick={() => setReportOpen(true)}
-                            className="w-full py-2.5 bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-700 transition-all flex items-center justify-center gap-2"
-                          >
-                            生成详情报告 <ArrowRight size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                  {/* Tactical Sidebar */}
+                  <div className="col-span-12 xl:col-span-3">
+                    <SidePanel selection={selection} data={filteredData} filteredData={filteredData} exemptCenters={exemptCenters} onOpenReport={() => setReportOpen(true)} onResetSelection={() => setSelection({ type: 'all', id: null })} />
                   </div>
                 </ErrorBoundary>
               )}
@@ -416,6 +282,16 @@ export default function App() {
               </div>
             </footer>
           </div>
+          <ConfigPanel
+            isOpen={configOpen}
+            onClose={() => setConfigOpen(false)}
+            centers={(() => {
+              const list: { name: string; province: string }[] = [];
+              filteredData.forEach((prov: any) => (prov.subCenters || []).forEach((c: any) => list.push({ name: c.name, province: prov.province })));
+              return list;
+            })()}
+            onConfigChange={handleConfigChange}
+          />
           <ReportModal
             isOpen={reportOpen}
             onClose={() => setReportOpen(false)}
