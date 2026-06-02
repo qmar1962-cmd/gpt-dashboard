@@ -184,6 +184,11 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   const [rosterData, setRosterData] = useState<AttendanceRow[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
 
+  // 考勤月份（默认当前月，有数据后自动切到数据最新月）
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const prevMonth = () => { const d = new Date(calendarMonth); d.setMonth(d.getMonth() - 1); setCalendarMonth(d); };
+  const nextMonth = () => { const d = new Date(calendarMonth); d.setMonth(d.getMonth() + 1); setCalendarMonth(d); };
+
   // 预警分页
   const [warningWorkPage, setWarningWorkPage] = useState(1);
   const [warningAbsentPage, setWarningAbsentPage] = useState(1);
@@ -432,6 +437,19 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
   }, []);
 
   useEffect(() => { loadDailyData(); }, [loadDailyData]);
+
+  // 数据加载后自动切到最近有数据的月份
+  useEffect(() => {
+    if (Object.keys(dailyData).length === 0) return;
+    const allDates = new Set<string>();
+    Object.values(dailyData).forEach(empDates => {
+      if (empDates && typeof empDates === 'object') Object.keys(empDates).forEach(d => allDates.add(d));
+    });
+    if (allDates.size === 0) return;
+    const latest = Array.from(allDates).sort().pop()!; // e.g. '2026-05-31'
+    const [y, m] = latest.split('-').map(Number);
+    setCalendarMonth(new Date(y, m - 1, 1));
+  }, [dailyData]);
 
   // ════ 计算 rows（优先花名册） ════
   const rows: AttendanceRow[] = (() => {
@@ -1041,6 +1059,12 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                   <button onClick={() => { setTab('calendar'); setPage(1); }} className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all ${tab === 'calendar' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-50'}`}><CalendarDays size={11} />出勤日历</button>
                 </div>
                 <span className="text-[10px] text-zinc-400">共 {rows.length} 人{search && ` · 筛选 ${filtered.length} 人`}</span>
+                {/* 月份切换 */}
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <button onClick={prevMonth} className="p-0.5 hover:bg-zinc-100 rounded transition-colors" title="上个月"><ChevronLeft size={14} className="text-zinc-400" /></button>
+                  <span className="text-xs font-medium text-zinc-600 min-w-[72px] text-center">{calendarMonth.getFullYear()}年{calendarMonth.getMonth() + 1}月</span>
+                  <button onClick={nextMonth} className="p-0.5 hover:bg-zinc-100 rounded transition-colors" title="下个月"><ChevronRight size={14} className="text-zinc-400" /></button>
+                </div>
               </div>
               <div className="relative">
                 <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -1128,7 +1152,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                       <th className="px-2.5 py-2.5 text-left font-bold text-zinc-400 whitespace-nowrap border-r border-zinc-100 text-[9px] min-w-[72px]">负责人</th>
                       {Array.from({ length: 31 }, (_, i) => {
                         const d = i + 1;
-                        const weekDay = new Date(new Date().getFullYear(), new Date().getMonth(), d).getDay();
+                        const weekDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), d).getDay();
                         const isWeekend = weekDay === 0 || weekDay === 6;
                         return (
                           <th key={d} className={`px-0.5 py-2.5 text-center font-bold whitespace-nowrap border-r border-zinc-50 w-11 text-[9px] ${isWeekend ? 'text-blue-400' : 'text-zinc-400'}`}>
@@ -1171,7 +1195,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                         </td>
                         {Array.from({ length: 31 }, (_, i) => {
                           const d = i + 1;
-                          const fullDate = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                          const fullDate = `${calendarMonth.getFullYear()}-${String(calendarMonth.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                           const hasData = allDates.has(fullDate);
                           const present = g.dailyPresent.get(fullDate) || 0;
                           const rateNum = g.total > 0 ? (present / g.total) * 100 : 0;
@@ -1217,7 +1241,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                     <th className="px-2.5 py-2.5 text-left font-bold text-zinc-400 whitespace-nowrap border-r border-zinc-100 text-[9px]">岗位</th>
                     {Array.from({ length: 31 }, (_, i) => {
                       const d = i + 1;
-                      const weekDay = new Date(new Date().getFullYear(), new Date().getMonth(), d).getDay();
+                      const weekDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), d).getDay();
                       const isWeekend = weekDay === 0 || weekDay === 6;
                       return (
                         <th key={d} className={`px-0.5 py-2.5 text-center font-bold whitespace-nowrap border-r border-zinc-50 w-11 text-[9px] ${isWeekend ? 'text-blue-400' : 'text-zinc-400'}`}>
@@ -1239,7 +1263,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                         <td className="px-2.5 py-1.5 text-zinc-400 whitespace-nowrap border-r border-zinc-100 text-[10px]">{row.role}</td>
                         {Array.from({ length: 31 }, (_, i) => {
                           const d = i + 1;
-                          const fullDate = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                          const fullDate = `${calendarMonth.getFullYear()}-${String(calendarMonth.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                           const isInRange = calendarActiveDates.has(fullDate);
                           const isPresent = empAtt[fullDate] === true;
                           const displayVal = isInRange ? (isPresent ? '✓' : '休') : '';

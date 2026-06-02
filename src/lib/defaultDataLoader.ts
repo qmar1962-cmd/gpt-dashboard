@@ -17,6 +17,7 @@ import {
   getRosterRawData,
   getModuleAttendanceRawData,
   getCenterHeadcountRawData,
+  getCenterAttendanceRawData,
   clearRawDataByType,
 } from './database';
 
@@ -421,6 +422,8 @@ export async function hasExistingData(): Promise<boolean> {
 
     const headcountData = await getCenterHeadcountRawData();
     if (headcountData?.rawData?.length > 0) return true;
+      const centerAttData = await getCenterAttendanceRawData();
+      if (centerAttData?.rawData?.length > 0) return true;
 
     return false;
   } catch (e) {

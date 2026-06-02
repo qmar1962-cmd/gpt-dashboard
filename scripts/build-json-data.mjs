@@ -19,6 +19,31 @@ const ROOT_DIR = join(__dirname, '..');
 const DATABASE_DIR = join(ROOT_DIR, 'public', 'database');
 const JSON_DIR = join(DATABASE_DIR, 'json');
 
+// ── 花名册清洗 ─────────────────────────────────────
+
+/** 去除字符串中的零宽字符（‌ ‍ 等） */
+function stripZeroWidth(str) {
+  return str.replace(/[​‌‍‎‏﻿]/g, '').trim();
+}
+
+/** 清洗花名册数据：去零宽字符，只保留有用列 */
+function cleanRosterData(rows, keepKeys) {
+  return rows.map(row => {
+    const cleaned = {};
+    for (const [key, value] of Object.entries(row)) {
+      const cleanKey = stripZeroWidth(String(key));
+      // 检查清洗后的列名是否匹配保留关键词
+      const matched = keepKeys.find(k => cleanKey.includes(k));
+      if (matched) {
+        cleaned[cleanKey] = value;
+      }
+    }
+    return cleaned;
+  });
+}
+
+// ── 主函数 ─────────────────────────────────────────
+
 /**
  * 主函数：构建 JSON 数据文件
  */
@@ -44,13 +69,21 @@ function buildJsonData() {
   }
 
   // 3. 先保留已有的历史 JSON 文件（防止 Excel 源文件缺失时丢失历史数据）
+  //    但花名册只保留最新一份，删掉旧的
   const fileList = {
     generated_at: new Date().toISOString(),
     files: {}
   };
   if (existsSync(JSON_DIR)) {
     const existingJsons = readdirSync(JSON_DIR).filter(f => f.endsWith('.json') && f !== 'filelist.json');
+    // 找出哪些是旧花名册（本次会重新生成）
+    const rosterFiles = files.filter(f => f.toLowerCase().startsWith('roster')).map(f => f.replace('.xlsx', '.json'));
     for (const jf of existingJsons) {
+      // 跳过旧的 roster 文件（与本次生成的不同日期的），只保留本次生成的
+      if (jf.toLowerCase().startsWith('roster') && !rosterFiles.includes(jf)) {
+        console.log(`  🗑️ 清理旧花名册: ${jf}`);
+        continue;
+      }
       const jpath = join(JSON_DIR, jf);
       try {
         const stats = statSync(jpath);
@@ -58,7 +91,7 @@ function buildJsonData() {
         fileList.files[jf] = { mtime: stats.mtime.toISOString(), size: stats.size, hash: hash };
       } catch (e) { /* skip corrupted files */ }
     }
-    console.log(`[构建 JSON 数据] 保留已有 ${existingJsons.length} 个 JSON 文件`);
+    console.log(`[构建 JSON 数据] 保留已有 ${Object.keys(fileList.files).length} 个 JSON 文件`);
   }
 
   let successCount = 0;
@@ -78,7 +111,17 @@ function buildJsonData() {
         continue;
       }
 
-      const data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: true });
+      let data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: true });
+
+      // ── 花名册清洗：去零宽字符 + 只保留有用列 ──
+      const isRoster = file.toLowerCase().startsWith('roster');
+      if (isRoster && data.length > 0) {
+        const KEEP_KEYS = ['工号', '员工ID', '编号', '姓名', '岗位名称', '岗位',
+          '部门', '所在单位', '五级单位', '六级单位', '七级单位', '九级单位',
+          '入职日期', '员工类别', '数据日期'];
+        data = cleanRosterData(data, KEEP_KEYS);
+        console.log(`  🧹 花名册清洗：${data.length} 行，保留 ${Object.keys(data[0] || {}).length} 列`);
+      }
 
       // 写入 JSON 文件
       const jsonFilename = file.replace('.xlsx', '.json');

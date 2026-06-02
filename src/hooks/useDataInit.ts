@@ -19,7 +19,7 @@ import {
   getWorkHoursLowRawData,
   idbGetRawData,
 } from '../lib/database';
-import { loadDefaultData } from '../lib/defaultDataLoader';
+import { loadDefaultData, hasExistingData } from '../lib/defaultDataLoader';
 import { mergeAndDedupe } from '../lib/dataMerge';
 
 interface LoadingState {
@@ -55,6 +55,13 @@ export function useDataInit() {
       try {
         setLoading({ isLoading: true, message: '正在初始化数据库...', progress: 10 });
         await initDatabase();
+
+        // 检测 IndexedDB 是否为空，是则清缓存强制全量加载
+        const hasData = await hasExistingData();
+        if (!hasData) {
+          console.log('[初始化] IndexedDB 为空，清除缓存强制全量加载');
+          localStorage.removeItem('gpt_filelist_cache');
+        }
 
         setLoading({ isLoading: true, message: '正在加载数据文件...', progress: 30 });
         const loaded = await loadDefaultData((loaded, total) => {
@@ -101,8 +108,9 @@ export function useDataInit() {
           && !rawStored?.rawData?.length;
 
         if (allEmpty) {
-          console.warn('[初始化] 检测到 IndexedDB 数据为空，清除缓存标记并重新加载...');
+          console.warn('[初始化] 检测到 IndexedDB 数据为空，清除所有缓存重新加载...');
           localStorage.removeItem('gpt_loaded_files');
+          localStorage.removeItem('gpt_filelist_cache');
 
           await loadDefaultData((loaded, total) => {
             setLoading({ isLoading: true, message: `正在重新加载 (${loaded}/${total})...`, progress: 30 + Math.round((loaded / total) * 30) });

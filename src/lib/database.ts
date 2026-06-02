@@ -364,6 +364,18 @@ export async function getCenterHeadcountRawData(): Promise<{ rawData: any[]; dat
 }
 
 /**
+ * 读取日出勤明细原始数据（中心考勤）
+ */
+export async function getCenterAttendanceRawData(): Promise<{ rawData: any[]; dataType: string; savedAt: number } | null> {
+  try {
+    return await idbGetRawData('center_daily_attendance');
+  } catch (e) {
+    console.warn('[DB] IndexedDB 读取失败（center_daily_attendance）:', e);
+    return null;
+  }
+}
+
+/**
  * 读取日工时高原始数据（出勤工时>12.5h）
  */
 export async function getWorkHoursHighRawData(): Promise<{ rawData: any[]; dataType: string; savedAt: number } | null> {
