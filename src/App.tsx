@@ -132,7 +132,7 @@ export default function App() {
               <span className="text-[10px] uppercase tracking-[0.3em] font-bold">报告：刘洋 {formattedDate}</span>
             </div>
 
-            <div className="mt-auto mb-4 flex flex-col gap-3">
+            <div className="mt-auto mb-2 flex flex-col gap-3">
               <button
                 onClick={() => setConfigOpen(true)}
                 className="p-3 rounded-lg transition-all flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-slate-200"
