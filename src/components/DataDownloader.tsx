@@ -74,7 +74,7 @@ export default function DataDownloader({ data, fileName = '导出数据' }: Data
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all",
           isExporting && exportFormat === 'xlsx'
-            ? "bg-zinc-300 cursor-not-allowed"
+            ? "bg-slate-300 cursor-not-allowed"
             : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg"
         )}
       >
@@ -96,7 +96,7 @@ export default function DataDownloader({ data, fileName = '导出数据' }: Data
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all",
           isExporting && exportFormat === 'csv'
-            ? "bg-zinc-300 cursor-not-allowed"
+            ? "bg-slate-300 cursor-not-allowed"
             : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
         )}
       >

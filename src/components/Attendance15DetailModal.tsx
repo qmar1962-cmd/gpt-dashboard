@@ -89,14 +89,14 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
         transition={{ duration: 0.15 }}
-        className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-zinc-200 z-50 w-[300px] overflow-hidden"
+        className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 w-[300px] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {mode === 'view' ? (
           <>
             {/* 已选日期段列表 */}
             <div className="px-3 py-2 max-h-[160px] overflow-y-auto space-y-1">
-              {ranges.length === 0 && <p className="text-[10px] text-zinc-400 text-center py-3">暂未选择排休日期</p>}
+              {ranges.length === 0 && <p className="text-[10px] text-slate-400 text-center py-3">暂未选择排休日期</p>}
               {ranges.map((r, i) => (
                 <div key={i} className="flex items-center justify-between bg-blue-50 rounded px-2 py-1.5">
                   <span className="text-[11px] font-bold text-blue-700">{fmtMD(r.start)} ~ {fmtMD(r.end)}</span>
@@ -104,7 +104,7 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-2 px-3 py-2.5 border-t border-zinc-100 bg-zinc-50/50">
+            <div className="flex items-center gap-2 px-3 py-2.5 border-t border-slate-100 bg-slate-50/50">
               <button onClick={() => setMode('add')} className="flex-1 px-2 py-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center justify-center gap-1">
                 <CalendarDays size={10} /> 添加日期段
               </button>
@@ -117,13 +117,13 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
         ) : (
           <>
             {/* 日期选择模式 */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100">
-              <button onClick={() => { setViewDate(new Date(year, month - 1, 1)); }} className="p-1 rounded hover:bg-zinc-100 text-zinc-400"><ChevronLeft size={14} /></button>
-              <span className="text-xs font-bold text-zinc-700">{year}年{month + 1}月</span>
-              <button onClick={() => { setViewDate(new Date(year, month + 1, 1)); }} className="p-1 rounded hover:bg-zinc-100 text-zinc-400"><ChevronRight size={14} /></button>
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100">
+              <button onClick={() => { setViewDate(new Date(year, month - 1, 1)); }} className="p-1 rounded hover:bg-slate-100 text-slate-400"><ChevronLeft size={14} /></button>
+              <span className="text-xs font-bold text-slate-700">{year}年{month + 1}月</span>
+              <button onClick={() => { setViewDate(new Date(year, month + 1, 1)); }} className="p-1 rounded hover:bg-slate-100 text-slate-400"><ChevronRight size={14} /></button>
             </div>
-            <div className="grid grid-cols-7 px-2 py-1 border-b border-zinc-50">
-              {weekDays.map(d => <div key={d} className="text-center text-[10px] font-bold text-zinc-400 py-0.5">{d}</div>)}
+            <div className="grid grid-cols-7 px-2 py-1 border-b border-slate-50">
+              {weekDays.map(d => <div key={d} className="text-center text-[10px] font-bold text-slate-400 py-0.5">{d}</div>)}
             </div>
             <div className="grid grid-cols-7 p-2 gap-0.5">
               {Array.from({ length: (firstDay + 6) % 7 }, (_, i) => <div key={`e-${i}`} className="h-7" />)}
@@ -134,18 +134,18 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
                 const isS = ds === pickStart; const isE = ds === pickEnd;
                 return <button key={d} onClick={() => handleDayClick(ds)} onMouseEnter={() => setHoverDate(ds)}
                   className={cn("h-7 text-[11px] font-medium rounded-md flex items-center justify-center transition-all",
-                    inR ? "bg-blue-50 text-blue-700" : "hover:bg-zinc-100 text-zinc-600",
+                    inR ? "bg-blue-50 text-blue-700" : "hover:bg-slate-100 text-slate-600",
                     (isS || isE) && "bg-blue-500 text-white font-bold")}>{d}</button>;
               })}
             </div>
-            <div className="flex items-center justify-between px-4 py-2.5 border-t border-zinc-100 bg-zinc-50/50">
-              <span className="text-[10px] font-bold text-zinc-500 truncate max-w-[160px]">
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
+              <span className="text-[10px] font-bold text-slate-500 truncate max-w-[160px]">
                 {pickStart ? (pickEnd ? `${fmtMD(pickStart)} ~ ${fmtMD(pickEnd)}` : `起点 ${fmtMD(pickStart)}，选终点`) : '点击选择起始日期'}
               </span>
               <div className="flex gap-1.5">
-                <button onClick={() => { setMode('view'); setPickStart(null); setPickEnd(null); }} className="px-2 py-1 text-[10px] font-bold text-zinc-400 hover:bg-zinc-100 rounded">返回</button>
+                <button onClick={() => { setMode('view'); setPickStart(null); setPickEnd(null); }} className="px-2 py-1 text-[10px] font-bold text-slate-400 hover:bg-slate-100 rounded">返回</button>
                 <button onClick={addRange} disabled={!pickStart}
-                  className={cn("px-2.5 py-1 text-[10px] font-bold rounded", pickStart ? "bg-blue-500 text-white" : "bg-zinc-200 text-zinc-400")}>添加</button>
+                  className={cn("px-2.5 py-1 text-[10px] font-bold rounded", pickStart ? "bg-blue-500 text-white" : "bg-slate-200 text-slate-400")}>添加</button>
               </div>
             </div>
           </>
@@ -576,12 +576,12 @@ export default function Attendance15DetailModal({
             className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
           >
             {/* 头部 */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 flex-shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
                 </h3>
-                <p className="text-[10px] text-zinc-400 mt-0.5">
+                <p className="text-[10px] text-slate-400 mt-0.5">
                   操作在职 {Object.keys(empGroupObj).length}人 · T-2出勤 {t2PresentList.length}人 · 出勤率 {Object.keys(empGroupObj).length > 0 ? Math.round(t2PresentList.length / Object.keys(empGroupObj).length * 100) : 0}%
                   （{weeklyData[weeklyData.length - 1]?.date?.slice(5) || ''}）
                 </p>
@@ -589,13 +589,13 @@ export default function Attendance15DetailModal({
                 <div className="mt-1 flex items-center gap-2">
                   {isEditingResponsible ? (
                     <div className="flex items-center gap-1.5">
-                      <User size={11} className="text-zinc-400" />
+                      <User size={11} className="text-slate-400" />
                       <input
                         type="text"
                         value={responsibleInput}
                         onChange={e => setResponsibleInput(e.target.value)}
                         placeholder="输入负责人姓名"
-                        className="text-[11px] px-2 py-0.5 border border-zinc-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
+                        className="text-[11px] px-2 py-0.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
                         autoFocus
                         onKeyDown={e => {
                           if (e.key === 'Enter') handleSaveResponsible();
@@ -610,7 +610,7 @@ export default function Attendance15DetailModal({
                       </button>
                       <button
                         onClick={() => setIsEditingResponsible(false)}
-                        className="text-[10px] px-1.5 py-0.5 text-zinc-400 hover:text-zinc-600"
+                        className="text-[10px] px-1.5 py-0.5 text-slate-400 hover:text-slate-600"
                       >
                         取消
                       </button>
@@ -621,27 +621,27 @@ export default function Attendance15DetailModal({
                         setResponsibleInput(responsiblePerson);
                         setIsEditingResponsible(true);
                       }}
-                      className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-700 transition-colors group"
+                      className="flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-700 transition-colors group"
                     >
-                      <User size={11} className="text-zinc-400 group-hover:text-zinc-600" />
+                      <User size={11} className="text-slate-400 group-hover:text-slate-600" />
                       <span>考勤负责人：{responsiblePerson || '未设置'}</span>
-                      <Edit3 size={10} className="text-zinc-300 group-hover:text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Edit3 size={10} className="text-slate-300 group-hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
                   )}
                 </div>
-                <p className="text-[11px] font-bold text-zinc-400 mt-0.5 flex items-center gap-2">
+                <p className="text-[11px] font-bold text-slate-400 mt-0.5 flex items-center gap-2">
                   <TrendingUp size={11} />
                   近7天连续出勤趋势（T-2 = 今天 - 2天）
                   <span className="inline-flex items-center gap-1 ml-2">
                     <span className="text-emerald-600">T-2: {currentCount} 人</span>
-                    <span className="text-zinc-300">/</span>
-                    <span className="text-zinc-500">T-3: {prevCount} 人</span>
+                    <span className="text-slate-300">/</span>
+                    <span className="text-slate-500">T-3: {prevCount} 人</span>
                   </span>
                 </p>
               </div>
               <button
                 onClick={handleClose}
-                className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600 flex-shrink-0 ml-2"
+                className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600 flex-shrink-0 ml-2"
               >
                 <X size={16} />
               </button>
@@ -650,7 +650,7 @@ export default function Attendance15DetailModal({
             {/* 内容区域 */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {/* 柱状图趋势 */}
-              <div className="bg-zinc-50 rounded-xl p-4">
+              <div className="bg-slate-50 rounded-xl p-4">
                 <div className="flex items-end gap-2 h-28">
                   {weeklyData.map((day, idx) => {
                     const barHeight = day.abnormalCount > 0
@@ -662,7 +662,7 @@ export default function Attendance15DetailModal({
                         {/* 数值标签 */}
                         <span className={cn(
                           "text-[10px] font-black",
-                          day.abnormalCount > 0 ? "text-blue-500" : "text-zinc-300"
+                          day.abnormalCount > 0 ? "text-blue-500" : "text-slate-300"
                         )}>
                           {day.abnormalCount > 0 ? day.abnormalCount : '—'}
                         </span>
@@ -676,7 +676,7 @@ export default function Attendance15DetailModal({
                               "w-6 rounded-t-md transition-all",
                               day.abnormalCount > 0
                                 ? "bg-gradient-to-t from-blue-500 to-blue-400"
-                                : "bg-zinc-200",
+                                : "bg-slate-200",
                               isLatest && day.abnormalCount > 0 && "ring-2 ring-blue-300 ring-offset-1"
                             )}
                             style={{ alignSelf: 'flex-end' }}
@@ -685,10 +685,10 @@ export default function Attendance15DetailModal({
                         {/* 日期标签 */}
                         <span className={cn(
                           "text-[9px] font-bold",
-                          isLatest ? "text-blue-500 font-black" : "text-zinc-400"
+                          isLatest ? "text-blue-500 font-black" : "text-slate-400"
                         )}>
                           {day.dateLabel}
-                          {isLatest && <span className="ml-0.5 text-zinc-300">T-2</span>}
+                          {isLatest && <span className="ml-0.5 text-slate-300">T-2</span>}
                         </span>
                       </div>
                     );
@@ -698,10 +698,10 @@ export default function Attendance15DetailModal({
 
               {/* 每日明细 */}
               <div className="space-y-2">
-                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   每日连续出勤明细（≥ 15 天）
                 </h4>
-                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 mb-1">
+                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-slate-600 mb-1">
                   <ChevronDown size={12} className={showAllDays ? 'rotate-180' : ''} />{showAllDays ? '收起' : '展开近 7 天'}
                 </button>
                 {displayDays.map(day => (
@@ -711,13 +711,13 @@ export default function Attendance15DetailModal({
                       "rounded-lg border p-3 transition-all",
                       day.abnormalCount > 0
                         ? "border-blue-100 bg-blue-50/30"
-                        : "border-zinc-100 bg-zinc-50/30"
+                        : "border-slate-100 bg-slate-50/30"
                     )}
                   >
                     {/* 日期行 */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[12px] font-black text-zinc-700">{day.dateLabel}</span>
+                        <span className="text-[12px] font-black text-slate-700">{day.dateLabel}</span>
                         {day.abnormalCount > 0 ? (
                           <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded">
                             {day.abnormalCount} 人
@@ -728,17 +728,17 @@ export default function Attendance15DetailModal({
                           </span>
                         )}
                       </div>
-                      <span className="text-[9px] text-zinc-400 font-bold">{day.date}</span>
+                      <span className="text-[9px] text-slate-400 font-bold">{day.date}</span>
                     </div>
 
                     {day.abnormalCount > 0 ? (
                       <div className="space-y-1">
                         {/* 表头 */}
                         <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 px-3 pb-1 border-b border-blue-50">
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide">姓名</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide">岗位</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-20">连续天数</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-center w-28">排休计划</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">姓名</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">岗位</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right w-20">连续天数</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-center w-28">排休计划</span>
                         </div>
                         {/* 数据行 */}
                         {day.details.map((detail, idx) => {
@@ -754,10 +754,10 @@ export default function Attendance15DetailModal({
                               {/* 姓名 */}
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <Clock size={10} className="text-blue-400 flex-shrink-0" />
-                                <span className="text-[11px] font-bold text-zinc-700 truncate">{detail.name}</span>
+                                <span className="text-[11px] font-bold text-slate-700 truncate">{detail.name}</span>
                               </div>
                               {/* 岗位 */}
-                              <span className="text-[11px] font-medium text-zinc-500 truncate">{detail.jobName}</span>
+                              <span className="text-[11px] font-medium text-slate-500 truncate">{detail.jobName}</span>
                               {/* 连续天数 */}
                               <span className={cn(
                                 "text-[11px] font-black font-mono text-right w-20 px-1.5 py-0.5 rounded",
@@ -781,7 +781,7 @@ export default function Attendance15DetailModal({
                                   "text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer border transition-all min-w-[80px] text-center",
                                   plan
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                    : "bg-zinc-50 text-zinc-400 border-dashed border-zinc-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50"
+                                    : "bg-slate-50 text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50"
                                 )}>
                                   {plan ? formatPlanDisplay(plan) : (
                                     <span className="flex items-center justify-center gap-1">
@@ -803,11 +803,11 @@ export default function Attendance15DetailModal({
                             {/* 组别 + 出勤率 + 排休判定 */}
                             {gi && (
                               <div className="flex items-center gap-3 mt-1.5 pt-1.5 border-t border-blue-50 text-[10px]">
-                                <span className="text-zinc-500">组别：<span className="font-bold text-zinc-700">{gi.group}</span></span>
-                                <span className="text-zinc-500">出勤率：<span className={cn("font-bold", gi.rate >= 85 ? "text-red-600" : "text-emerald-600")}>{gi.rate}%</span></span>
+                                <span className="text-slate-500">组别：<span className="font-bold text-slate-700">{gi.group}</span></span>
+                                <span className="text-slate-500">出勤率：<span className={cn("font-bold", gi.rate >= 85 ? "text-red-600" : "text-emerald-600")}>{gi.rate}%</span></span>
                                 <span className={cn("px-1.5 py-0.5 rounded font-bold text-[9px]",
                                   gi.judgment === '无法排休' ? "bg-red-100 text-red-600" :
-                                  gi.judgment === '没排休' ? "bg-amber-100 text-amber-600" : "bg-zinc-100 text-zinc-500"
+                                  gi.judgment === '没排休' ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-500"
                                 )}>{gi.judgment}</span>
                               </div>
                             )}
@@ -816,7 +816,7 @@ export default function Attendance15DetailModal({
                         })}
                       </div>
                     ) : (
-                      <p className="text-[10px] text-zinc-300 font-bold pl-1">无连续出勤 ≥ 15 天人员</p>
+                      <p className="text-[10px] text-slate-300 font-bold pl-1">无连续出勤 ≥ 15 天人员</p>
                     )}
                   </div>
                 ))}
@@ -824,8 +824,8 @@ export default function Attendance15DetailModal({
             </div>
 
             {/* 底部 */}
-            <div className="px-6 py-3 border-t border-zinc-100 bg-zinc-50/50 flex-shrink-0">
-              <p className="text-[9px] text-zinc-400 font-bold text-center">
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
+              <p className="text-[9px] text-slate-400 font-bold text-center">
                 仅展示连续出勤 ≥ 15 天的人员明细
               </p>
               {hasUnsavedChanges ? (

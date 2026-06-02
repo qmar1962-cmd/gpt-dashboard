@@ -310,10 +310,10 @@ export default function Attendance7DetailModal({
       '纠纷': 'bg-orange-100 text-orange-700 border-orange-200',
       '挂编': 'bg-cyan-100 text-cyan-700 border-cyan-200',
       '出差': 'bg-blue-100 text-blue-700 border-blue-200',
-      '离职未清': 'bg-zinc-100 text-zinc-700 border-zinc-300',
+      '离职未清': 'bg-slate-100 text-slate-700 border-slate-300',
       '已返岗': 'bg-emerald-100 text-emerald-700 border-emerald-200',
     };
-    return colorMap[reason] || 'bg-zinc-50 text-zinc-600 border-zinc-200';
+    return colorMap[reason] || 'bg-slate-50 text-slate-600 border-slate-200';
   };
 
   return (
@@ -339,24 +339,24 @@ export default function Attendance7DetailModal({
             className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
           >
             {/* 头部 */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 flex-shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
                 </h3>
-                <p className="text-[11px] font-bold text-zinc-400 mt-0.5 flex items-center gap-2">
+                <p className="text-[11px] font-bold text-slate-400 mt-0.5 flex items-center gap-2">
                   <TrendingUp size={11} />
                   近7天连续未出勤趋势（T-2 = 今天 - 2天）
                   <span className="inline-flex items-center gap-1 ml-2">
                     <span className="text-red-600">T-2: {currentCount} 人</span>
-                    <span className="text-zinc-300">/</span>
-                    <span className="text-zinc-500">T-3: {prevCount} 人</span>
+                    <span className="text-slate-300">/</span>
+                    <span className="text-slate-500">T-3: {prevCount} 人</span>
                   </span>
                 </p>
               </div>
               <button
                 onClick={handleClose}
-                className="p-2 rounded-lg hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600 flex-shrink-0 ml-2"
+                className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600 flex-shrink-0 ml-2"
               >
                 <X size={16} />
               </button>
@@ -365,7 +365,7 @@ export default function Attendance7DetailModal({
             {/* 内容区域 */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {/* 柱状图趋势 */}
-              <div className="bg-zinc-50 rounded-xl p-4">
+              <div className="bg-slate-50 rounded-xl p-4">
                 <div className="flex items-end gap-2 h-28">
                   {weeklyData.map((day, idx) => {
                     const barHeight = day.abnormalCount > 0
@@ -376,7 +376,7 @@ export default function Attendance7DetailModal({
                       <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                         <span className={cn(
                           "text-[10px] font-black",
-                          day.abnormalCount > 0 ? "text-red-500" : "text-zinc-300"
+                          day.abnormalCount > 0 ? "text-red-500" : "text-slate-300"
                         )}>
                           {day.abnormalCount > 0 ? day.abnormalCount : '—'}
                         </span>
@@ -389,7 +389,7 @@ export default function Attendance7DetailModal({
                               "w-6 rounded-t-md transition-all",
                               day.abnormalCount > 0
                                 ? "bg-gradient-to-t from-red-500 to-red-400"
-                                : "bg-zinc-200",
+                                : "bg-slate-200",
                               isLatest && day.abnormalCount > 0 && "ring-2 ring-red-300 ring-offset-1"
                             )}
                             style={{ alignSelf: 'flex-end' }}
@@ -397,10 +397,10 @@ export default function Attendance7DetailModal({
                         </div>
                         <span className={cn(
                           "text-[9px] font-bold",
-                          isLatest ? "text-red-500 font-black" : "text-zinc-400"
+                          isLatest ? "text-red-500 font-black" : "text-slate-400"
                         )}>
                           {day.dateLabel}
-                          {isLatest && <span className="ml-0.5 text-zinc-300">T-2</span>}
+                          {isLatest && <span className="ml-0.5 text-slate-300">T-2</span>}
                         </span>
                       </div>
                     );
@@ -410,10 +410,10 @@ export default function Attendance7DetailModal({
 
               {/* 每日明细 */}
               <div className="space-y-2">
-                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   每日连续未出勤明细（≥ 7 天）
                 </h4>
-                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-zinc-400 hover:text-zinc-600 mb-1">
+                <button onClick={() => setShowAllDays(!showAllDays)} className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-slate-600 mb-1">
                   <ChevronDown size={12} className={showAllDays ? 'rotate-180' : ''} />{showAllDays ? '收起' : '展开近 7 天'}
                 </button>
                 {displayDays.map(day => (
@@ -423,13 +423,13 @@ export default function Attendance7DetailModal({
                       "rounded-lg border p-3 transition-all",
                       day.abnormalCount > 0
                         ? "border-red-100 bg-red-50/30"
-                        : "border-zinc-100 bg-zinc-50/30"
+                        : "border-slate-100 bg-slate-50/30"
                     )}
                   >
                     {/* 日期行 */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[12px] font-black text-zinc-700">{day.dateLabel}</span>
+                        <span className="text-[12px] font-black text-slate-700">{day.dateLabel}</span>
                         {day.abnormalCount > 0 ? (
                           <span className="text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded">
                             {day.abnormalCount} 人
@@ -440,17 +440,17 @@ export default function Attendance7DetailModal({
                           </span>
                         )}
                       </div>
-                      <span className="text-[9px] text-zinc-400 font-bold">{day.date}</span>
+                      <span className="text-[9px] text-slate-400 font-bold">{day.date}</span>
                     </div>
 
                     {day.abnormalCount > 0 ? (
                       <div className="space-y-1">
                         {/* 表头 */}
                         <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 px-3 pb-1 border-b border-red-50">
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide">姓名</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide">岗位</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-right w-20">未出勤天数</span>
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wide text-center w-28">未出勤原因</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">姓名</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">岗位</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right w-20">未出勤天数</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-center w-28">未出勤原因</span>
                         </div>
                         {/* 数据行 */}
                         {day.details.map((detail, idx) => {
@@ -464,10 +464,10 @@ export default function Attendance7DetailModal({
                               {/* 姓名 */}
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <AlertCircle size={10} className="text-red-400 flex-shrink-0" />
-                                <span className="text-[11px] font-bold text-zinc-700 truncate">{detail.name}</span>
+                                <span className="text-[11px] font-bold text-slate-700 truncate">{detail.name}</span>
                               </div>
                               {/* 岗位 */}
-                              <span className="text-[11px] font-medium text-zinc-500 truncate">{detail.jobName}</span>
+                              <span className="text-[11px] font-medium text-slate-500 truncate">{detail.jobName}</span>
                               {/* 未出勤天数 */}
                               <span className={cn(
                                 "text-[11px] font-black font-mono text-right w-20 px-1.5 py-0.5 rounded",
@@ -491,7 +491,7 @@ export default function Attendance7DetailModal({
                                     "text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer border transition-all text-center flex items-center justify-center gap-1",
                                     reason
                                       ? `${getReasonStyle(reason)} pr-0`
-                                      : "bg-zinc-50 text-zinc-400 border-dashed border-zinc-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 min-w-[80px]"
+                                      : "bg-slate-50 text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 min-w-[80px]"
                                   )}
                                 >
                                   {reason || (
@@ -519,7 +519,7 @@ export default function Attendance7DetailModal({
                                       animate={{ opacity: 1, y: 0, scale: 1 }}
                                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                                       transition={{ duration: 0.12 }}
-                                      className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-zinc-200 z-50 w-28 overflow-hidden"
+                                      className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-slate-200 z-50 w-28 overflow-hidden"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       {REASON_OPTIONS.map(opt => (
@@ -530,7 +530,7 @@ export default function Attendance7DetailModal({
                                             "w-full text-left px-3 py-1.5 text-[11px] font-medium transition-colors",
                                             opt === reason
                                               ? "bg-blue-50 text-blue-700 font-bold"
-                                              : "hover:bg-zinc-50 text-zinc-600"
+                                              : "hover:bg-slate-50 text-slate-600"
                                           )}
                                         >
                                           {opt}
@@ -545,7 +545,7 @@ export default function Attendance7DetailModal({
                         })}
                       </div>
                     ) : (
-                      <p className="text-[10px] text-zinc-300 font-bold pl-1">无连续未出勤 ≥ 7 天人员</p>
+                      <p className="text-[10px] text-slate-300 font-bold pl-1">无连续未出勤 ≥ 7 天人员</p>
                     )}
                   </div>
                 ))}
@@ -553,8 +553,8 @@ export default function Attendance7DetailModal({
             </div>
 
             {/* 底部 */}
-            <div className="px-6 py-3 border-t border-zinc-100 bg-zinc-50/50 flex-shrink-0">
-              <p className="text-[9px] text-zinc-400 font-bold text-center">
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
+              <p className="text-[9px] text-slate-400 font-bold text-center">
                 仅展示连续未出勤 ≥ 7 天的人员明细
               </p>
               {hasUnsavedChanges ? (

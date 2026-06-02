@@ -10,6 +10,8 @@ import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays
 import AttendanceModule from './components/AttendanceModule';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
+import AlertBanner from './components/AlertBanner';
+import DataValidationBar from './components/DataValidationBar';
 import LoadingOverlay from './components/LoadingOverlay';
 import KPICard from './components/KPICard';
 import DataTable from './components/DataTable';
@@ -114,9 +116,9 @@ export default function App() {
       {!isLoggedIn ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans flex relative border-8 border-white overflow-hidden" id="bold-dashboard">
+        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex relative border-8 border-white overflow-hidden" id="bold-dashboard">
           {/* Vertical Intelligence Sidebar */}
-          <nav className="w-16 h-full border-r border-zinc-200 flex flex-col items-center justify-center bg-white">
+          <nav className="w-16 h-full border-r border-slate-200 flex flex-col items-center justify-center bg-white">
             <div className="flex items-center gap-4 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
               <span className="text-[10px] uppercase tracking-[0.3em] font-bold">报告：刘洋 {formattedDate}</span>
             </div>
@@ -128,7 +130,7 @@ export default function App() {
                   "p-3 rounded-lg transition-all flex items-center justify-center",
                   adminMode
                     ? "bg-amber-500 text-white shadow-lg scale-110 ring-2 ring-amber-300"
-                    : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200"
+                    : "bg-slate-100 text-slate-400 hover:bg-slate-200"
                 )}
                 title={adminMode ? "退出管理员模式" : "管理员模式（设置考核豁免）"}
               >
@@ -139,7 +141,7 @@ export default function App() {
                 className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                   viewMode === 'dashboard'
                     ? 'bg-red-600 text-white shadow-lg scale-110'
-                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
                 title="数据看板"
               >
@@ -150,7 +152,7 @@ export default function App() {
                 className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                   viewMode === 'attendance'
                     ? 'bg-red-600 text-white shadow-lg scale-110'
-                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
                 title="中心考勤"
               >
@@ -162,7 +164,7 @@ export default function App() {
                   className={`relative p-3 rounded-lg transition-all flex items-center justify-center ${
                     viewMode === 'data'
                       ? 'bg-red-600 text-white shadow-lg scale-110'
-                      : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                   title="数据上传与管理"
                 >
@@ -175,10 +177,10 @@ export default function App() {
 
           {/* Main Stream Area */}
           <div className="flex-1 flex flex-col overflow-auto h-screen">
-            <header className="h-24 min-h-[96px] border-b border-zinc-200 flex items-center justify-between px-12 bg-white sticky top-0 z-50">
+            <header className="h-24 min-h-[96px] border-b border-slate-200 flex items-center justify-between px-12 bg-white sticky top-0 z-50">
               <div className="flex flex-col">
                 <h1 className="text-5xl font-black tracking-tighter leading-none">GPT 数据通报</h1>
-                <p className="text-[10px] uppercase tracking-[0.4em] font-semibold text-zinc-400 mt-1">中区绩效指标与数据复盘</p>
+                <p className="text-[10px] uppercase tracking-[0.4em] font-semibold text-slate-400 mt-1">中区绩效指标与数据复盘</p>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className="text-xs font-mono bg-black text-white px-3 py-1">数据日期：{formattedT2Date}</span>
@@ -187,14 +189,14 @@ export default function App() {
                   <span className="text-[10px] font-black border-b-2 border-red-500 uppercase">高风险动态反馈</span>
                 </div>
                 {loggedInUser && (
-                  <div className="flex items-center gap-3 text-[11px] text-zinc-500">
-                    <span className="font-bold text-zinc-700">
+                  <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                    <span className="font-bold text-slate-700">
                       {loggedInUser.name}
                       {isAdminLogin && <span className="ml-1 text-amber-600">（管理员）</span>}
                     </span>
                     <button
                       onClick={handleLogout}
-                      className="text-zinc-400 hover:text-red-500 transition-colors underline underline-offset-2"
+                      className="text-slate-400 hover:text-red-500 transition-colors underline underline-offset-2"
                       title="退出登录"
                     >
                       退出
@@ -218,11 +220,11 @@ export default function App() {
               ) : (
                 <ErrorBoundary label="数据看板">
                   {/* Main Visual & Registry */}
-                  <div className="col-span-12 xl:col-span-9 border-r border-zinc-200 bg-white">
-                    <div className="p-12 border-b border-zinc-200 bg-zinc-50/50">
+                  <div className="col-span-12 xl:col-span-9 border-r border-slate-200 bg-white">
+                    <div className="p-12 border-b border-slate-200 bg-slate-50/50">
                       <div className="flex justify-between items-end mb-8">
                         <div className="flex flex-col gap-2">
-                          <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-zinc-400 block">中区加权平均得分统计</label>
+                          <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 block">中区加权平均得分统计</label>
                           <span className="text-6xl font-black leading-none tracking-tighter">{avgTotalScore} 分</span>
                         </div>
                         <div className="max-w-2xl text-right">
@@ -263,7 +265,7 @@ export default function App() {
                           <h2 className="text-xl font-black uppercase tracking-tighter italic border-b-4 border-black inline-block leading-none">区域注册监控器</h2>
                           <MetricHelpPanel />
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                        <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                           <span>过滤器：{selection.type === 'all' ? '所有节点' : selection.label}</span>
                           {customData && customData.length > 0 && (
                             <span className="text-red-500 font-bold">• 自定义数据</span>
@@ -285,6 +287,8 @@ export default function App() {
                           </button>
                         </div>
                       )}
+                      <AlertBanner data={filteredData} />
+                      <DataValidationBar data={filteredData} />
                       <DataTable
                         data={filteredData}
                         onSelect={handleSelect}
@@ -305,9 +309,9 @@ export default function App() {
                   </div>
 
                   {/* Tactical Sidebar */}
-                  <div className="col-span-12 xl:col-span-3 flex flex-col bg-white border-l border-zinc-200">
-                    <div className="p-8 border-b border-zinc-200">
-                      <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-zinc-400 block mb-6 text-center">多维核心指标分析</span>
+                  <div className="col-span-12 xl:col-span-3 flex flex-col bg-white border-l border-slate-200">
+                    <div className="p-8 border-b border-slate-200">
+                      <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 block mb-6 text-center">多维核心指标分析</span>
                       <div className="w-full aspect-square">
                         <SummaryChart selection={selection} data={filteredData} />
                       </div>
@@ -315,7 +319,7 @@ export default function App() {
                         <div className="mt-4 flex justify-center">
                           <button
                             onClick={() => setSelection({ type: 'all', id: null })}
-                            className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-black transition-colors flex items-center gap-1"
+                            className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-black transition-colors flex items-center gap-1"
                           >
                             重置为全局概览 [CLEAR]
                           </button>
@@ -395,20 +399,20 @@ export default function App() {
               )}
             </main>
 
-            <footer className="h-20 min-h-[80px] border-t border-zinc-200 bg-zinc-100 flex items-center px-12 justify-between z-10">
+            <footer className="h-20 min-h-[80px] border-t border-slate-200 bg-slate-100 flex items-center px-12 justify-between z-10">
               <div className="flex gap-8 items-center text-[10px] font-bold uppercase tracking-widest">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                   <span>实时流：活跃</span>
                 </div>
-                <div className="h-4 w-px bg-zinc-300"></div>
+                <div className="h-4 w-px bg-slate-300"></div>
                 <span className="opacity-40">内部机密：4级加密</span>
               </div>
               <div className="flex gap-2">
-                <div className="w-1 h-1 bg-zinc-900"></div>
-                <div className="w-1 h-1 bg-zinc-900"></div>
-                <div className="w-1 h-1 bg-zinc-900"></div>
-                <div className="w-8 h-1 bg-zinc-900 ml-4"></div>
+                <div className="w-1 h-1 bg-slate-900"></div>
+                <div className="w-1 h-1 bg-slate-900"></div>
+                <div className="w-1 h-1 bg-slate-900"></div>
+                <div className="w-8 h-1 bg-slate-900 ml-4"></div>
               </div>
             </footer>
           </div>

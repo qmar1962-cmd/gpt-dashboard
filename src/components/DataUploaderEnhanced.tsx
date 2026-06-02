@@ -196,8 +196,8 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
           >
             <div className="w-full max-w-5xl mx-auto">
               <div className="mb-3 flex items-center gap-2">
-                <div className="w-1 h-4 bg-zinc-900 rounded-full"></div>
-                <p className="text-sm font-bold text-zinc-600">
+                <div className="w-1 h-4 bg-slate-900 rounded-full"></div>
+                <p className="text-sm font-bold text-slate-600">
                   上传 {TEMPLATE_LABELS[selectedTemplate]} 数据
                 </p>
               </div>
@@ -208,8 +208,8 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
                 className={cn(
                   "relative border-2 border-dashed rounded-xl p-14 text-center transition-all duration-300",
                   isDragging 
-                    ? "border-zinc-900 bg-zinc-50" 
-                    : "border-zinc-200 bg-white hover:border-zinc-300"
+                    ? "border-slate-900 bg-slate-50" 
+                    : "border-slate-200 bg-white hover:border-slate-300"
                 )}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -229,7 +229,7 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="w-14 h-14 border-4 border-zinc-100 border-t-zinc-900 rounded-full animate-spin"
+                      className="w-14 h-14 border-4 border-slate-100 border-t-slate-900 rounded-full animate-spin"
                     />
                   ) : uploadStatus === 'success' ? (
                     <motion.div
@@ -251,15 +251,15 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="w-14 h-14 bg-zinc-100 rounded-full flex items-center justify-center"
+                      className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center"
                     >
-                      <Upload size={28} className="text-zinc-400" />
+                      <Upload size={28} className="text-slate-400" />
                     </motion.div>
                   )}
 
                   <div className="space-y-2">
                     {isProcessing ? (
-                      <p className="text-zinc-500 font-medium">正在解析文件...</p>
+                      <p className="text-slate-500 font-medium">正在解析文件...</p>
                     ) : uploadStatus === 'success' ? (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -267,10 +267,10 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
                         className="space-y-1"
                       >
                         <p className="text-emerald-600 font-bold">{statusMessage}</p>
-                        <p className="text-xs text-zinc-400">文件：{fileName}</p>
+                        <p className="text-xs text-slate-400">文件：{fileName}</p>
                         <button
                           onClick={resetUpload}
-                          className="text-xs text-zinc-400 hover:text-zinc-600 underline underline-offset-2"
+                          className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2"
                         >
                           继续上传其他文件
                         </button>
@@ -284,17 +284,17 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
                         <p className="text-red-600 font-medium">{statusMessage}</p>
                         <button
                           onClick={resetUpload}
-                          className="text-xs text-zinc-400 hover:text-zinc-600 underline underline-offset-2"
+                          className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2"
                         >
                           重新上传
                         </button>
                       </motion.div>
                     ) : (
                       <>
-                        <p className="text-base font-bold text-zinc-600">
+                        <p className="text-base font-bold text-slate-600">
                           拖拽文件到此处，或点击选择文件
                         </p>
-                        <p className="text-sm text-zinc-400">
+                        <p className="text-sm text-slate-400">
                           支持 Excel (.xlsx, .xls) 和 CSV (.csv)
                         </p>
                       </>
@@ -304,7 +304,7 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
               </motion.div>
 
               {/* 存储说明 */}
-              <div className="mt-6 flex items-start gap-3 text-xs text-zinc-400">
+              <div className="mt-6 flex items-start gap-3 text-xs text-slate-400">
                 <Database size={16} className="mt-0.5 flex-shrink-0" />
                 <p>数据按日期存储到本地数据库，自动保留 30 天，刷新页面不丢失。</p>
               </div>

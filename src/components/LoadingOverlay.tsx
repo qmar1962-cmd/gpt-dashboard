@@ -42,17 +42,17 @@ export default function LoadingOverlay({
 
         {/* 加载文案 */}
         <div className="text-center">
-          <p className="text-sm font-bold text-zinc-700">{message}</p>
+          <p className="text-sm font-bold text-slate-700">{message}</p>
           {/* 可选进度条 */}
           {progress !== undefined && (
             <div className="mt-3 w-48">
-              <div className="h-1.5 bg-zinc-200 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-red-500 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="mt-1 text-[10px] text-zinc-400">{progress}%</p>
+              <p className="mt-1 text-[10px] text-slate-400">{progress}%</p>
             </div>
           )}
         </div>

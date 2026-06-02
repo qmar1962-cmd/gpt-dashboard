@@ -65,15 +65,15 @@ export default function AttendanceSummaryDetailModal({
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           <div>
-            <h3 className="text-base font-bold text-zinc-800">
+            <h3 className="text-base font-bold text-slate-800">
               {centerName} · {dept2} · {group}
             </h3>
-            <p className="text-xs text-zinc-400 mt-0.5">{dateLabel} 出勤明细</p>
+            <p className="text-xs text-slate-400 mt-0.5">{dateLabel} 出勤明细</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-zinc-100 rounded-lg transition-colors">
-            <X size={18} className="text-zinc-400" />
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+            <X size={18} className="text-slate-400" />
           </button>
         </div>
 
@@ -86,7 +86,7 @@ export default function AttendanceSummaryDetailModal({
               <h4 className="text-sm font-bold text-emerald-600">出勤人员（{presentList.length}人）</h4>
             </div>
             {presentList.length === 0 ? (
-              <p className="text-xs text-zinc-400 py-2">无出勤人员</p>
+              <p className="text-xs text-slate-400 py-2">无出勤人员</p>
             ) : (
               <div className="overflow-y-auto rounded-lg border border-emerald-100 flex-1 min-h-0">
                 <table className="w-full text-xs border-collapse">
@@ -100,9 +100,9 @@ export default function AttendanceSummaryDetailModal({
                   <tbody>
                     {presentList.map((p) => (
                       <tr key={p.empId} className="border-b border-emerald-50 hover:bg-emerald-50/50 transition-colors">
-                        <td className="px-3 py-2 text-zinc-600 font-mono">{p.empId}</td>
-                        <td className="px-3 py-2 text-zinc-800 font-bold">{p.name}</td>
-                        <td className="px-3 py-2 text-zinc-600">{p.role}</td>
+                        <td className="px-3 py-2 text-slate-600 font-mono">{p.empId}</td>
+                        <td className="px-3 py-2 text-slate-800 font-bold">{p.name}</td>
+                        <td className="px-3 py-2 text-slate-600">{p.role}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -112,7 +112,7 @@ export default function AttendanceSummaryDetailModal({
           </div>
 
           {/* 分隔线 */}
-          <div className="w-px bg-zinc-200 shrink-0"></div>
+          <div className="w-px bg-slate-200 shrink-0"></div>
 
           {/* 未出勤人员 */}
           <div className="flex-1 min-w-0 flex flex-col">
@@ -121,7 +121,7 @@ export default function AttendanceSummaryDetailModal({
               <h4 className="text-sm font-bold text-red-600">未出勤人员（{absentList.length}人）</h4>
             </div>
             {absentList.length === 0 ? (
-              <p className="text-xs text-zinc-400 py-2">无未出勤人员</p>
+              <p className="text-xs text-slate-400 py-2">无未出勤人员</p>
             ) : (
               <div className="overflow-y-auto rounded-lg border border-red-100 flex-1 min-h-0">
                 <table className="w-full text-xs border-collapse">
@@ -135,9 +135,9 @@ export default function AttendanceSummaryDetailModal({
                   <tbody>
                     {absentList.map((p) => (
                       <tr key={p.empId} className="border-b border-red-50 hover:bg-red-50/50 transition-colors">
-                        <td className="px-3 py-2 text-zinc-600 font-mono">{p.empId}</td>
-                        <td className="px-3 py-2 text-zinc-800 font-bold">{p.name}</td>
-                        <td className="px-3 py-2 text-zinc-600">{p.role}</td>
+                        <td className="px-3 py-2 text-slate-600 font-mono">{p.empId}</td>
+                        <td className="px-3 py-2 text-slate-800 font-bold">{p.name}</td>
+                        <td className="px-3 py-2 text-slate-600">{p.role}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -91,9 +91,9 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
   };
 
   return (
-    <div className="w-full h-full bg-zinc-50">
+    <div className="w-full h-full bg-slate-50">
       {/* 顶部操作栏 */}
-      <div className="bg-white border-b border-zinc-200 px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+      <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
@@ -101,7 +101,7 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
             </div>
             <div>
               <h2 className="text-xl font-black uppercase tracking-tight">数据管理中心</h2>
-              <p className="text-xs text-zinc-500 font-bold uppercase tracking-wider">
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
                 已存储 {uploadCount}/7 种数据类型 • 共 {totalRows.toLocaleString()} 条记录
               </p>
             </div>
@@ -127,7 +127,7 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
       </div>
 
       {/* 标签页导航 */}
-      <div className="bg-white border-b border-zinc-200 px-8">
+      <div className="bg-white border-b border-slate-200 px-8">
         <div className="flex items-center gap-1">
           <button
             onClick={() => setActiveTab('upload')}
@@ -135,7 +135,7 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
               "px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all flex items-center gap-2",
               activeTab === 'upload'
                 ? "border-red-600 text-red-600 bg-red-50"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50"
+                : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             )}
           >
             <Upload size={14} />
@@ -147,7 +147,7 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
               "px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all flex items-center gap-2",
               activeTab === 'overview'
                 ? "border-red-600 text-red-600 bg-red-50"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50"
+                : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             )}
           >
             <Database size={14} />
@@ -159,7 +159,7 @@ export default function DataManagerEnhanced({ onDataLoaded }: DataManagerProps) 
               "px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all flex items-center gap-2",
               activeTab === 'remote'
                 ? "border-red-600 text-red-600 bg-red-50"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50"
+                : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
             )}
           >
             <Globe size={14} />
@@ -250,8 +250,8 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
   if (loading) {
     return (
       <div className="text-center py-20">
-        <div className="w-8 h-8 border-2 border-zinc-300 border-t-red-600 rounded-full animate-spin-faster mx-auto mb-4" />
-        <p className="text-zinc-600">加载中...</p>
+        <div className="w-8 h-8 border-2 border-slate-300 border-t-red-600 rounded-full animate-spin-faster mx-auto mb-4" />
+        <p className="text-slate-600">加载中...</p>
       </div>
     );
   }
@@ -264,24 +264,24 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
     <div className="max-w-5xl mx-auto space-y-6">
       {/* 概览卡片 */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-zinc-200">
-          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">数据类型</p>
-          <p className="text-2xl font-black text-zinc-900 mt-1">{typesWithData}<span className="text-sm text-zinc-400 font-bold">/7</span></p>
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">数据类型</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{typesWithData}<span className="text-sm text-slate-400 font-bold">/7</span></p>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-zinc-200">
-          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">总记录数</p>
-          <p className="text-2xl font-black text-zinc-900 mt-1">{totalRows.toLocaleString()}</p>
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">总记录数</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{totalRows.toLocaleString()}</p>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-zinc-200">
-          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">聚合数据</p>
-          <p className="text-2xl font-black text-zinc-900 mt-1">{storageInfo?.storageSizeKB || '0.00'}<span className="text-sm text-zinc-400 font-bold"> KB</span></p>
+        <div className="bg-white p-5 rounded-xl border border-slate-200">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">聚合数据</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{storageInfo?.storageSizeKB || '0.00'}<span className="text-sm text-slate-400 font-bold"> KB</span></p>
         </div>
       </div>
 
       {/* 各类型数据一览表（含清除按钮） */}
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
-          <h4 className="font-black text-sm text-zinc-900 flex items-center gap-2">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h4 className="font-black text-sm text-slate-900 flex items-center gap-2">
             <BarChart3 size={16} />
             各数据类型详情
           </h4>
@@ -292,7 +292,7 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
               "flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all",
               totalRows > 0 && cleaning === null
                 ? "bg-red-600 text-white hover:bg-red-700"
-                : "bg-zinc-100 text-zinc-300"
+                : "bg-slate-100 text-slate-300"
             )}
           >
             {cleaning === 'all' ? (
@@ -305,13 +305,13 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-100">
-              <th className="text-left px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">数据类型</th>
-              <th className="text-left px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">说明</th>
-              <th className="text-right px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">记录数</th>
-              <th className="text-center px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">分布</th>
-              <th className="text-center px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">状态</th>
-              <th className="text-right px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">操作</th>
+            <tr className="border-b border-slate-100">
+              <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">数据类型</th>
+              <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">说明</th>
+              <th className="text-right px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">记录数</th>
+              <th className="text-center px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">分布</th>
+              <th className="text-center px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">状态</th>
+              <th className="text-right px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -323,8 +323,8 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
 
               return (
                 <tr key={config.key} className={cn(
-                  "border-b border-zinc-100 last:border-0 transition-colors",
-                  hasData ? "bg-white hover:bg-zinc-50/50" : "bg-zinc-50/50"
+                  "border-b border-slate-100 last:border-0 transition-colors",
+                  hasData ? "bg-white hover:bg-slate-50/50" : "bg-slate-50/50"
                 )}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -334,12 +334,12 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
                       <span className={cn("font-black text-sm", config.color)}>{config.label}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-zinc-500 text-xs max-w-[280px]">{config.desc}</td>
-                  <td className="px-6 py-4 text-right font-mono font-black text-zinc-900">{count.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-slate-500 text-xs max-w-[280px]">{config.desc}</td>
+                  <td className="px-6 py-4 text-right font-mono font-black text-slate-900">{count.toLocaleString()}</td>
                   <td className="px-6 py-4 w-[120px]">
-                    <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div
-                        className={cn("h-full rounded-full transition-all", count > 0 ? "bg-red-500" : "bg-zinc-200")}
+                        className={cn("h-full rounded-full transition-all", count > 0 ? "bg-red-500" : "bg-slate-200")}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -351,7 +351,7 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
                         已存储
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-100 text-zinc-400 text-[10px] font-black uppercase">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-400 text-[10px] font-black uppercase">
                         <AlertCircle size={10} />
                         未上传
                       </span>
@@ -365,7 +365,7 @@ function OverviewTab({ onCleaned }: { onCleaned: () => void }) {
                         "flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ml-auto",
                         count > 0 && cleaning === null
                           ? "text-red-600 bg-red-50 hover:bg-red-100"
-                          : "text-zinc-300 bg-zinc-50 cursor-default"
+                          : "text-slate-300 bg-slate-50 cursor-default"
                       )}
                     >
                       {isCleaning ? (
@@ -496,7 +496,7 @@ function RemoteTab() {
     job_performance: { name: '岗位效能异常数据', icon: '📊', color: 'text-red-700' },
     module_attendance: { name: '模块考勤数据', icon: '📋', color: 'text-blue-700' },
     headcount: { name: '人员编制数据', icon: '👤', color: 'text-indigo-700' },
-    other: { name: '其他文件', icon: '📁', color: 'text-zinc-600' },
+    other: { name: '其他文件', icon: '📁', color: 'text-slate-600' },
   };
 
   // 文件名解析：提取日期后缀
@@ -532,8 +532,8 @@ function RemoteTab() {
   if (loading) {
     return (
       <div className="text-center py-20">
-        <div className="w-8 h-8 border-2 border-zinc-300 border-t-red-600 rounded-full animate-spin-faster mx-auto mb-4" />
-        <p className="text-zinc-600">加载远端文件中...</p>
+        <div className="w-8 h-8 border-2 border-slate-300 border-t-red-600 rounded-full animate-spin-faster mx-auto mb-4" />
+        <p className="text-slate-600">加载远端文件中...</p>
       </div>
     );
   }
@@ -541,15 +541,15 @@ function RemoteTab() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* 操作栏 */}
-      <div className="bg-white p-5 rounded-xl border border-zinc-200 flex items-center justify-between">
+      <div className="bg-white p-5 rounded-xl border border-slate-200 flex items-center justify-between">
         <div>
-          <h3 className="font-black text-lg text-zinc-900">远端数据文件管理</h3>
-          <p className="text-xs text-zinc-500 mt-1">管理 GitHub 仓库中的 public/database/ 数据文件</p>
+          <h3 className="font-black text-lg text-slate-900">远端数据文件管理</h3>
+          <p className="text-xs text-slate-500 mt-1">管理 GitHub 仓库中的 public/database/ 数据文件</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={loadRemoteFiles}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-zinc-200 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-colors"
           >
             <Globe size={14} />
             刷新
@@ -574,36 +574,36 @@ function RemoteTab() {
       {Object.entries(groupedFiles).map(([dataType, typeFiles]) => {
         const typeInfo = DATA_TYPE_LABELS[dataType] || DATA_TYPE_LABELS['other'];
         return (
-        <div key={dataType} className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 bg-zinc-50 border-b border-zinc-200">
-            <h4 className="font-black text-sm text-zinc-900 flex items-center gap-2">
+        <div key={dataType} className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
+            <h4 className="font-black text-sm text-slate-900 flex items-center gap-2">
               <span>{typeInfo.icon}</span>
               <span>{typeInfo.name}</span>
-              <span className="text-xs font-normal text-zinc-400 ml-2">({typeFiles.length} 个文件)</span>
+              <span className="text-xs font-normal text-slate-400 ml-2">({typeFiles.length} 个文件)</span>
             </h4>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-100">
-                <th className="text-left px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">文件名</th>
-                <th className="text-right px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">大小</th>
-                <th className="text-right px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">修改时间</th>
-                <th className="text-center px-6 py-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">操作</th>
+              <tr className="border-b border-slate-100">
+                <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">文件名</th>
+                <th className="text-right px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">大小</th>
+                <th className="text-right px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">修改时间</th>
+                <th className="text-center px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">操作</th>
               </tr>
             </thead>
             <tbody>
               {typeFiles.map((file: any) => {
                 const { typeLabel, dateLabel } = parseFileDisplayName(file.name);
                 return (
-                <tr key={file.name} className="border-b border-zinc-100 last:border-0 hover:bg-zinc-50/50">
+                <tr key={file.name} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
-                      <span className="font-medium text-zinc-900">{typeLabel}{dateLabel ? ` (${dateLabel})` : ''}</span>
-                      <span className="font-mono text-xs text-zinc-400 mt-0.5">{file.name}</span>
+                      <span className="font-medium text-slate-900">{typeLabel}{dateLabel ? ` (${dateLabel})` : ''}</span>
+                      <span className="font-mono text-xs text-slate-400 mt-0.5">{file.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right text-zinc-600">{(file.size / 1024).toFixed(1)} KB</td>
-                  <td className="px-6 py-4 text-right text-zinc-600 text-xs">{new Date(file.mtime).toLocaleString('zh-CN')}</td>
+                  <td className="px-6 py-4 text-right text-slate-600">{(file.size / 1024).toFixed(1)} KB</td>
+                  <td className="px-6 py-4 text-right text-slate-600 text-xs">{new Date(file.mtime).toLocaleString('zh-CN')}</td>
                   <td className="px-6 py-4 text-center">
                     <button
                       onClick={() => handleDelete(file.name)}
@@ -628,7 +628,7 @@ function RemoteTab() {
       })}
 
       {files.length === 0 && (
-        <div className="text-center py-20 text-zinc-500">
+        <div className="text-center py-20 text-slate-500">
           暂无远端数据文件
         </div>
       )}

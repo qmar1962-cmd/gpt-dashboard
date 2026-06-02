@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Ban, CheckCircle2, ExternalLink, X } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, ChevronDown, ChevronUp, Ban, CheckCircle2, ExternalLink, X, Download, TrendingUp } from 'lucide-react';
 import { RegionalData } from '../types';
 import { cn, formatNumber } from '../lib/utils';
 import { getWeeklyEfficiencyDetail, WeeklyDetail, getWeeklySalaryDetail, SalaryWeeklyDetail, getWeeklyAttendance15Detail, Attendance15WeeklyDetail, getWeeklyAttendance7Detail, Attendance7WeeklyDetail, getWorkHoursHighDetail, WorkHoursHighWeeklyDetail, getWorkHoursLowDetail, WorkHoursLowWeeklyDetail } from '../lib/dataProcessor';
@@ -11,6 +11,7 @@ import Attendance15DetailModal from './Attendance15DetailModal';
 import Attendance7DetailModal from './Attendance7DetailModal';
 import WorkHoursHighDetailModal from './WorkHoursHighDetailModal';
 import WorkHoursLowDetailModal from './WorkHoursLowDetailModal';
+import CenterTrendModal from './CenterTrendModal';
 
 import { Selection } from '../App';
 
@@ -131,6 +132,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     currentCount: 0,
     prevCount: 0,
   });
+  const [trendModal, setTrendModal] = useState<{ centerName: string; provinceName: string } | null>(null);
   // 非操明细弹窗
   const [nonOpDetail, setNonOpDetail] = useState<{ centerName: string; nonOpCount: number; rosterTotal: number; outsourced: number; nonOpRatio: number; departments?: Record<string, number>; positions?: Record<string, { dept: string; count: number }>; staffingStandard?: { departments: { dept: string; standard: number; actual: number; diff: number }[]; totalStandard: number; totalActual: number; posStandards: { pos: string; standard: number; rule: string }[] } } | null>(null);
   const [nonOpTab, setNonOpTab] = useState<'dept' | 'pos'>('dept');
@@ -154,17 +156,46 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     }
   };
 
+  const handleExportExcel = async () => {
+    const rows: any[] = [];
+    data.forEach((item: any) => {
+      (item.subCenters || []).forEach((c: any) => {
+        rows.push({
+          '省区': item.province, '中心': c.name, '得分': c.score ?? 0,
+          '非操占比': c.nonOpRatio != null ? c.nonOpRatio + '%' : '',
+          '综合管幅': c.compositeScope ?? '', '组长管幅': c.leaderScope ?? '',
+          '综合超目标': c.compOverTarget ?? '', '组长超目标': c.leadOverTarget ?? '',
+          '效能异常(个)': c.abnormalCount ?? 0, '绩效异常(人)': c.t2SalaryCount ?? 0,
+          '绩效覆盖率': c.salaryCoverage || '', '连续出勤≥15天(人)': c.att15Count ?? 0,
+          '连续出勤触发率': c.att15Rate || '', '长期未出勤≥7天(人)': c.att7Count ?? 0,
+          '日工时高>12.5h(人)': c.t2WhHighCount ?? 0, '日工时高触发率': c.whHighRate || '',
+          '日工时低≤8h(人)': c.t2WhLowCount ?? 0,
+        });
+      });
+    });
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = Object.keys(rows[0] || {}).map((k: string) => ({ wch: Math.max(k.length * 2, 12) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '绩效通报');
+    XLSX.writeFile(wb, 'GPT绩效通报_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  };
+
   return (
-    <div className="w-full border-t border-zinc-200 bg-white" id="performance-data-table">
+    <div className="w-full border-t border-slate-200 bg-white" id="performance-data-table">
+      {/* Toolbar */}
+      <div className="flex items-center justify-end px-4 py-1.5 bg-slate-50 border-b border-slate-100">
+        <button onClick={handleExportExcel} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"><Download size={12} />导出 Excel</button>
+      </div>
       {/* Table Header */}
-      <div className="grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] bg-zinc-50 border-b border-zinc-200 py-3 px-4 sticky top-[95px] z-20">
-        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">排名</div>
-        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">分区 / 负责人</div>
-        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">得分</div>
-        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">非操</div>
-        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">管幅</div>
-        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-right">超目标</div>
-        <div className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] text-center">各维度明细</div>
+      <div className="grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] bg-slate-100/80 backdrop-blur-sm border-b border-slate-200 py-3 px-4 sticky top-[95px] z-20">
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">排名</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">分区 / 负责人</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">得分</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">非操</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">管幅</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-right">超目标</div>
+        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">各维度明细</div>
       </div>
 
       <div className="flex flex-col">
@@ -172,14 +203,14 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
           <React.Fragment key={item.id}>
             {/* Province Row */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: idx * 0.05 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: idx * 0.03 }}
               onClick={() => handleRegionClick(item)}
               className={cn(
-                "grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-zinc-100 cursor-pointer group transition-all",
-                currentSelection?.id === item.id ? "bg-zinc-900 text-white shadow-[0_0_30px_rgba(0,0,0,0.2)] z-20" : 
-                expandedRows[item.id] ? "bg-white shadow-[0_0_25px_rgba(0,0,0,0.03)] z-10" : "bg-white hover:bg-zinc-50/50"
+                "grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-slate-100 cursor-pointer group transition-all",
+                currentSelection?.id === item.id ? "bg-slate-900 text-white shadow-[0_0_30px_rgba(0,0,0,0.2)] z-20" : 
+                expandedRows[item.id] ? "bg-white shadow-[0_0_25px_rgba(0,0,0,0.03)] z-10" : "bg-white hover:bg-slate-50/50"
               )}
             >
               <div className={cn(
@@ -222,7 +253,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     const avg = centersWithNonOp.reduce((s: number, c: any) => s + (c.nonOpRatio || 0), 0) / centersWithNonOp.length;
                     return <span className="font-black text-base tracking-tighter">{avg.toFixed(2)}%</span>;
                   }
-                  return <span className="text-sm font-bold text-zinc-300">—</span>;
+                  return <span className="text-sm font-bold text-slate-300">—</span>;
                 })()}
               </div>
 
@@ -235,17 +266,17 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     return (
                       <>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[9px] font-bold text-zinc-400 leading-none">综合</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none">综合</span>
                           <span className="font-black text-xl tracking-tighter leading-none">{avgComp.toFixed(1)}</span>
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[9px] font-bold text-zinc-400 leading-none">组长</span>
-                          <span className="font-black text-base tracking-tighter text-zinc-500 leading-none">{avgLead.toFixed(1)}</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none">组长</span>
+                          <span className="font-black text-base tracking-tighter text-slate-500 leading-none">{avgLead.toFixed(1)}</span>
                         </div>
                       </>
                     );
                   }
-                  return <span className="text-sm font-bold text-zinc-300">—</span>;
+                  return <span className="text-sm font-bold text-slate-300">—</span>;
                 })()}
               </div>
 
@@ -259,21 +290,21 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     return (
                       <>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[9px] font-bold text-zinc-400 leading-none">综合</span>
-                          <span className={cn("font-black text-base font-mono tracking-tighter leading-none", sumCompOT > 0 ? "text-red-500" : sumCompOT < 0 ? "text-emerald-500" : "text-zinc-400")}>{sumCompOT > 0 ? '+' : ''}{sumCompOT.toFixed(1)}</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none">综合</span>
+                          <span className={cn("font-black text-base font-mono tracking-tighter leading-none", sumCompOT > 0 ? "text-red-500" : sumCompOT < 0 ? "text-emerald-500" : "text-slate-400")}>{sumCompOT > 0 ? '+' : ''}{sumCompOT.toFixed(1)}</span>
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[9px] font-bold text-zinc-400 leading-none">组长</span>
-                          <span className={cn("font-black text-xs font-mono tracking-tighter text-zinc-500 leading-none", sumLeadOT > 0 ? "!text-red-400" : sumLeadOT < 0 ? "!text-emerald-400" : "")}>{sumLeadOT > 0 ? '+' : ''}{sumLeadOT.toFixed(1)}</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none">组长</span>
+                          <span className={cn("font-black text-xs font-mono tracking-tighter text-slate-500 leading-none", sumLeadOT > 0 ? "!text-red-400" : sumLeadOT < 0 ? "!text-emerald-400" : "")}>{sumLeadOT > 0 ? '+' : ''}{sumLeadOT.toFixed(1)}</span>
                         </div>
                       </>
                     );
                   }
-                  return <span className="text-sm font-bold text-zinc-300">—</span>;
+                  return <span className="text-sm font-bold text-slate-300">—</span>;
                 })()}
               </div>
 
-              <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-zinc-100 min-w-0">
+              <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-slate-100 min-w-0">
                 <DimensionCell label="效能异常" score={item.dimensions?.job?.score ?? 0} metrics={item.dimensions?.job?.metrics ?? []} />
                 <DimensionCell label="绩效异常" score={item.dimensions?.salary?.score ?? 0} metrics={item.dimensions?.salary?.metrics ?? []} />
                 <DimensionCell label="连续出勤" score={item.dimensions?.attendance15?.score ?? 0} metrics={item.dimensions?.attendance15?.metrics ?? []} />
@@ -295,10 +326,10 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   exit={{ height: 0, opacity: 0 }}
                   onClick={() => !adminMode && handleCenterClick(center, item)}
                   className={cn(
-                    "grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] items-center py-3 px-4 border-b border-zinc-50 transition-all",
+                    "grid grid-cols-[50px_160px_80px_80px_100px_100px_1fr] items-center py-3 px-4 border-b border-slate-50 transition-all",
                     adminMode ? "cursor-default" : "cursor-pointer",
                     exempt ? "opacity-40" : "",
-                    currentSelection?.id === center.id && !adminMode ? "bg-red-600 text-white" : "bg-zinc-50/20 hover:bg-zinc-100/50 last:border-b-zinc-200"
+                    currentSelection?.id === center.id && !adminMode ? "bg-red-600 text-white" : "bg-slate-50/20 hover:bg-slate-100/50 last:border-b-slate-200"
                   )}
                 >
                   <div />
@@ -314,7 +345,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                         className={cn(
                           "flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded text-[10px] font-black uppercase tracking-wide transition-all border",
                           exempt
-                            ? "bg-zinc-200 text-zinc-400 border-zinc-300 hover:bg-red-50 hover:border-red-300 hover:text-red-500"
+                            ? "bg-slate-200 text-slate-400 border-slate-300 hover:bg-red-50 hover:border-red-300 hover:text-red-500"
                             : "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-red-50 hover:border-red-300 hover:text-red-500"
                         )}
                       >
@@ -326,9 +357,10 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     )}
                     <div className={cn(
                       "flex flex-col pl-4 border-l-4",
-                      currentSelection?.id === center.id && !adminMode ? "border-white" : "border-zinc-900"
+                      currentSelection?.id === center.id && !adminMode ? "border-white" : "border-slate-900"
                     )}>
                       <span className="font-black text-xs uppercase tracking-tight">{center.name}中心</span>
+                            <button onClick={(e) => { e.stopPropagation(); setTrendModal({ centerName: center.name, provinceName: item.province }); }} className="ml-1.5 p-0.5 hover:bg-blue-50 rounded transition-colors" title="历史趋势"><TrendingUp size={11} className="text-blue-400 hover:text-blue-600" /></button>
                       <span className={cn(
                         "text-[9px] font-bold",
                         currentSelection?.id === center.id && !adminMode ? "opacity-80" : "opacity-30"
@@ -357,7 +389,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           className="font-black text-sm tracking-tighter hover:text-red-500 hover:underline underline-offset-2 transition-colors cursor-pointer"
                           title="点击查看非操明细"
                         >{center.nonOpRatio.toFixed(2)}%</button>
-                      : <span className="text-xs font-bold text-zinc-300">—</span>
+                      : <span className="text-xs font-bold text-slate-300">—</span>
                     }
                   </div>
                   <div className={cn(
@@ -367,16 +399,16 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     {center.compositeScope !== undefined ? (
                       <>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[9px] font-bold text-zinc-400 leading-none">综合</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none">综合</span>
                           <span className="font-black text-base tracking-tighter leading-none">{center.compositeScope?.toFixed(1)}</span>
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[9px] font-bold text-zinc-400 leading-none">组长</span>
-                          <span className="font-black text-xs tracking-tighter text-zinc-500 leading-none">{center.leaderScope?.toFixed(1)}</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none">组长</span>
+                          <span className="font-black text-xs tracking-tighter text-slate-500 leading-none">{center.leaderScope?.toFixed(1)}</span>
                         </div>
                       </>
                     ) : (
-                      <span className="text-xs font-bold text-zinc-300">—</span>
+                      <span className="text-xs font-bold text-slate-300">—</span>
                     )}
                   </div>
 
@@ -388,22 +420,22 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     {center.compositeScope !== undefined ? (
                       <>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[9px] font-bold text-zinc-400 leading-none">综合</span>
-                          <span className={cn("font-black text-xs font-mono tracking-tighter leading-none", (center.compOverTarget || 0) > 0 ? "text-red-500" : (center.compOverTarget || 0) < 0 ? "text-emerald-500" : "text-zinc-400")}>{(center.compOverTarget || 0) > 0 ? '+' : ''}{(center.compOverTarget || 0).toFixed(1)}</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none">综合</span>
+                          <span className={cn("font-black text-xs font-mono tracking-tighter leading-none", (center.compOverTarget || 0) > 0 ? "text-red-500" : (center.compOverTarget || 0) < 0 ? "text-emerald-500" : "text-slate-400")}>{(center.compOverTarget || 0) > 0 ? '+' : ''}{(center.compOverTarget || 0).toFixed(1)}</span>
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-[9px] font-bold text-zinc-400 leading-none">组长</span>
-                          <span className={cn("font-black text-[10px] font-mono tracking-tighter text-zinc-500 leading-none", (center.leadOverTarget || 0) > 0 ? "!text-red-400" : (center.leadOverTarget || 0) < 0 ? "!text-emerald-400" : "")}>{(center.leadOverTarget || 0) > 0 ? '+' : ''}{(center.leadOverTarget || 0).toFixed(1)}</span>
+                          <span className="text-[9px] font-bold text-slate-400 leading-none">组长</span>
+                          <span className={cn("font-black text-[10px] font-mono tracking-tighter text-slate-500 leading-none", (center.leadOverTarget || 0) > 0 ? "!text-red-400" : (center.leadOverTarget || 0) < 0 ? "!text-emerald-400" : "")}>{(center.leadOverTarget || 0) > 0 ? '+' : ''}{(center.leadOverTarget || 0).toFixed(1)}</span>
                         </div>
                       </>
                     ) : (
-                      <span className="text-xs font-bold text-zinc-300">—</span>
+                      <span className="text-xs font-bold text-slate-300">—</span>
                     )}
                   </div>
-                  <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-zinc-100 min-w-0">
+                  <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-slate-100 min-w-0">
                     <div
                       className={cn(
-                        "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
                         rawData && rawData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={rawData && rawData.length > 0 ? "" : "请上传岗位效能异常数据以查看详情"}
@@ -423,31 +455,31 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       }}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight flex items-center gap-1">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight flex items-center gap-1">
                           效能异常
                           {rawData && rawData.length > 0 && (
-                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
+                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-zinc-50 text-zinc-900 transition-colors",
-                          rawData && rawData.length > 0 && "group-hover:bg-zinc-100"
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          rawData && rawData.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.job ?? 0}</span>
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">前一天</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.prevAbnormalCount || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.prevAbnormalCount || 0}</span>
                         </div>
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">个数</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.abnormalCount || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.abnormalCount || 0}</span>
                         </div>
                       </div>
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
                         salaryData && salaryData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={salaryData && salaryData.length > 0 ? "" : "请上传薪资异常数据以查看详情"}
@@ -467,31 +499,31 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       }}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight flex items-center gap-1">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight flex items-center gap-1">
                           绩效异常
                           {salaryData && salaryData.length > 0 && (
-                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
+                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-zinc-50 text-zinc-900 transition-colors",
-                          salaryData && salaryData.length > 0 && "group-hover:bg-zinc-100"
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          salaryData && salaryData.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.salary ?? 0}</span>
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">覆盖率</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.salaryCoverage || '0%'}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.salaryCoverage || '0%'}</span>
                         </div>
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">算薪</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.salaryCount || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.salaryCount || 0}</span>
                         </div>
                       </div>
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
                         attendance15Data && attendance15Data.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={attendance15Data && attendance15Data.length > 0 ? "" : "请上传连续15日出勤数据以查看详情"}
@@ -511,31 +543,31 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       }}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight flex items-center gap-1">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight flex items-center gap-1">
                           连续出勤
                           {attendance15Data && attendance15Data.length > 0 && (
-                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
+                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-zinc-50 text-zinc-900 transition-colors",
-                          attendance15Data && attendance15Data.length > 0 && "group-hover:bg-zinc-100"
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          attendance15Data && attendance15Data.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.att15 ?? 0}</span>
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">触发率</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.att15Rate || '0%'}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.att15Rate || '0%'}</span>
                         </div>
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">新增</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.att15New || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.att15New || 0}</span>
                         </div>
                       </div>
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
                         attendance7Data && attendance7Data.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={attendance7Data && attendance7Data.length > 0 ? "" : "请上传连续7日未出勤数据以查看详情"}
@@ -555,31 +587,31 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       }}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight flex items-center gap-1">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight flex items-center gap-1">
                           长期未出勤
                           {attendance7Data && attendance7Data.length > 0 && (
-                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
+                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-zinc-50 text-zinc-900 transition-colors",
-                          attendance7Data && attendance7Data.length > 0 && "group-hover:bg-zinc-100"
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          attendance7Data && attendance7Data.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.att7 ?? 0}</span>
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">异常</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.att7Count || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.att7Count || 0}</span>
                         </div>
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">新增</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.att7New || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.att7New || 0}</span>
                         </div>
                       </div>
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
                         workHoursHighData && workHoursHighData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={workHoursHighData && workHoursHighData.length > 0 ? "" : "请上传日工时高数据以查看详情"}
@@ -599,31 +631,31 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       }}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight flex items-center gap-1">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight flex items-center gap-1">
                           日工时高
                           {workHoursHighData && workHoursHighData.length > 0 && (
-                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
+                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-zinc-50 text-zinc-900 transition-colors",
-                          workHoursHighData && workHoursHighData.length > 0 && "group-hover:bg-zinc-100"
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          workHoursHighData && workHoursHighData.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.workHoursHigh ?? 0}</span>
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">触发率</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whHighRate || '0%'}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.whHighRate || '0%'}</span>
                         </div>
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">新增</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whHighNew || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.whHighNew || 0}</span>
                         </div>
                       </div>
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-zinc-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
                         workHoursLowData && workHoursLowData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={workHoursLowData && workHoursLowData.length > 0 ? "" : "请上传日工时低数据以查看详情"}
@@ -643,25 +675,25 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       }}
                     >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight flex items-center gap-1">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight flex items-center gap-1">
                           日工时低
                           {workHoursLowData && workHoursLowData.length > 0 && (
-                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400" />
+                            <ExternalLink size={9} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400" />
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-zinc-50 text-zinc-900 transition-colors",
-                          workHoursLowData && workHoursLowData.length > 0 && "group-hover:bg-zinc-100"
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          workHoursLowData && workHoursLowData.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.workHoursLow ?? 0}</span>
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">异常人数</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whLowCount || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.whLowCount || 0}</span>
                         </div>
                         <div className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
                           <span className="opacity-40 truncate">新增</span>
-                          <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{center.whLowNew || 0}</span>
+                          <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{center.whLowNew || 0}</span>
                         </div>
                       </div>
                     </div>
@@ -749,40 +781,40 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[600px] max-h-[80vh] overflow-y-auto">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-black text-sm">{nonOpDetail.centerName}中心 · 非操明细</h3>
-                    <button onClick={() => setNonOpDetail(null)} className="p-1 hover:bg-zinc-100 rounded text-zinc-400"><X size={14} /></button>
+                    <button onClick={() => setNonOpDetail(null)} className="p-1 hover:bg-slate-100 rounded text-slate-400"><X size={14} /></button>
                   </div>
                   {/* 汇总行 */}
                   <div className="flex items-center gap-4 mb-3 text-[11px]">
-                    <span className="text-zinc-500">在职 <b className="text-zinc-800">{nonOpDetail.rosterTotal}</b></span>
-                    <span className="text-zinc-500">外包 <b className="text-zinc-800">{nonOpDetail.outsourced}</b></span>
-                    <span className="text-zinc-500">总人数 <b className="text-zinc-800">{nonOpDetail.rosterTotal + nonOpDetail.outsourced}</b></span>
-                    <span className="text-zinc-500">非操占比 <b className="text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</b></span>
+                    <span className="text-slate-500">在职 <b className="text-slate-800">{nonOpDetail.rosterTotal}</b></span>
+                    <span className="text-slate-500">外包 <b className="text-slate-800">{nonOpDetail.outsourced}</b></span>
+                    <span className="text-slate-500">总人数 <b className="text-slate-800">{nonOpDetail.rosterTotal + nonOpDetail.outsourced}</b></span>
+                    <span className="text-slate-500">非操占比 <b className="text-red-600">{nonOpDetail.nonOpRatio.toFixed(2)}%</b></span>
                   </div>
                   {/* 维度切换 */}
                   <div className="flex gap-1 mb-3">
-                    <button onClick={() => setNonOpTab('dept')} className={nonOpTab === 'dept' ? "px-3 py-1 text-[10px] font-bold bg-zinc-900 text-white rounded" : "px-3 py-1 text-[10px] font-bold bg-zinc-100 text-zinc-500 rounded hover:bg-zinc-200"}>部门维度</button>
-                    <button onClick={() => setNonOpTab('pos')} className={nonOpTab === 'pos' ? "px-3 py-1 text-[10px] font-bold bg-zinc-900 text-white rounded" : "px-3 py-1 text-[10px] font-bold bg-zinc-100 text-zinc-500 rounded hover:bg-zinc-200"}>岗位维度</button>
+                    <button onClick={() => setNonOpTab('dept')} className={nonOpTab === 'dept' ? "px-3 py-1 text-[10px] font-bold bg-slate-900 text-white rounded" : "px-3 py-1 text-[10px] font-bold bg-slate-100 text-slate-500 rounded hover:bg-slate-200"}>部门维度</button>
+                    <button onClick={() => setNonOpTab('pos')} className={nonOpTab === 'pos' ? "px-3 py-1 text-[10px] font-bold bg-slate-900 text-white rounded" : "px-3 py-1 text-[10px] font-bold bg-slate-100 text-slate-500 rounded hover:bg-slate-200"}>岗位维度</button>
                   </div>
                   {/* 部门维度 */}
                   {nonOpTab === 'dept' && nonOpDetail.staffingStandard && (
-                    <div className="border border-zinc-200 rounded-lg overflow-hidden">
-                      <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400">
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                      <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-slate-900 text-[10px] font-bold text-slate-400">
                         <div>部门</div><div className="text-right">标准</div><div className="text-right">实际</div><div className="text-right">差额</div>
                       </div>
                       {nonOpDetail.staffingStandard.departments.map(d => (
-                        <div key={d.dept} className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50">
-                          <div className="font-medium text-zinc-700">{d.dept}</div>
-                          <div className="text-right font-mono text-zinc-500">{d.standard}</div>
-                          <div className="text-right font-mono font-bold text-zinc-800">{d.actual || '—'}</div>
-                          <div className={d.diff > 0 ? "text-right font-mono font-bold text-red-600" : d.diff < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-zinc-400"}>
+                        <div key={d.dept} className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 border-b border-slate-50 text-[11px] hover:bg-slate-50/50">
+                          <div className="font-medium text-slate-700">{d.dept}</div>
+                          <div className="text-right font-mono text-slate-500">{d.standard}</div>
+                          <div className="text-right font-mono font-bold text-slate-800">{d.actual || '—'}</div>
+                          <div className={d.diff > 0 ? "text-right font-mono font-bold text-red-600" : d.diff < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-slate-400"}>
                             {d.diff > 0 ? '+' : ''}{d.diff !== 0 ? d.diff : '0'}
                           </div>
                         </div>
                       ))}
-                      <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-zinc-50 text-[11px] font-bold">
+                      <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-slate-50 text-[11px] font-bold">
                         <div>合计</div>
-                        <div className="text-right font-mono text-zinc-700">{nonOpDetail.staffingStandard.totalStandard}</div>
-                        <div className="text-right font-mono text-zinc-800">{nonOpDetail.staffingStandard.totalActual}</div>
+                        <div className="text-right font-mono text-slate-700">{nonOpDetail.staffingStandard.totalStandard}</div>
+                        <div className="text-right font-mono text-slate-800">{nonOpDetail.staffingStandard.totalActual}</div>
                         <div className={nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard > 0 ? "text-right font-mono text-red-600" : "text-right font-mono text-emerald-600"}>
                           {(() => { const d = nonOpDetail.staffingStandard.totalActual - nonOpDetail.staffingStandard.totalStandard; return (d > 0 ? '+' : '') + d; })()}
                         </div>
@@ -791,8 +823,8 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   )}
                   {/* 岗位维度 */}
                   {nonOpTab === 'pos' && nonOpDetail.positions && (
-                    <div className="border border-zinc-200 rounded-lg overflow-hidden">
-                      <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 bg-zinc-900 text-[10px] font-bold text-zinc-400">
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                      <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 bg-slate-900 text-[10px] font-bold text-slate-400">
                         <div>岗位</div><div className="text-right">标准</div><div className="text-right">实际</div><div className="text-right">差额</div>
                       </div>
                       {(() => {
@@ -821,26 +853,26 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                         });
                         return rows.map(r => (
                           <React.Fragment key={r.pos}>
-                            <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 border-b border-zinc-50 text-[11px] hover:bg-zinc-50/50 cursor-pointer" onClick={() => setExpandedRule(expandedRule === r.pos ? null : r.pos)}>
-                              <div className="font-medium text-zinc-700 truncate flex items-center gap-1">
+                            <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 border-b border-slate-50 text-[11px] hover:bg-slate-50/50 cursor-pointer" onClick={() => setExpandedRule(expandedRule === r.pos ? null : r.pos)}>
+                              <div className="font-medium text-slate-700 truncate flex items-center gap-1">
                                 {r.pos}
-                                {r.rule && <span className="text-zinc-300 text-[9px]">ⓘ</span>}
+                                {r.rule && <span className="text-slate-300 text-[9px]">ⓘ</span>}
                               </div>
-                              <div className="text-right font-mono text-zinc-500">{r.standard > 0 ? r.standard : '—'}</div>
-                              <div className="text-right font-mono font-bold text-zinc-800">{r.actual || '—'}</div>
-                              <div className={(r.actual - r.standard) > 0 ? "text-right font-mono font-bold text-red-600" : (r.actual - r.standard) < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-zinc-400"}>
+                              <div className="text-right font-mono text-slate-500">{r.standard > 0 ? r.standard : '—'}</div>
+                              <div className="text-right font-mono font-bold text-slate-800">{r.actual || '—'}</div>
+                              <div className={(r.actual - r.standard) > 0 ? "text-right font-mono font-bold text-red-600" : (r.actual - r.standard) < 0 ? "text-right font-mono font-bold text-emerald-600" : "text-right font-mono text-slate-400"}>
                                 {r.standard > 0 ? ((r.actual - r.standard) > 0 ? '+' : '') + (r.actual - r.standard) : '—'}
                               </div>
                             </div>
                             {expandedRule === r.pos && (
-                              <div className="px-3 py-1.5 bg-amber-50 text-[10px] text-amber-700 border-b border-zinc-50">{r.rule}</div>
+                              <div className="px-3 py-1.5 bg-amber-50 text-[10px] text-amber-700 border-b border-slate-50">{r.rule}</div>
                             )}
                           </React.Fragment>
                         ));
                       })()}
                     </div>
                   )}
-                  <p className="text-[10px] text-zinc-400 pt-2">* 非操作 = 花名册(排除中心操作/中心现场管理+特殊岗位) + 外包。部门维度对标配置标准表。</p>
+                  <p className="text-[10px] text-slate-400 pt-2">* 非操作 = 花名册(排除中心操作/中心现场管理+特殊岗位) + 外包。部门维度对标配置标准表。</p>
                 </motion.div>
               );
             })()}
@@ -849,8 +881,8 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
       </AnimatePresence>
 
       {/* Scoring Rules Footer */}
-      <div className="p-8 bg-zinc-50 border-t border-zinc-200 mt-4">
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">计分规则解析</h3>
+      <div className="p-8 bg-slate-50 border-t border-slate-200 mt-4">
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">计分规则解析</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
             <div className="rule-item">
@@ -882,18 +914,19 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
           </div>
         </div>
       </div>
+      <CenterTrendModal isOpen={trendModal !== null} centerName={trendModal?.centerName || ""} provinceName={trendModal?.provinceName || ""} onClose={() => setTrendModal(null)} />
     </div>
   );
 }
 
 function DimensionCell({ label, score, metrics }: { label: string, score: number, metrics: any[] }) {
   return (
-    <div className="flex flex-col border-l border-zinc-200 pl-3 py-1 min-w-0">
+    <div className="flex flex-col border-l border-slate-200 pl-3 py-1 min-w-0">
       <div className="flex justify-between items-center mb-1">
-        <span className="text-[11px] font-black text-zinc-400 uppercase tracking-tight truncate">{label}</span>
+        <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight truncate">{label}</span>
         <span className={cn(
           "text-sm font-black px-1.5 py-0.5 rounded flex-shrink-0",
-          score < 0 ? "bg-red-50 text-red-600" : "bg-zinc-50 text-zinc-900"
+          score < 0 ? "bg-red-50 text-red-600" : "bg-slate-50 text-slate-900"
         )}>
           {score}
         </span>
@@ -902,7 +935,7 @@ function DimensionCell({ label, score, metrics }: { label: string, score: number
         {metrics.map((m, i) => (
           <div key={i} className="flex justify-between items-center text-[9px] font-bold leading-none min-w-0">
             <span className="opacity-40 truncate">{m.label}</span>
-            <span className="font-mono text-zinc-600 flex-shrink-0 ml-1">{m.value}</span>
+            <span className="font-mono text-slate-600 flex-shrink-0 ml-1">{m.value}</span>
           </div>
         ))}
       </div>
@@ -914,26 +947,26 @@ function DimensionMini({ score, label, active }: { score: number, label: string,
   return (
     <div className={cn(
       "pl-4 border-l flex items-center justify-between group/mini flex-1",
-      active ? "border-white/20" : "border-zinc-100"
+      active ? "border-white/20" : "border-slate-100"
     )}>
       <div className="flex flex-col">
         <span className={cn(
           "text-[8px] font-black uppercase transition-colors",
-          active ? "text-white/60" : "text-zinc-300 group-hover/mini:text-zinc-500"
+          active ? "text-white/60" : "text-slate-300 group-hover/mini:text-slate-500"
         )}>{label}</span>
         <span className={cn(
           "text-[11px] font-black leading-none", 
-          score < 0 ? (active ? "text-white underline decoration-red-500 underline-offset-2" : "text-red-500") : (active ? "text-white" : "text-zinc-500")
+          score < 0 ? (active ? "text-white underline decoration-red-500 underline-offset-2" : "text-red-500") : (active ? "text-white" : "text-slate-500")
         )}>{score}</span>
       </div>
       <div className={cn(
          "w-10 h-1 ml-2 rounded-full overflow-hidden",
-         active ? "bg-white/20" : "bg-zinc-100"
+         active ? "bg-white/20" : "bg-slate-100"
       )}>
         <div 
           className={cn(
             "h-full transition-all duration-500", 
-            score < 0 ? (active ? "bg-white" : "bg-red-500") : (active ? "bg-white" : "bg-zinc-800")
+            score < 0 ? (active ? "bg-white" : "bg-red-500") : (active ? "bg-white" : "bg-slate-800")
           )} 
           style={{ width: `${Math.max(5, Math.min(100, (Math.abs(score) / 25) * 100))}%` }} 
         />

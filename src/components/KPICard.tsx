@@ -16,15 +16,15 @@ export default function KPICard({ label, value, description, trend, inverted, cl
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "p-6 flex flex-col justify-center border-zinc-200 transition-colors",
-        inverted ? "bg-zinc-900 text-white" : "bg-white text-zinc-900",
+        "p-6 flex flex-col justify-center border-slate-200 transition-colors",
+        inverted ? "bg-slate-900 text-white" : "bg-white text-slate-900",
         className
       )}
       id={`kpi-card-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <span className={cn(
         "text-[9px] uppercase font-bold tracking-[0.2em] block mb-1",
-        inverted ? "opacity-50" : "text-zinc-400"
+        inverted ? "opacity-50" : "text-slate-400"
       )}>
         {label}
       </span>

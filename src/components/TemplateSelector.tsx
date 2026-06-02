@@ -79,8 +79,8 @@ export default function TemplateSelector({ selectedTemplate, onSelectTemplate }:
   return (
     <div className="w-full max-w-5xl mx-auto mb-10">
       <div className="mb-6">
-        <h3 className="text-base font-bold text-zinc-800">选择数据类型</h3>
-        <p className="text-sm text-zinc-400 mt-1">请选择要上传的数据文件类型</p>
+        <h3 className="text-base font-bold text-slate-800">选择数据类型</h3>
+        <p className="text-sm text-slate-400 mt-1">请选择要上传的数据文件类型</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -93,8 +93,8 @@ export default function TemplateSelector({ selectedTemplate, onSelectTemplate }:
               className={cn(
                 "p-5 text-left transition-all rounded-xl",
                 isSelected
-                  ? "bg-zinc-900 text-white shadow-lg"
-                  : "bg-white border border-zinc-200 hover:border-zinc-300 hover:shadow-sm"
+                  ? "bg-slate-900 text-white shadow-lg"
+                  : "bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm"
               )}
             >
               <div className="flex items-center justify-end mb-2">
@@ -102,7 +102,7 @@ export default function TemplateSelector({ selectedTemplate, onSelectTemplate }:
                   "text-[11px] font-bold px-2 py-0.5 rounded-md",
                   isSelected
                     ? "bg-white/20 text-white/90"
-                    : "bg-zinc-100 text-zinc-400"
+                    : "bg-slate-100 text-slate-400"
                 )}>
                   {t.cycle}
                 </span>
@@ -110,21 +110,21 @@ export default function TemplateSelector({ selectedTemplate, onSelectTemplate }:
 
               <div className={cn(
                 "font-bold text-sm leading-tight mb-1.5",
-                isSelected ? "text-white" : "text-zinc-800"
+                isSelected ? "text-white" : "text-slate-800"
               )}>
                 {t.label}
               </div>
 
               <p className={cn(
                 "text-xs leading-relaxed mb-1",
-                isSelected ? "text-zinc-300" : "text-zinc-500"
+                isSelected ? "text-slate-300" : "text-slate-500"
               )}>
                 {t.description}
               </p>
 
               <p className={cn(
                 "text-xs leading-relaxed mb-3",
-                isSelected ? "text-zinc-400" : "text-zinc-400"
+                isSelected ? "text-slate-400" : "text-slate-400"
               )}>
                 {t.detail}
               </p>
@@ -136,8 +136,8 @@ export default function TemplateSelector({ selectedTemplate, onSelectTemplate }:
                     className={cn(
                       "px-1.5 py-0.5 rounded text-[10px] font-medium",
                       isSelected
-                        ? "bg-white/10 text-zinc-300"
-                        : "bg-zinc-50 text-zinc-400"
+                        ? "bg-white/10 text-slate-300"
+                        : "bg-slate-50 text-slate-400"
                     )}
                   >
                     {f}

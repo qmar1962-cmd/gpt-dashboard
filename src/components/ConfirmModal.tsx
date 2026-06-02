@@ -36,20 +36,20 @@ export default function ConfirmModal({ isOpen, title, message, confirmText = '�
         onClick={handleOverlayClick}
       />
       {/* 弹窗 */}
-      <div className="fixed z-[201] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] bg-white rounded-xl shadow-2xl border border-zinc-200 animate-in zoom-in-95 duration-150 origin-center">
+      <div className="fixed z-[201] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] bg-white rounded-xl shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 origin-center">
         {/* 标题 */}
-        <div className="px-5 pt-5 pb-3 border-b border-zinc-100">
-          <h3 className="text-sm font-bold text-zinc-900">{title}</h3>
+        <div className="px-5 pt-5 pb-3 border-b border-slate-100">
+          <h3 className="text-sm font-bold text-slate-900">{title}</h3>
         </div>
         {/* 内容 */}
         <div className="px-5 py-4">
-          <p className="text-[12px] text-zinc-600 leading-relaxed">{message}</p>
+          <p className="text-[12px] text-slate-600 leading-relaxed">{message}</p>
         </div>
         {/* 按钮 */}
         <div className="px-5 pb-4 flex justify-end gap-2.5">
           <button
             onClick={onCancel}
-            className="px-4 py-1.5 text-[12px] font-medium text-zinc-600 bg-zinc-100 rounded-lg hover:bg-zinc-200 transition-colors"
+            className="px-4 py-1.5 text-[12px] font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
           >
             {cancelText}
           </button>
@@ -58,7 +58,7 @@ export default function ConfirmModal({ isOpen, title, message, confirmText = '�
             className={`px-4 py-1.5 text-[12px] font-medium text-white rounded-lg transition-colors ${
               destructive
                 ? 'bg-red-500 hover:bg-red-600'
-                : 'bg-zinc-900 hover:bg-zinc-700'
+                : 'bg-slate-900 hover:bg-slate-700'
             }`}
           >
             {confirmText}

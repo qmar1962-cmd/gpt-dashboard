@@ -346,25 +346,25 @@ export default function MetricHelpPanel() {
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="w-5 h-5 rounded-full border border-zinc-300 flex items-center justify-center transition-all duration-200 hover:border-red-400 hover:bg-red-50 group" title="查看各指标数据口径说明">
-        <HelpCircle size={13} className="text-zinc-400 group-hover:text-red-500 transition-colors" />
+      <button onClick={() => setIsOpen(true)} className="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center transition-all duration-200 hover:border-red-400 hover:bg-red-50 group" title="查看各指标数据口径说明">
+        <HelpCircle size={13} className="text-slate-400 group-hover:text-red-500 transition-colors" />
       </button>
-      <button onClick={() => setIsManualOpen(true)} className="w-5 h-5 rounded-full border border-zinc-300 flex items-center justify-center transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 group" title="查看版本修订历史">
-        <Book size={13} className="text-zinc-400 group-hover:text-blue-500 transition-colors" />
+      <button onClick={() => setIsManualOpen(true)} className="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 group" title="查看版本修订历史">
+        <Book size={13} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
       </button>
       <AnimateWrapper isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <div className="flex flex-col h-full">
           {/* 头部 */}
-          <div className="flex items-center justify-between pb-4 border-b border-zinc-100 shrink-0">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
             <div>
-              <h3 className="text-sm font-black text-zinc-900 tracking-tight">指标口径说明</h3>
-              <p className="text-[10px] text-zinc-400 mt-0.5">数据来源 / 取数字段 / 计算规则</p>
+              <h3 className="text-sm font-black text-slate-900 tracking-tight">指标口径说明</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">数据来源 / 取数字段 / 计算规则</p>
             </div>
-            <button onClick={() => setIsOpen(false)} className="w-6 h-6 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors"><X size={14} className="text-zinc-400" /></button>
+            <button onClick={() => setIsOpen(false)} className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors"><X size={14} className="text-slate-400" /></button>
           </div>
 
           {/* 章节导航 */}
-          <div className="flex gap-1 py-3 border-b border-zinc-100 overflow-x-auto shrink-0">
+          <div className="flex gap-1 py-3 border-b border-slate-100 overflow-x-auto shrink-0">
             {SECTIONS.map(sec => (
               <button
                 key={sec.id}
@@ -372,8 +372,8 @@ export default function MetricHelpPanel() {
                 className={cn(
                   "flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors",
                   activeSection === sec.id
-                    ? "bg-zinc-900 text-white"
-                    : "bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
+                    ? "bg-slate-900 text-white"
+                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                 )}
               >
                 {sec.icon}
@@ -399,12 +399,12 @@ export default function MetricHelpPanel() {
       <AnimateWrapper isOpen={isManualOpen} onClose={() => setIsManualOpen(false)}>
         <div className="flex flex-col h-full">
           {/* 头部 */}
-          <div className="flex items-center justify-between pb-4 border-b border-zinc-100 shrink-0">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
             <div>
-              <h3 className="text-sm font-black text-zinc-900 tracking-tight">版本修订历史</h3>
-              <p className="text-[10px] text-zinc-400 mt-0.5">功能更新 / 修复记录 / 版本说明</p>
+              <h3 className="text-sm font-black text-slate-900 tracking-tight">版本修订历史</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">功能更新 / 修复记录 / 版本说明</p>
             </div>
-            <button onClick={() => setIsManualOpen(false)} className="w-6 h-6 rounded-full hover:bg-zinc-100 flex items-center justify-center transition-colors"><X size={14} className="text-zinc-400" /></button>
+            <button onClick={() => setIsManualOpen(false)} className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors"><X size={14} className="text-slate-400" /></button>
           </div>
 
           {/* 版本历史内容 */}
@@ -413,40 +413,40 @@ export default function MetricHelpPanel() {
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V3.2.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-29</span>
+                <span className="text-[9px] text-slate-400">2026-05-29</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">非操占比列：花名册(排除中心操作+特殊岗位) + 外包人数，点击查看各部门明细</span>
+                  <span className="text-slate-600">非操占比列：花名册(排除中心操作+特殊岗位) + 外包人数，点击查看各部门明细</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">排休计划多段日期选择：一个人可选多个不连续日期段</span>
+                  <span className="text-slate-600">排休计划多段日期选择：一个人可选多个不连续日期段</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">效能异常弹窗新增全网同岗均值、均值偏离两列</span>
+                  <span className="text-slate-600">效能异常弹窗新增全网同岗均值、均值偏离两列</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">数据管道自动化：process_data.py 推送前自动 Excel→JSON</span>
+                  <span className="text-slate-600">数据管道自动化：process_data.py 推送前自动 Excel→JSON</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">继承逻辑自动保存到 Supabase：三个弹窗（排休/未出勤/工时低）打开即继承</span>
+                  <span className="text-slate-600">继承逻辑自动保存到 Supabase：三个弹窗（排休/未出勤/工时低）打开即继承</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">协作数据存储从 GitHub API 迁移到 Supabase，解决多人并发冲突</span>
+                  <span className="text-slate-600">协作数据存储从 GitHub API 迁移到 Supabase，解决多人并发冲突</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
-                  <span className="text-zinc-600">0527/0528 数据不显示（JSON 未生成），Office 锁文件入库，非操占比分子漏加外包</span>
+                  <span className="text-slate-600">0527/0528 数据不显示（JSON 未生成），Office 锁文件入库，非操占比分子漏加外包</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">删除</span>
-                  <span className="text-zinc-600">移除长期未出勤弹窗的考勤负责人编辑功能</span>
+                  <span className="text-slate-600">移除长期未出勤弹窗的考勤负责人编辑功能</span>
                 </div>
               </div>
             </div>
@@ -455,32 +455,32 @@ export default function MetricHelpPanel() {
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V3.1.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-27</span>
+                <span className="text-[9px] text-slate-400">2026-05-27</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">数据去重升级：IndexedDB 写入从 JSON.stringify 去重改为业务键去重（工号+日期），重复推送同一天数据不再重复显示</span>
+                  <span className="text-slate-600">数据去重升级：IndexedDB 写入从 JSON.stringify 去重改为业务键去重（工号+日期），重复推送同一天数据不再重复显示</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">管理员登录加固：密码从源码明文 123456 改为 SHA-256 哈希存储，源码和 JS 包均不暴露密码</span>
+                  <span className="text-slate-600">管理员登录加固：密码从源码明文 123456 改为 SHA-256 哈希存储，源码和 JS 包均不暴露密码</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">数据清理完善："清除全部数据"按钮新增清理文件缓存、管理员模式、豁免中心等残留项</span>
+                  <span className="text-slate-600">数据清理完善："清除全部数据"按钮新增清理文件缓存、管理员模式、豁免中心等残留项</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">安全</span>
-                  <span className="text-zinc-600">GitHub 仓库从公开改为私有，保护员工数据不外泄</span>
+                  <span className="text-slate-600">GitHub 仓库从公开改为私有，保护员工数据不外泄</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">安全</span>
-                  <span className="text-zinc-600">Git 远程 URL 移除硬编码的 PAT 令牌，消除令牌泄露风险</span>
+                  <span className="text-slate-600">Git 远程 URL 移除硬编码的 PAT 令牌，消除令牌泄露风险</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">安全</span>
-                  <span className="text-zinc-600">Supabase 5 张协作数据表启用 RLS（行级安全），后续可随时收紧写入权限</span>
+                  <span className="text-slate-600">Supabase 5 张协作数据表启用 RLS（行级安全），后续可随时收紧写入权限</span>
                 </div>
               </div>
             </div>
@@ -489,24 +489,24 @@ export default function MetricHelpPanel() {
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V3.0.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-26</span>
+                <span className="text-[9px] text-slate-400">2026-05-26</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">数据加载架构升级：Excel 预解析为 JSON，浏览器直接加载 JSON，速度提升 5 倍+</span>
+                  <span className="text-slate-600">数据加载架构升级：Excel 预解析为 JSON，浏览器直接加载 JSON，速度提升 5 倍+</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">增量更新修复：引入 MD5 hash 对比机制，解决 filelist.json mtime 被重置问题，只加载变更文件</span>
+                  <span className="text-slate-600">增量更新修复：引入 MD5 hash 对比机制，解决 filelist.json mtime 被重置问题，只加载变更文件</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">自动兼容模式：先尝试 JSON 加载，失败后自动回退 Excel，本地开发无需手动生成 JSON</span>
+                  <span className="text-slate-600">自动兼容模式：先尝试 JSON 加载，失败后自动回退 Excel，本地开发无需手动生成 JSON</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">动态导入 xlsx：xlsx 库从主包中拆分，减少主包体积，加速首屏加载</span>
+                  <span className="text-slate-600">动态导入 xlsx：xlsx 库从主包中拆分，减少主包体积，加速首屏加载</span>
                 </div>
               </div>
             </div>
@@ -515,28 +515,28 @@ export default function MetricHelpPanel() {
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.9.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-25</span>
+                <span className="text-[9px] text-slate-400">2026-05-25</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">协作数据存储迁移：从 GitHub API 迁移到 Supabase 数据库，解决多人并发编辑冲突</span>
+                  <span className="text-slate-600">协作数据存储迁移：从 GitHub API 迁移到 Supabase 数据库，解决多人并发编辑冲突</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">支持 5 种协作数据实时同步：排休计划、未出勤原因、考勤负责人、班组负责人、工时低原因</span>
+                  <span className="text-slate-600">支持 5 种协作数据实时同步：排休计划、未出勤原因、考勤负责人、班组负责人、工时低原因</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">支持实时多人协作：Supabase Realtime 自动推送，多人同时编辑不再冲突</span>
+                  <span className="text-slate-600">支持实时多人协作：Supabase Realtime 自动推送，多人同时编辑不再冲突</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">移除 GitHub API 限流限制：无 60次/小时 请求上限，支持 20 人同时使用</span>
+                  <span className="text-slate-600">移除 GitHub API 限流限制：无 60次/小时 请求上限，支持 20 人同时使用</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
-                  <span className="text-zinc-600">旧数据乱码问题：修复了 GitHub API 编码错误导致的历史数据中文乱码</span>
+                  <span className="text-slate-600">旧数据乱码问题：修复了 GitHub API 编码错误导致的历史数据中文乱码</span>
                 </div>
               </div>
             </div>
@@ -545,40 +545,40 @@ export default function MetricHelpPanel() {
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.8.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-22</span>
+                <span className="text-[9px] text-slate-400">2026-05-22</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">日工时高考核维度：出勤工时&gt;12.5h，日均触发占比超10%每增加1%扣1分，满分5分封顶0分</span>
+                  <span className="text-slate-600">日工时高考核维度：出勤工时&gt;12.5h，日均触发占比超10%每增加1%扣1分，满分5分封顶0分</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">日工时低考核维度：出勤工时≤8h，每出现1人扣1分，满分5分封顶0分</span>
+                  <span className="text-slate-600">日工时低考核维度：出勤工时≤8h，每出现1人扣1分，满分5分封顶0分</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">日工时低原因字段：支持选择原因（倒班、临时事假、脱岗、其他），支持继承逻辑</span>
+                  <span className="text-slate-600">日工时低原因字段：支持选择原因（倒班、临时事假、脱岗、其他），支持继承逻辑</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">薪资异常权重调整：从25分调整为15分（总分保持100分不变）</span>
+                  <span className="text-slate-600">薪资异常权重调整：从25分调整为15分（总分保持100分不变）</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">数据通报全面支持日工时高/低：报告文案、统计条、各中心详情、总览图片均新增日工时维度</span>
+                  <span className="text-slate-600">数据通报全面支持日工时高/低：报告文案、统计条、各中心详情、总览图片均新增日工时维度</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">各维度明细支持日工时高/低：中心卡片网格从4列扩展为6列，支持点击查看明细</span>
+                  <span className="text-slate-600">各维度明细支持日工时高/低：中心卡片网格从4列扩展为6列，支持点击查看明细</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">计分规则解析同步更新：新增日工时高/低规则说明，薪资异常改为15分</span>
+                  <span className="text-slate-600">计分规则解析同步更新：新增日工时高/低规则说明，薪资异常改为15分</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
-                  <span className="text-zinc-600">省区维度显示0分Bug：日工时高触发人数为0时（满分5分）被误判为无数据，导致维度显示0分</span>
+                  <span className="text-slate-600">省区维度显示0分Bug：日工时高触发人数为0时（满分5分）被误判为无数据，导致维度显示0分</span>
                 </div>
               </div>
             </div>
@@ -587,36 +587,36 @@ export default function MetricHelpPanel() {
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.7.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-22</span>
+                <span className="text-[9px] text-slate-400">2026-05-22</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">通报总览图片生成：支持一键生成精致报告风格图片，可直接粘贴到微信</span>
+                  <span className="text-slate-600">通报总览图片生成：支持一键生成精致报告风格图片，可直接粘贴到微信</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">图片表格结构：10列精简为8列，管幅/超目标合并为2列（每列内显示综合+组长两行）</span>
+                  <span className="text-slate-600">图片表格结构：10列精简为8列，管幅/超目标合并为2列（每列内显示综合+组长两行）</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">图片标红规则：绩效异常&gt;1个、薪资异常&gt;3%、连续出勤&gt;3%、长期未出勤&gt;3% 红色加粗</span>
+                  <span className="text-slate-600">图片标红规则：绩效异常&gt;1个、薪资异常&gt;3%、连续出勤&gt;3%、长期未出勤&gt;3% 红色加粗</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">图片标题栏布局：标题左上对齐，副标题在下，全区均分标签居右，整体深蓝背景全宽渲染</span>
+                  <span className="text-slate-600">图片标题栏布局：标题左上对齐，副标题在下，全区均分标签居右，整体深蓝背景全宽渲染</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">得分背景色：高分浅绿/#d1fae5、中分浅黄/#fef3c7、低分浅红/#fecaca，视觉更柔和</span>
+                  <span className="text-slate-600">得分背景色：高分浅绿/#d1fae5、中分浅黄/#fef3c7、低分浅红/#fecaca，视觉更柔和</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
-                  <span className="text-zinc-600">标题栏与表头断开问题：标题栏、表头、数据行全部全宽连成一体</span>
+                  <span className="text-slate-600">标题栏与表头断开问题：标题栏、表头、数据行全部全宽连成一体</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
-                  <span className="text-zinc-600">左右留白过大：边距从24px压缩到4px，图片更紧凑</span>
+                  <span className="text-slate-600">左右留白过大：边距从24px压缩到4px，图片更紧凑</span>
                 </div>
               </div>
             </div>
@@ -625,20 +625,20 @@ export default function MetricHelpPanel() {
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.7.2</span>
-                <span className="text-[9px] text-zinc-400">2026-05-22</span>
+                <span className="text-[9px] text-slate-400">2026-05-22</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">自动继承逻辑：只继承"连续异常"情况（历史最近日期与当前窗口第一天差距≤3天），不继承"中断后重新异常"</span>
+                  <span className="text-slate-600">自动继承逻辑：只继承"连续异常"情况（历史最近日期与当前窗口第一天差距≤3天），不继承"中断后重新异常"</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">保存逻辑修复：保存时只清理当前窗口数据，不删除历史数据（防止历史原因/排休计划丢失）</span>
+                  <span className="text-slate-600">保存逻辑修复：保存时只清理当前窗口数据，不删除历史数据（防止历史原因/排休计划丢失）</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
-                  <span className="text-zinc-600">自动继承bug：之前只检查"此人是否有任何原因"，导致新日期缺失原因不填充，现改为对每个日期单独检查</span>
+                  <span className="text-slate-600">自动继承bug：之前只检查"此人是否有任何原因"，导致新日期缺失原因不填充，现改为对每个日期单独检查</span>
                 </div>
               </div>
             </div>
@@ -647,48 +647,48 @@ export default function MetricHelpPanel() {
             <div className="bg-emerald-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">V2.6.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-21</span>
+                <span className="text-[9px] text-slate-400">2026-05-21</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">未出勤原因自动继承：选原因时同一个人所有日期自动填（覆盖），清除时也同步清除</span>
+                  <span className="text-slate-600">未出勤原因自动继承：选原因时同一个人所有日期自动填（覆盖），清除时也同步清除</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">排休计划自动继承：选排休日期时同一个人所有日期自动填（覆盖），清除时也同步清除</span>
+                  <span className="text-slate-600">排休计划自动继承：选排休日期时同一个人所有日期自动填（覆盖），清除时也同步清除</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">保存时自动清理：保存未出勤原因/排休计划时，自动删掉不在当前7天异常列表的人</span>
+                  <span className="text-slate-600">保存时自动清理：保存未出勤原因/排休计划时，自动删掉不在当前7天异常列表的人</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">班组负责人批量编辑模式：修改后暂存本地，黄色提示条提醒未保存，统一点击"保存到云端"上传</span>
+                  <span className="text-slate-600">班组负责人批量编辑模式：修改后暂存本地，黄色提示条提醒未保存，统一点击"保存到云端"上传</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">离开考勤界面时保存提醒：切换 Tab 或刷新/关闭页面时弹窗提醒保存未提交的修改</span>
+                  <span className="text-slate-600">离开考勤界面时保存提醒：切换 Tab 或刷新/关闭页面时弹窗提醒保存未提交的修改</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">未保存修改刷新不丢失：修改负责人后未保存，刷新页面修改仍在本地</span>
+                  <span className="text-slate-600">未保存修改刷新不丢失：修改负责人后未保存，刷新页面修改仍在本地</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
-                  <span className="text-zinc-600">保存时重建数据结构：根据reasonMap/leavePlans重建collaborationData，确保同一个人所有日期都存进去（修复自动继承后未保存的问题）</span>
+                  <span className="text-slate-600">保存时重建数据结构：根据reasonMap/leavePlans重建collaborationData，确保同一个人所有日期都存进去（修复自动继承后未保存的问题）</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-red-600 font-bold shrink-0">修复</span>
-                  <span className="text-zinc-600">协作数据 UTF-8 编码修复：解决保存后排休计划、未出勤原因等中文内容乱码问题</span>
+                  <span className="text-slate-600">协作数据 UTF-8 编码修复：解决保存后排休计划、未出勤原因等中文内容乱码问题</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">弹窗界面美化：原生 alert/confirm 替换为 WPS 风格美观弹窗</span>
+                  <span className="text-slate-600">弹窗界面美化：原生 alert/confirm 替换为 WPS 风格美观弹窗</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">优化</span>
-                  <span className="text-zinc-600">口径说明更新：新增排休计划、未出勤原因、中心负责人、班组负责人的存储方式说明</span>
+                  <span className="text-slate-600">口径说明更新：新增排休计划、未出勤原因、中心负责人、班组负责人的存储方式说明</span>
                 </div>
               </div>
             </div>
@@ -697,28 +697,28 @@ export default function MetricHelpPanel() {
             <div className="bg-blue-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">V2.5.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-19</span>
+                <span className="text-[9px] text-slate-400">2026-05-19</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">排休计划协作编辑：支持为连续出勤≥15天的员工添加排休计划，存储于 GitHub 仓库</span>
+                  <span className="text-slate-600">排休计划协作编辑：支持为连续出勤≥15天的员工添加排休计划，存储于 GitHub 仓库</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">未出勤原因协作编辑：支持为连续未出勤≥7天的员工添加未出勤原因，存储于 GitHub 仓库</span>
+                  <span className="text-slate-600">未出勤原因协作编辑：支持为连续未出勤≥7天的员工添加未出勤原因，存储于 GitHub 仓库</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">中心负责人编辑：支持设置中心考勤负责人，存储于 GitHub 仓库</span>
+                  <span className="text-slate-600">中心负责人编辑：支持设置中心考勤负责人，存储于 GitHub 仓库</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">班组负责人编辑：支持设置各班组负责人，存储于 GitHub 仓库</span>
+                  <span className="text-slate-600">班组负责人编辑：支持设置各班组负责人，存储于 GitHub 仓库</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">多人协作支持：所有协作数据通过 GitHub API 读写，所有用户共享，实时同步</span>
+                  <span className="text-slate-600">多人协作支持：所有协作数据通过 GitHub API 读写，所有用户共享，实时同步</span>
                 </div>
               </div>
             </div>
@@ -727,42 +727,42 @@ export default function MetricHelpPanel() {
             <div className="bg-blue-50/40 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">V2.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-20</span>
+                <span className="text-[9px] text-slate-400">2026-05-20</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">添加版本修订历史手册（点击口径说明旁边的书本图标查看）</span>
+                  <span className="text-slate-600">添加版本修订历史手册（点击口径说明旁边的书本图标查看）</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">分离连续出勤和连续未出勤的筛选功能（各自独立筛选）</span>
+                  <span className="text-slate-600">分离连续出勤和连续未出勤的筛选功能（各自独立筛选）</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-zinc-600">分离连续出勤和连续未出勤的导出图片功能（分别导出两张图片）</span>
+                  <span className="text-slate-600">分离连续出勤和连续未出勤的导出图片功能（分别导出两张图片）</span>
                 </div>
               </div>
             </div>
 
             {/* V1.0 - 2026-05-15 */}
-            <div className="bg-zinc-50 rounded-lg p-3 space-y-2">
+            <div className="bg-slate-50 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-700">V1.0</span>
-                <span className="text-[9px] text-zinc-400">2026-05-15</span>
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">V1.0</span>
+                <span className="text-[9px] text-slate-400">2026-05-15</span>
               </div>
               <div className="space-y-1">
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">初始</span>
-                  <span className="text-zinc-600">GPT每日通报可视化看板正式上线</span>
+                  <span className="text-slate-600">GPT每日通报可视化看板正式上线</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">功能</span>
-                  <span className="text-zinc-600">支持岗位效能、薪资绩效、连续出勤、长期未出勤四大指标展示</span>
+                  <span className="text-slate-600">支持岗位效能、薪资绩效、连续出勤、长期未出勤四大指标展示</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-blue-600 font-bold shrink-0">功能</span>
-                  <span className="text-zinc-600">中心考勤模块：出勤日历、预警统计、导出图片</span>
+                  <span className="text-slate-600">中心考勤模块：出勤日历、预警统计、导出图片</span>
                 </div>
               </div>
             </div>
@@ -778,13 +778,13 @@ function OverviewSection() {
   return (
     <div className="space-y-5">
       {/* 日期概念 */}
-      <div className="bg-zinc-50 rounded-lg p-3 space-y-2">
-        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">日期概念</div>
+      <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+        <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider">日期概念</div>
         <div className="grid grid-cols-3 gap-1.5">
           {DATE_CONCEPTS.map(dc => (
-            <div key={dc.term} className="bg-white rounded-md px-2 py-1.5 border border-zinc-100">
-              <span className="font-mono font-black text-[11px] text-zinc-800">{dc.term}</span>
-              <p className="text-[9px] text-zinc-400 mt-0.5 leading-tight">{dc.desc}</p>
+            <div key={dc.term} className="bg-white rounded-md px-2 py-1.5 border border-slate-100">
+              <span className="font-mono font-black text-[11px] text-slate-800">{dc.term}</span>
+              <p className="text-[9px] text-slate-400 mt-0.5 leading-tight">{dc.desc}</p>
             </div>
           ))}
         </div>
@@ -792,28 +792,28 @@ function OverviewSection() {
 
       {/* 数据源总览 */}
       <div className="space-y-1.5">
-        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">数据源总览（9种上传类型）</div>
+        <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider">数据源总览（9种上传类型）</div>
         <div className="grid gap-1">
           {DATA_SOURCES.map(ds => (
-            <div key={ds.id} className="bg-zinc-50 rounded-md px-3 py-2 flex items-center gap-3">
-              <span className="font-mono font-bold text-[10px] text-zinc-700 min-w-[140px]">{ds.name}</span>
-              <span className="text-[9px] text-zinc-400">{ds.rows}</span>
-              <span className="ml-auto text-[8px] text-zinc-300 font-mono">{ds.dedup}</span>
+            <div key={ds.id} className="bg-slate-50 rounded-md px-3 py-2 flex items-center gap-3">
+              <span className="font-mono font-bold text-[10px] text-slate-700 min-w-[140px]">{ds.name}</span>
+              <span className="text-[9px] text-slate-400">{ds.rows}</span>
+              <span className="ml-auto text-[8px] text-slate-300 font-mono">{ds.dedup}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* 汇总指标 */}
-      <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-2">
+      <div className="bg-slate-900 text-white rounded-lg p-3 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider"><ArrowRight size={10} /> 汇总指标</div>
         {AGGREGATION_SPEC.items.map(item => (
           <div key={item.name} className="space-y-0.5">
             <span className="text-[10px] font-bold text-white">{item.name}</span>
-            <pre className="text-[9px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{item.formula}</pre>
+            <pre className="text-[9px] leading-relaxed text-slate-300 whitespace-pre-wrap font-mono">{item.formula}</pre>
           </div>
         ))}
-        <div className="pt-1.5 border-t border-zinc-700 text-[9px] text-amber-400/80 italic">{AGGREGATION_SPEC.exemptions}</div>
+        <div className="pt-1.5 border-t border-slate-700 text-[9px] text-amber-400/80 italic">{AGGREGATION_SPEC.exemptions}</div>
       </div>
     </div>
   );
@@ -825,14 +825,14 @@ function OperationSection() {
     <div className="space-y-5">
       {/* 文件命名规范 */}
       <div className="space-y-2">
-        <div className="flex items-center gap-1.5 text-[10px] font-black text-zinc-500 uppercase tracking-wider"><FileSpreadsheet size={11} /> 文件命名规范</div>
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-wider"><FileSpreadsheet size={11} /> 文件命名规范</div>
         <div className="grid gap-1">
           {OPERATION_SPEC.naming.map(n => (
-            <div key={n.type} className="bg-zinc-50 rounded-md px-3 py-2 space-y-1">
-              <span className="text-[10px] font-bold text-zinc-700">{n.type}</span>
+            <div key={n.type} className="bg-slate-50 rounded-md px-3 py-2 space-y-1">
+              <span className="text-[10px] font-bold text-slate-700">{n.type}</span>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono text-zinc-500 bg-white px-1.5 py-0.5 rounded border border-zinc-100">{n.pattern}</span>
-                <span className="text-[8px] text-zinc-400">例: {n.example}</span>
+                <span className="text-[9px] font-mono text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-100">{n.pattern}</span>
+                <span className="text-[8px] text-slate-400">例: {n.example}</span>
               </div>
             </div>
           ))}
@@ -840,10 +840,10 @@ function OperationSection() {
         <div className="bg-amber-50/60 rounded-md p-2.5 space-y-1 border border-amber-100">
           <div className="text-[10px] font-bold text-amber-700">为什么文件命名必须使用英文？</div>
           <ul className="space-y-0.5">
-            <li className="text-[9px] text-zinc-600 leading-relaxed">1. 跨平台兼容：英文文件名在不同操作系统（Windows/Mac/Linux）间传输不会乱码，中文文件名在部分服务器环境可能显示为乱码</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed">2. 程序自动扫描：系统按英文前缀（如 job_performance、salary_performance）匹配文件，中文前缀无法被正确识别</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed">3. Git 版本控制：Git 对中文文件名支持不稳定，英文命名可避免提交冲突和乱码问题</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed">4. 减少人为错误：英文命名避免因输入法切换、全半角等问题导致文件名格式不一致</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed">1. 跨平台兼容：英文文件名在不同操作系统（Windows/Mac/Linux）间传输不会乱码，中文文件名在部分服务器环境可能显示为乱码</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed">2. 程序自动扫描：系统按英文前缀（如 job_performance、salary_performance）匹配文件，中文前缀无法被正确识别</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed">3. Git 版本控制：Git 对中文文件名支持不稳定，英文命名可避免提交冲突和乱码问题</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed">4. 减少人为错误：英文命名避免因输入法切换、全半角等问题导致文件名格式不一致</li>
           </ul>
         </div>
       </div>
@@ -853,32 +853,32 @@ function OperationSection() {
         <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 uppercase tracking-wider"><Upload size={11} /> 数据上传流程</div>
         <ol className="space-y-1.5">
           {OPERATION_SPEC.uploadSteps.map((step, i) => (
-            <li key={i} className="text-[10px] text-zinc-600 leading-relaxed">{step}</li>
+            <li key={i} className="text-[10px] text-slate-600 leading-relaxed">{step}</li>
           ))}
         </ol>
         <div className="mt-2 pt-2 border-t border-blue-100">
           <div className="text-[10px] font-bold text-blue-700 mb-1">详细操作步骤：</div>
           <ol className="space-y-1">
-            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 1：</span>准备好 Excel 数据文件，确保列名与指标口径中要求的字段一致</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 2：</span>按"英文类型_日期"格式重命名文件，如 job_performance_20260515.xlsx（日期必须与数据日期一致）</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 3：</span>将文件放入项目根目录下的 public/database/ 文件夹中</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 4：</span>运行 git add -A && git commit -m "更新数据文件" && git push 将文件推送到仓库</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 5：</span>等待 Netlify 自动部署（约 1-2 分钟）</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 6：</span>线上打开看板页面，点击"数据管理" → "清除缓存并重新加载"，或直接按 Ctrl+F5 强制刷新</li>
-            <li className="text-[9px] text-zinc-600 leading-relaxed"><span className="font-bold text-zinc-700">Step 7：</span>验证数据是否生效：检查对应省区/中心的指标数值是否与 Excel 数据一致</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed"><span className="font-bold text-slate-700">Step 1：</span>准备好 Excel 数据文件，确保列名与指标口径中要求的字段一致</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed"><span className="font-bold text-slate-700">Step 2：</span>按"英文类型_日期"格式重命名文件，如 job_performance_20260515.xlsx（日期必须与数据日期一致）</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed"><span className="font-bold text-slate-700">Step 3：</span>将文件放入项目根目录下的 public/database/ 文件夹中</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed"><span className="font-bold text-slate-700">Step 4：</span>运行 git add -A && git commit -m "更新数据文件" && git push 将文件推送到仓库</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed"><span className="font-bold text-slate-700">Step 5：</span>等待 Netlify 自动部署（约 1-2 分钟）</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed"><span className="font-bold text-slate-700">Step 6：</span>线上打开看板页面，点击"数据管理" → "清除缓存并重新加载"，或直接按 Ctrl+F5 强制刷新</li>
+            <li className="text-[9px] text-slate-600 leading-relaxed"><span className="font-bold text-slate-700">Step 7：</span>验证数据是否生效：检查对应省区/中心的指标数值是否与 Excel 数据一致</li>
           </ol>
         </div>
       </div>
 
       {/* 更新频率 */}
       <div className="space-y-2">
-        <div className="flex items-center gap-1.5 text-[10px] font-black text-zinc-500 uppercase tracking-wider"><Clock size={11} /> 更新频率</div>
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-wider"><Clock size={11} /> 更新频率</div>
         <div className="grid gap-1">
           {OPERATION_SPEC.updateFreq.map(u => (
-            <div key={u.item} className="bg-zinc-50 rounded-md px-3 py-2 flex items-center gap-2">
-              <span className="text-[10px] font-bold text-zinc-700 flex-1">{u.item}</span>
+            <div key={u.item} className="bg-slate-50 rounded-md px-3 py-2 flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-700 flex-1">{u.item}</span>
               <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{u.freq}</span>
-              <span className="text-[9px] text-zinc-400">{u.note}</span>
+              <span className="text-[9px] text-slate-400">{u.note}</span>
             </div>
           ))}
         </div>
@@ -889,7 +889,7 @@ function OperationSection() {
         <div className="flex items-center gap-1.5 text-[10px] font-black text-purple-600 uppercase tracking-wider"><GitBranch size={11} /> 网页代码更新流程</div>
         <ol className="space-y-1">
           {OPERATION_SPEC.codeUpdate.map((step, i) => (
-            <li key={i} className="text-[10px] text-zinc-600 leading-relaxed">{step}</li>
+            <li key={i} className="text-[10px] text-slate-600 leading-relaxed">{step}</li>
           ))}
         </ol>
       </div>
@@ -897,7 +897,7 @@ function OperationSection() {
       {/* 缓存说明 */}
       <div className="flex items-start gap-2 bg-amber-50/40 rounded-lg p-3">
         <RefreshCw size={12} className="text-amber-500 mt-0.5 shrink-0" />
-        <p className="text-[10px] text-zinc-600 leading-relaxed">{OPERATION_SPEC.cacheNote}</p>
+        <p className="text-[10px] text-slate-600 leading-relaxed">{OPERATION_SPEC.cacheNote}</p>
       </div>
     </div>
   );
@@ -911,27 +911,27 @@ function MetricsSection() {
         <div key={spec.id} className="group">
           <div className="flex items-center gap-2 mb-2">
             <span className={cn("text-[10px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider", spec.color)}>{spec.weight}分</span>
-            <span className="font-bold text-xs text-zinc-900">{spec.name}</span>
-            <FileSpreadsheet size={11} className="text-zinc-300 ml-auto" />
+            <span className="font-bold text-xs text-slate-900">{spec.name}</span>
+            <FileSpreadsheet size={11} className="text-slate-300 ml-auto" />
           </div>
-          <div className="bg-zinc-50 rounded-lg p-3 mb-2 space-y-2">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
-            <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{spec.sourceTable}</div>
+          <div className="bg-slate-50 rounded-lg p-3 mb-2 space-y-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
+            <div className="text-xs font-mono font-semibold text-slate-800 bg-white rounded-md px-2 py-1.5 border border-slate-100">{spec.sourceTable}</div>
             <div className="grid grid-cols-2 gap-1">
               {spec.keyColumns.map((col) => (
                 <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
-                  <Hash size={9} className="text-zinc-300 mt-0.5 flex-shrink-0" />
-                  <span className="font-mono font-bold text-zinc-700">{col.col}</span>
-                  <span className="text-zinc-400">{col.desc}</span>
+                  <Hash size={9} className="text-slate-300 mt-0.5 flex-shrink-0" />
+                  <span className="font-mono font-bold text-slate-700">{col.col}</span>
+                  <span className="text-slate-400">{col.desc}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-1.5">
+          <div className="bg-slate-900 text-white rounded-lg p-3 space-y-1.5">
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-red-400 uppercase tracking-wider"><ArrowRight size={10} /> 计算公式</div>
-            <pre className="text-[10px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{spec.formula}</pre>
-            {spec.denominator && (<div className="mt-1.5 pt-1.5 border-t border-zinc-700"><span className="text-[9px] text-zinc-500">分母: </span><span className="text-[10px] text-emerald-400 font-medium">{spec.denominator}</span></div>)}
-            {spec.notes && (<div className="mt-1 pt-1.5 border-t border-zinc-700 text-[9px] text-zinc-500 italic">{spec.notes}</div>)}
+            <pre className="text-[10px] leading-relaxed text-slate-300 whitespace-pre-wrap font-mono">{spec.formula}</pre>
+            {spec.denominator && (<div className="mt-1.5 pt-1.5 border-t border-slate-700"><span className="text-[9px] text-slate-500">分母: </span><span className="text-[10px] text-emerald-400 font-medium">{spec.denominator}</span></div>)}
+            {spec.notes && (<div className="mt-1 pt-1.5 border-t border-slate-700 text-[9px] text-slate-500 italic">{spec.notes}</div>)}
           </div>
           {spec.detailFields && (
             <div className="bg-amber-50/40 rounded-lg p-2.5 mt-1.5 space-y-1.5">
@@ -939,8 +939,8 @@ function MetricsSection() {
               <div className="grid grid-cols-2 gap-0.5">
                 {spec.detailFields.map((f: { col: string; desc: string }) => (
                   <div key={f.col} className="flex items-start gap-1 text-[9px]">
-                    <span className="font-mono font-bold text-zinc-600">{f.col}</span>
-                    <span className="text-zinc-400">{f.desc}</span>
+                    <span className="font-mono font-bold text-slate-600">{f.col}</span>
+                    <span className="text-slate-400">{f.desc}</span>
                   </div>
                 ))}
               </div>
@@ -1019,29 +1019,29 @@ function StaffingSection() {
           {CENTER_CLASS_LIST.map(c => (
             <div key={c.cls} className="flex items-start gap-2 text-[10px]">
               <span className="font-bold text-blue-600 shrink-0">{c.cls}</span>
-              <span className="text-zinc-500">{c.centers}</span>
+              <span className="text-slate-500">{c.centers}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* 各部门配置标准 */}
-      <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">各部门岗位配置标准（2025年暂定版）</div>
+      <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider">各部门岗位配置标准（2025年暂定版）</div>
       <div className="space-y-4">
         {STAFFING_STANDARDS.map(dept => (
-          <div key={dept.dept} className="bg-zinc-50 rounded-lg p-3 space-y-2">
+          <div key={dept.dept} className="bg-slate-50 rounded-lg p-3 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-zinc-700">{dept.dept}</span>
-              <span className="text-[8px] text-zinc-400">({dept.positions.length}个岗位)</span>
+              <span className="text-[10px] font-black text-slate-700">{dept.dept}</span>
+              <span className="text-[8px] text-slate-400">({dept.positions.length}个岗位)</span>
             </div>
             <div className="space-y-1.5">
               {dept.positions.map(p => (
-                <div key={p.pos} className="bg-white rounded-md px-3 py-2 border border-zinc-100">
+                <div key={p.pos} className="bg-white rounded-md px-3 py-2 border border-slate-100">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-bold text-zinc-700">{p.pos}</span>
+                    <span className="text-[10px] font-bold text-slate-700">{p.pos}</span>
                     {p.rule.includes('暂不计入') && <span className="text-[8px] font-bold text-amber-500 bg-amber-50 px-1 py-0.5 rounded">暂估</span>}
                   </div>
-                  <pre className="text-[9px] leading-relaxed text-zinc-400 whitespace-pre-wrap font-sans">{p.rule}</pre>
+                  <pre className="text-[9px] leading-relaxed text-slate-400 whitespace-pre-wrap font-sans">{p.rule}</pre>
                 </div>
               ))}
             </div>
@@ -1052,7 +1052,7 @@ function StaffingSection() {
       {/* 自动计算说明 */}
       <div className="bg-amber-50/40 rounded-lg p-3 space-y-2">
         <div className="text-[10px] font-black text-amber-600 uppercase tracking-wider">自动计算口径</div>
-        <div className="text-[10px] text-zinc-600 leading-relaxed space-y-1">
+        <div className="text-[10px] text-slate-600 leading-relaxed space-y-1">
           <p>1. 中心分类：A/B/C类按上表固定</p>
           <p>2. 人资专员分档：花名册在职人数（九级单位=xx转运中心）</p>
           <p>3. 主厨分档：按在职人数近似（≤900/1400/1800分档）</p>
@@ -1071,21 +1071,21 @@ function ScopeSection() {
     <div className="space-y-4">
       <div className="bg-blue-50/50 rounded-lg p-3 mb-2 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
-        <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{SCOPE_SPEC.sourceTable}</div>
+        <div className="text-xs font-mono font-semibold text-slate-800 bg-white rounded-md px-2 py-1.5 border border-slate-100">{SCOPE_SPEC.sourceTable}</div>
         <div className="grid grid-cols-2 gap-1">
           {SCOPE_SPEC.keyColumns.map((col) => (
             <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
-              <Hash size={9} className="text-zinc-300 mt-0.5 flex-shrink-0" />
-              <span className="font-mono font-bold text-zinc-700">{col.col}</span>
-              <span className="text-zinc-400">{col.desc}</span>
+              <Hash size={9} className="text-slate-300 mt-0.5 flex-shrink-0" />
+              <span className="font-mono font-bold text-slate-700">{col.col}</span>
+              <span className="text-slate-400">{col.desc}</span>
             </div>
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900 text-white rounded-lg p-3 space-y-1.5">
+      <div className="bg-slate-900 text-white rounded-lg p-3 space-y-1.5">
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider"><ArrowRight size={10} /> 计算公式</div>
-        {SCOPE_SPEC.formulas.map((f, i) => (<pre key={i} className="text-[10px] leading-relaxed text-zinc-300 font-mono">{f}</pre>))}
-        <div className="mt-1 pt-1.5 border-t border-zinc-700 text-[9px] text-zinc-500 italic">操作人数 = 总人数 - 组长数 - 主管数</div>
+        {SCOPE_SPEC.formulas.map((f, i) => (<pre key={i} className="text-[10px] leading-relaxed text-slate-300 font-mono">{f}</pre>))}
+        <div className="mt-1 pt-1.5 border-t border-slate-700 text-[9px] text-slate-500 italic">操作人数 = 总人数 - 组长数 - 主管数</div>
         {SCOPE_SPEC.rosterTargetNote && <div className="pt-1 text-[9px] text-amber-400/80 italic">{SCOPE_SPEC.rosterTargetNote}</div>}
       </div>
     </div>
@@ -1097,19 +1097,19 @@ function AttendanceSection() {
   return (
     <div className="space-y-4">
       {ATTENDANCE_SPEC.dataSources.map((ds, idx) => (
-        <div key={idx} className="bg-zinc-50 rounded-lg p-3 mb-2 space-y-2">
+        <div key={idx} className="bg-slate-50 rounded-lg p-3 mb-2 space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源{idx + 1}</div>
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源{idx + 1}</div>
             <span className="text-[8px] font-medium px-1.5 py-0.5 rounded-full bg-cyan-50 text-cyan-600 border border-cyan-100">{ds.role.split('-')[0].trim()}</span>
           </div>
-          <div className="text-xs font-mono font-semibold text-zinc-800 bg-white rounded-md px-2 py-1.5 border border-zinc-100">{ds.table}</div>
+          <div className="text-xs font-mono font-semibold text-slate-800 bg-white rounded-md px-2 py-1.5 border border-slate-100">{ds.table}</div>
           <div className="grid grid-cols-1 gap-0.5">
             {ds.columns.map((col) => (
               <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
                 <Hash size={9} className="text-cyan-300 mt-0.5 flex-shrink-0" />
-                <span className="font-mono font-bold text-zinc-700 min-w-0">{col.col}</span>
-                <span className="text-zinc-400 flex-shrink-0">-&gt;</span>
-                <span className="text-zinc-500">{col.desc}</span>
+                <span className="font-mono font-bold text-slate-700 min-w-0">{col.col}</span>
+                <span className="text-slate-400 flex-shrink-0">-&gt;</span>
+                <span className="text-slate-500">{col.desc}</span>
               </div>
             ))}
           </div>
@@ -1120,9 +1120,9 @@ function AttendanceSection() {
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-red-500 uppercase tracking-wider"><ArrowRight size={10} /> 指标计算 (共 {ATTENDANCE_SPEC.metrics.length} 项)</div>
         <div className="grid gap-1.5">
           {ATTENDANCE_SPEC.metrics.map((m) => (
-            <div key={m.name} className="bg-zinc-900 text-white rounded-lg p-2.5 space-y-1">
+            <div key={m.name} className="bg-slate-900 text-white rounded-lg p-2.5 space-y-1">
               <span className="text-[10px] font-bold text-white block">{m.name}</span>
-              <pre className="text-[9px] leading-relaxed text-zinc-300 whitespace-pre-wrap font-mono">{m.formula}</pre>
+              <pre className="text-[9px] leading-relaxed text-slate-300 whitespace-pre-wrap font-mono">{m.formula}</pre>
               {m.note && <span className="text-[8px] text-emerald-400/70 italic block">* {m.note}</span>}
             </div>
           ))}
@@ -1134,8 +1134,8 @@ function AttendanceSection() {
         <div className="grid gap-0.5">
           {ATTENDANCE_SPEC.summaryTableSpec.map((f: { col: string; desc: string }) => (
             <div key={f.col} className="flex items-start gap-1.5 text-[9px]">
-              <span className="font-mono font-bold text-zinc-600 min-w-[56px] shrink-0">{f.col}</span>
-              <span className="text-zinc-400">{f.desc}</span>
+              <span className="font-mono font-bold text-slate-600 min-w-[56px] shrink-0">{f.col}</span>
+              <span className="text-slate-400">{f.desc}</span>
             </div>
           ))}
         </div>
@@ -1145,15 +1145,15 @@ function AttendanceSection() {
       <div className="bg-orange-50/40 rounded-lg p-3 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 uppercase tracking-wider"><CalendarDays size={10} /> 排休计划（连续出勤弹窗）</div>
         <div className="space-y-1 text-[9px]">
-          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">触发条件</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.trigger}</span></div>
-          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.storage}</span></div>
-          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">自动匹配</span><span className="text-zinc-500">{ATTENDANCE_SPEC.leavePlanSpec.autoMatch}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">触发条件</span><span className="text-slate-500">{ATTENDANCE_SPEC.leavePlanSpec.trigger}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">持久化</span><span className="text-slate-500">{ATTENDANCE_SPEC.leavePlanSpec.storage}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-orange-600 shrink-0">自动匹配</span><span className="text-slate-500">{ATTENDANCE_SPEC.leavePlanSpec.autoMatch}</span></div>
         </div>
         <div className="grid grid-cols-2 gap-0.5 mt-1">
           {ATTENDANCE_SPEC.leavePlanSpec.fields.map((f: { col: string; desc: string }) => (
             <div key={f.col} className="flex items-start gap-1 text-[9px]">
-              <span className="font-mono font-bold text-zinc-600">{f.col}</span>
-              <span className="text-zinc-400">{f.desc}</span>
+              <span className="font-mono font-bold text-slate-600">{f.col}</span>
+              <span className="text-slate-400">{f.desc}</span>
             </div>
           ))}
         </div>
@@ -1163,10 +1163,10 @@ function AttendanceSection() {
       <div className="bg-purple-50/40 rounded-lg p-3 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-purple-600 uppercase tracking-wider"><AlertCircle size={10} /> 未出勤原因（长期未出勤弹窗）</div>
         <div className="space-y-1 text-[9px]">
-          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">触发条件</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.trigger}</span></div>
-          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">原因选项</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.options}</span></div>
-          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.storage}</span></div>
-          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">自动清理</span><span className="text-zinc-500">{ATTENDANCE_SPEC.absenceReasonSpec.autoClean}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">触发条件</span><span className="text-slate-500">{ATTENDANCE_SPEC.absenceReasonSpec.trigger}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">原因选项</span><span className="text-slate-500">{ATTENDANCE_SPEC.absenceReasonSpec.options}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">持久化</span><span className="text-slate-500">{ATTENDANCE_SPEC.absenceReasonSpec.storage}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-purple-600 shrink-0">自动清理</span><span className="text-slate-500">{ATTENDANCE_SPEC.absenceReasonSpec.autoClean}</span></div>
         </div>
       </div>
 
@@ -1174,19 +1174,19 @@ function AttendanceSection() {
       <div className="bg-sky-50/40 rounded-lg p-3 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-sky-600 uppercase tracking-wider"><Users size={10} /> 班组负责人（出勤日历表格）</div>
         <div className="space-y-1 text-[9px]">
-          <div className="flex gap-1"><span className="font-bold text-sky-600 shrink-0">持久化</span><span className="text-zinc-500">{ATTENDANCE_SPEC.groupLeadersSpec.storage}</span></div>
+          <div className="flex gap-1"><span className="font-bold text-sky-600 shrink-0">持久化</span><span className="text-slate-500">{ATTENDANCE_SPEC.groupLeadersSpec.storage}</span></div>
         </div>
         <div className="grid grid-cols-1 gap-0.5 mt-1">
           {ATTENDANCE_SPEC.groupLeadersSpec.fields.map((f: { col: string; desc: string }) => (
             <div key={f.col} className="flex items-start gap-1 text-[9px]">
-              <span className="font-mono font-bold text-zinc-600">{f.col}</span>
-              <span className="text-zinc-400">{f.desc}</span>
+              <span className="font-mono font-bold text-slate-600">{f.col}</span>
+              <span className="text-slate-400">{f.desc}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-2 text-[9px] text-zinc-400 italic leading-relaxed space-y-1">
+      <div className="mt-2 text-[9px] text-slate-400 italic leading-relaxed space-y-1">
         <p>* 出勤判定: 日出勤明细中有该人该日期的记录 = 出勤(true); 无记录 = 缺勤(false)</p>
         <p>* 人员筛选: 花名册中 二级部门 包含[中心操作] 且 转运中心 匹配当前选中中心</p>
         <p>* 数据优先级: IndexedDB 真实数据 &gt; 静态 JSON fallback</p>
@@ -1204,28 +1204,28 @@ function MatchingSection() {
         {MATCHING_SPEC.rules.map(rule => (
           <div key={rule.name} className="flex items-start gap-1.5 text-[9px]">
             <span className="font-bold text-blue-600 shrink-0">{rule.name}</span>
-            <span className="text-zinc-500">{rule.desc}</span>
+            <span className="text-slate-500">{rule.desc}</span>
           </div>
         ))}
-        <div className="text-[8px] text-zinc-400 italic mt-1">{MATCHING_SPEC.notes}</div>
+        <div className="text-[8px] text-slate-400 italic mt-1">{MATCHING_SPEC.notes}</div>
       </div>
 
       {/* 各指标明细字段汇总 */}
       <div className="space-y-3">
-        <div className="text-[10px] font-black text-zinc-500 uppercase tracking-wider">弹窗明细字段汇总</div>
+        <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider">弹窗明细字段汇总</div>
         {([
           { title: '效能异常', fields: DETAIL_FIELDS.job, color: 'text-red-600' },
           { title: '绩效异常', fields: DETAIL_FIELDS.salary, color: 'text-amber-600' },
           { title: '连续出勤', fields: DETAIL_FIELDS.att15, color: 'text-orange-600' },
           { title: '长期未出勤', fields: DETAIL_FIELDS.att7, color: 'text-purple-600' },
         ]).map(g => (
-          <div key={g.title} className="bg-zinc-50 rounded-lg p-2.5 space-y-1">
+          <div key={g.title} className="bg-slate-50 rounded-lg p-2.5 space-y-1">
             <div className={cn("text-[9px] font-black uppercase tracking-wider", g.color)}>{g.title}</div>
             <div className="grid grid-cols-2 gap-0.5">
               {g.fields.map((f: { col: string; desc: string }) => (
                 <div key={f.col} className="flex items-start gap-1 text-[9px]">
-                  <span className="font-mono font-bold text-zinc-600">{f.col}</span>
-                  <span className="text-zinc-400">{f.desc}</span>
+                  <span className="font-mono font-bold text-slate-600">{f.col}</span>
+                  <span className="text-slate-400">{f.desc}</span>
                 </div>
               ))}
             </div>
@@ -1241,7 +1241,7 @@ function AnimateWrapper({ isOpen, onClose, children }: { isOpen: boolean; onClos
   return (
     <>
       <div className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="fixed right-4 top-20 bottom-14 w-[420px] z-[101] bg-white rounded-xl shadow-2xl border border-zinc-200 overflow-hidden flex flex-col animate-in slide-in-from-right duration-200 ease-out">
+      <div className="fixed right-4 top-20 bottom-14 w-[420px] z-[101] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in slide-in-from-right duration-200 ease-out">
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
       </div>
     </>

@@ -55,7 +55,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-100/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-100/80 backdrop-blur-sm">
       <form className="flex flex-col gap-2.5 bg-white py-10 px-8 rounded-3xl shadow-lg hover:shadow-xl transition-shadow relative" onSubmit={handleSubmit}>
         {/* 管理员入口齿轮按钮 */}
         <button
@@ -65,7 +65,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             setAdminError('');
             setAdminPassword('');
           }}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-500 transition-all"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all"
           title="管理员入口"
         >
           <Settings size={16} className={showAdminInput ? 'animate-spin' : ''} />
@@ -73,10 +73,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
         <p className="text-black text-center font-bold text-lg pb-8">登录看板</p>
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-zinc-700">姓名</label>
+          <label className="text-sm font-medium text-slate-700">姓名</label>
           <input
             type="text"
-            className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300"
+            className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
             placeholder="请输入姓名"
             value={name}
             onChange={e => {
@@ -87,10 +87,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           {errors.name && <p className="text-xs text-red-600 mt-0">{errors.name}</p>}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-zinc-700">工号</label>
+          <label className="text-sm font-medium text-slate-700">工号</label>
           <input
             type="text"
-            className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300"
+            className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
             placeholder="8位数字，以0开头"
             maxLength={8}
             value={empId}
@@ -105,10 +105,10 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
         {showAdminInput && (
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-zinc-700">管理员密码</label>
+            <label className="text-sm font-medium text-slate-700">管理员密码</label>
             <input
               type="password"
-              className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-300"
+              className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
               placeholder="输入管理员密码"
               value={adminPassword}
               onChange={e => {
@@ -120,7 +120,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             <button
               type="button"
               onClick={handleAdminLogin}
-              className="text-center py-2.5 px-8 rounded-lg bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-none transition-all"
+              className="text-center py-2.5 px-8 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-none transition-all"
               style={{ marginTop: '0.75em', backgroundColor: '#b45309' }}
             >
               管理员登录
@@ -128,7 +128,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           </div>
         )}
 
-        {!showAdminInput && <button type="submit" className="text-center py-2.5 px-8 rounded-lg bg-zinc-900 text-white text-sm font-bold hover:bg-zinc-800 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-none transition-all">进入看板</button>}
+        {!showAdminInput && <button type="submit" className="text-center py-2.5 px-8 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-none transition-all">进入看板</button>}
       </form>
     </div>
   );

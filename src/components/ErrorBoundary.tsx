@@ -33,14 +33,14 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="p-8 text-center text-red-600">
           <h3 className="text-lg font-bold mb-2">⚠️ 组件渲染出错</h3>
-          <p className="text-sm text-zinc-500 mb-4">{this.props.label || '未知组件'}</p>
-          <pre className="text-xs bg-zinc-100 p-4 rounded-lg overflow-auto text-left max-w-2xl mx-auto whitespace-pre-wrap break-all">
+          <p className="text-sm text-slate-500 mb-4">{this.props.label || '未知组件'}</p>
+          <pre className="text-xs bg-slate-100 p-4 rounded-lg overflow-auto text-left max-w-2xl mx-auto whitespace-pre-wrap break-all">
             {this.state.error?.message}
             {'\n\n'}
             {this.state.error?.stack}
           </pre>
           <button
-            className="mt-4 px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm"
+            className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm"
             onClick={() => this.setState({ hasError: false })}
           >
             重试

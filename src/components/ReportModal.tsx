@@ -68,8 +68,8 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
             <AlertTriangle size={18} /><h2 className="text-sm font-black">报告生成失败</h2>
           </div>
           <div className="p-6 text-center space-y-3">
-            <p className="text-sm text-zinc-500">{error || '未知错误'}</p>
-            <button onClick={onClose} className="px-5 py-2 bg-zinc-900 text-white text-xs font-bold rounded-lg hover:bg-zinc-800">关闭</button>
+            <p className="text-sm text-slate-500">{error || '未知错误'}</p>
+            <button onClick={onClose} className="px-5 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800">关闭</button>
           </div>
         </div>
       </div>
@@ -219,16 +219,16 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white w-[95%] max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
         {/* 头部 */}
-        <div className="bg-zinc-900 text-white px-6 py-4 flex items-center justify-between shrink-0">
+        <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center"><FileText size={20} /></div>
             <div>
               <h2 className="text-lg font-black tracking-tight">GPT 数据通报</h2>
-              <p className="text-[11px] text-zinc-400">{report.reportDate} · 全区均分 <span className="text-white font-bold">{report.overallScore}</span> 分</p>
+              <p className="text-[11px] text-slate-400">{report.reportDate} · 全区均分 <span className="text-white font-bold">{report.overallScore}</span> 分</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleCopy} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all", copied ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700")}>
+            <button onClick={handleCopy} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all", copied ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700")}>
               {copied ? <Check size={13} /> : <Copy size={13} />}{copied ? '已复制' : '复制文字'}
             </button>
             <button onClick={handleDownload} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[11px] font-bold rounded-lg hover:bg-red-700 transition-all">
@@ -236,7 +236,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
             </button>
             <button onClick={handleGenerateOverviewImage} disabled={imgStatus === 'generating'}
               className={cn("flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all",
-                imgStatus === 'generating' ? "bg-zinc-600 text-zinc-300" : imgStatus === 'done' ? "bg-emerald-600 text-white" : imgStatus === 'error' ? "bg-red-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700"
+                imgStatus === 'generating' ? "bg-slate-600 text-slate-300" : imgStatus === 'done' ? "bg-emerald-600 text-white" : imgStatus === 'error' ? "bg-red-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700"
               )}>
               <Image size={13} />{imgStatus === 'generating' ? '生成中...' : imgStatus === 'done' ? imgMsg : imgStatus === 'error' ? imgMsg : '复制图片'}
             </button>
@@ -245,11 +245,11 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         </div>
 
         {/* 统计条 */}
-        <div className="px-6 py-3 bg-zinc-50 border-b border-zinc-200 grid grid-cols-3 md:grid-cols-6 gap-3 shrink-0">
+        <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 grid grid-cols-3 md:grid-cols-6 gap-3 shrink-0">
           {dimKeys.map(k => (
             <div key={k} className="flex items-center gap-1.5">
-              <span className={cn("font-mono font-bold text-sm", totals[k] > 0 ? "text-red-600" : "text-zinc-400")}>{totals[k]}</span>
-              <span className="text-[10px] text-zinc-500 font-medium">{DIM_LABELS[k]}{DIM_UNITS[k]}</span>
+              <span className={cn("font-mono font-bold text-sm", totals[k] > 0 ? "text-red-600" : "text-slate-400")}>{totals[k]}</span>
+              <span className="text-[10px] text-slate-500 font-medium">{DIM_LABELS[k]}{DIM_UNITS[k]}</span>
             </div>
           ))}
         </div>
@@ -257,9 +257,9 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         {/* 报告正文 */}
         <div className="flex-1 overflow-auto px-6 py-5 space-y-5">
           {/* 执行摘要 */}
-          <div className="p-4 bg-zinc-900 text-white rounded-xl">
-            <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-2">执行摘要</h3>
-            <p className="text-sm leading-relaxed text-zinc-200">{report.summary}</p>
+          <div className="p-4 bg-slate-900 text-white rounded-xl">
+            <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">执行摘要</h3>
+            <p className="text-sm leading-relaxed text-slate-200">{report.summary}</p>
           </div>
 
           {/* 各省区详情 */}
@@ -267,16 +267,16 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
             <div key={prov.province}>
               <button
                 onClick={() => setExpandedProvince(expandedProvince === prov.province ? null : prov.province)}
-                className="w-full flex items-center gap-3 py-2.5 border-b-2 border-zinc-100 hover:bg-zinc-50 rounded-lg px-2 transition-colors"
+                className="w-full flex items-center gap-3 py-2.5 border-b-2 border-slate-100 hover:bg-slate-50 rounded-lg px-2 transition-colors"
               >
-                <span className="text-lg font-black italic text-zinc-400">#{prov.ranking}</span>
+                <span className="text-lg font-black italic text-slate-400">#{prov.ranking}</span>
                 <span className="text-sm font-black">{prov.province}</span>
-                <span className="text-[11px] text-zinc-400">负责人：{prov.responsible}</span>
+                <span className="text-[11px] text-slate-400">负责人：{prov.responsible}</span>
                 <span className={cn("ml-auto px-2.5 py-0.5 rounded font-mono font-bold text-xs",
                   prov.totalScore >= 80 ? 'bg-emerald-100 text-emerald-700' :
                   prov.totalScore >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
                 )}>{prov.totalScore}分</span>
-                <span className="text-[10px] text-zinc-300 ml-1">{expandedProvince === prov.province ? '▼' : '▶'}</span>
+                <span className="text-[10px] text-slate-300 ml-1">{expandedProvince === prov.province ? '▼' : '▶'}</span>
               </button>
 
               <div className={cn("space-y-2 mt-2 pl-6", expandedProvince === prov.province ? '' : 'hidden')}>
@@ -284,12 +284,12 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                   const hasIssue = dimKeys.some(k => (center as any)[k] > 0);
                   return (
                     <div key={center.centerName} className={cn("p-3 rounded-lg border",
-                      hasIssue ? 'border-red-200 bg-red-50/20' : 'border-zinc-100 bg-zinc-50/30'
+                      hasIssue ? 'border-red-200 bg-red-50/20' : 'border-slate-100 bg-slate-50/30'
                     )}>
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-black">{center.centerName}</span>
-                          <span className="text-[10px] text-zinc-400">({center.responsible})</span>
+                          <span className="text-[10px] text-slate-400">({center.responsible})</span>
                           {hasIssue && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
                         </div>
                         <span className={cn("px-2 py-0.5 rounded font-mono font-bold text-[11px]",
@@ -309,7 +309,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
                           const extra = rateMap[k] ? `（${rateMap[k]}）` : '';
                           return (
                             <div key={k} className={cn("px-2 py-1.5 rounded text-[11px] leading-tight",
-                              val > 0 ? 'bg-red-100/60 text-red-700 font-bold' : 'bg-zinc-100 text-zinc-500'
+                              val > 0 ? 'bg-red-100/60 text-red-700 font-bold' : 'bg-slate-100 text-slate-500'
                             )}>
                               <span className="text-[9px] uppercase tracking-wide opacity-60 block">{DIM_LABELS[k]}</span>
                               <span className="font-mono font-bold">{val > 0 ? `${val}${DIM_UNITS[k]}${extra}` : `0${DIM_UNITS[k]}`}</span>
@@ -326,7 +326,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         </div>
 
         {/* 底部 */}
-        <div className="px-6 py-2.5 bg-zinc-100 border-t border-zinc-200 text-[10px] text-zinc-400 text-right shrink-0">
+        <div className="px-6 py-2.5 bg-slate-100 border-t border-slate-200 text-[10px] text-slate-400 text-right shrink-0">
           由 GPT 数据通报系统自动生成 · {report.generatedAt}
         </div>
       </div>
