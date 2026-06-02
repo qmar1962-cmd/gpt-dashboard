@@ -28,8 +28,8 @@ const DATA_SOURCES = [
   { id: 'salary_performance', name: '薪资绩效异常', rows: '每人一条（姓名+岗位+日期）', dedup: '姓名 + 岗位 + 数据日期' },
   { id: 'attendance_15days', name: '连续15日出勤', rows: '连续出勤≥15天的员工', dedup: '工号 + 数据日期' },
   { id: 'attendance_7days', name: '连续7日未出勤', rows: '连续未出勤≥7天的员工', dedup: '工号 + 数据日期' },
-  { id: 'work_hours_high', name: '日工时高（>12.5h）', rows: '出勤工时>12.5h的员工', dedup: '工号 + 数据日期' },
-  { id: 'work_hours_low', name: '日工时低（≤8h）', rows: '出勤工时≤8h的员工', dedup: '工号 + 数据日期' },
+  { id: 'work_hours_high', name: '日工时高（&gt;12.5h）', rows: '出勤工时&gt;12.5h的员工', dedup: '工号 + 数据日期' },
+  { id: 'work_hours_low', name: '日工时低（&le;8h）', rows: '出勤工时&le;8h的员工', dedup: '工号 + 数据日期' },
   { id: 'employee_roster', name: '中心在职花名册', rows: '全部在职人员（含非操作部门）', dedup: '工号' },
   { id: 'center_daily_attendance', name: '中心日出勤明细', rows: '每人每天一条（有记录=出勤）', dedup: '工号 + 数据日期' },
   { id: 'outsourcing', name: '转运中心外包人数', rows: '14个转运中心的外包人数', dedup: '中心名称' },
@@ -42,8 +42,8 @@ const OPERATION_SPEC = {
     { type: '薪资绩效异常', pattern: 'salary_performance_YYYYMMDD.xlsx', example: 'salary_performance_20260514.xlsx' },
     { type: '连续15日出勤', pattern: 'attendance15_YYYYMMDD.xlsx', example: 'attendance15_20260514.xlsx' },
     { type: '连续7日未出勤', pattern: 'attendance7_YYYYMMDD.xlsx', example: 'attendance7_20260514.xlsx' },
-    { type: '日工时高（>12.5h）', pattern: 'work_hours_high_YYYYMMDD.xlsx', example: 'work_hours_high_20260514.xlsx' },
-    { type: '日工时低（≤8h）', pattern: 'work_hours_low_YYYYMMDD.xlsx', example: 'work_hours_low_20260514.xlsx' },
+    { type: '日工时高（&gt;12.5h）', pattern: 'work_hours_high_YYYYMMDD.xlsx', example: 'work_hours_high_20260514.xlsx' },
+    { type: '日工时低（&le;8h）', pattern: 'work_hours_low_YYYYMMDD.xlsx', example: 'work_hours_low_20260514.xlsx' },
     { type: '中心在职花名册', pattern: 'roster_YYYYMMDD.xlsx', example: 'roster_20260514.xlsx' },
     { type: '外包人数', pattern: 'outsourcing.xlsx', example: 'outsourcing.xlsx（固定文件名，覆盖更新）' },
     { type: '中心日出勤明细', pattern: 'center_attendance_YYYYMMDD.xlsx', example: 'center_attendance_20260514.xlsx' },
@@ -127,13 +127,13 @@ const DETAIL_FIELDS = {
     { col: '工号', desc: '用于未出勤原因全局匹配' },
   ],
   workHoursHigh: [
-    { col: '姓名', desc: '日工时>12.5h人员' },
+    { col: '姓名', desc: '日工时&gt;12.5h人员' },
     { col: '岗位', desc: '人员岗位' },
     { col: '出勤工时', desc: '当日出勤工时' },
     { col: '超过12.5h天数', desc: '统计周期内超过12.5h的天数' },
   ],
   workHoursLow: [
-    { col: '姓名', desc: '日工时≤8h人员' },
+    { col: '姓名', desc: '日工时&le;8h人员' },
     { col: '岗位', desc: '人员岗位' },
     { col: '出勤工时', desc: '当日出勤工时' },
     { col: '低于8h天数', desc: '统计周期内低于8h的天数' },
@@ -223,8 +223,8 @@ const METRIC_SPECS = [
       { col: '出勤工时', desc: '当日出勤工时' },
       { col: '数据日期', desc: '统计日期' },
     ],
-    formula: '触发占比 = 日工时>12.5h人数 / 在职人数 * 100%\n得分: <=10% 得 5 分; >10% 每多 1% 扣 1 分（四舍五入）\n最低 0 分',
-    notes: '仅统计当日出勤工时 >12.5h 的记录',
+    formula: '触发占比 = 日工时&gt;12.5h人数 / 在职人数 * 100%\n得分: <=10% 得 5 分; >10% 每多 1% 扣 1 分（四舍五入）\n最低 0 分',
+    notes: '仅统计当日出勤工时 &gt;12.5h 的记录',
     detailFields: DETAIL_FIELDS.workHoursHigh,
   },
   {
@@ -241,7 +241,7 @@ const METRIC_SPECS = [
       { col: '数据日期', desc: '统计日期' },
     ],
     formula: '每出现 1 人扣 1 分，满分 5 分，最低 0 分\nmax(0, 5 - 异常人数)',
-    notes: '仅统计当日出勤工时 ≤8h 的记录',
+    notes: '仅统计当日出勤工时 &le;8h 的记录',
     detailFields: DETAIL_FIELDS.workHoursLow,
   },
 ];
@@ -558,7 +558,7 @@ export default function MetricHelpPanel() {
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-slate-600">智能告警+数据校验：侧栏关键行动内嵌，恶化/改善/异常分组，变化>30%自动标黄</span>
+                  <span className="text-slate-600">智能告警+数据校验：侧栏关键行动内嵌，恶化/改善/异常分组，变化&gt;30%自动标黄</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
@@ -608,7 +608,7 @@ export default function MetricHelpPanel() {
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-slate-600">日工时低考核维度：出勤工时≤8h，每出现1人扣1分，满分5分封顶0分</span>
+                  <span className="text-slate-600">日工时低考核维度：出勤工时&le;8h，每出现1人扣1分，满分5分封顶0分</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
