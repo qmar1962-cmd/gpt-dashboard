@@ -125,7 +125,7 @@ export default function App() {
       {!isLoggedIn ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <div className="min-h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden p-6" id="bold-dashboard">
+        <div className="min-h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden px-6 pt-[64px] pb-6" id="bold-dashboard">
           {/* Vertical Intelligence Sidebar */}
           <nav className="w-16 h-full border-r border-slate-200 flex flex-col items-center justify-center bg-white">
             <div className="flex items-center gap-4 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
