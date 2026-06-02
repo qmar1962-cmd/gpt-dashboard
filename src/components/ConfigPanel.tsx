@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Settings, Save, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { clearConfigCache } from '../lib/dashboardConfig';
 
 const CONFIG_KEY = 'gpt_dashboard_config';
 
@@ -63,6 +64,7 @@ export default function ConfigPanel({ isOpen, onClose, centers, onConfigChange }
 
   const handleSave = () => {
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    clearConfigCache();
     onConfigChange(config);
     setSaved(true);
   };

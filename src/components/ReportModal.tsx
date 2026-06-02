@@ -88,12 +88,11 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
       const rows = report.overviewTable || [];
       const headers = ['中心', '得分', '管幅', '超目标', '非操', '效能异常', '绩效异常', '连续出勤', '长期未出勤', '日工时高', '日工时低'];
       const colWidths = [80, 50, 85, 85, 55, 55, 60, 60, 70, 70, 70];
-      // 非操标红阈值
-      const nonOpThresholds: Record<string, number> = {
-        '武汉':8,'郑州':8,'长沙':8,'漯河':8,'南昌':8,
-        '武昌':10,'荆州':10,'衡阳':10,'新乡':10,
-        '襄阳':12,'常德':12,'赣州':12,'横峰':12,'商丘':12,
-      };
+      // 非操标红阈值（从配置读取）
+      const nonOpThresholds: Record<string, number> = {};
+      rows.forEach(r => {
+        nonOpThresholds[r.centerName] = getNonopThreshold(getCenterClass(r.centerName));
+      });
       const tableWidth = colWidths.reduce((a, b) => a + b, 0);
       const rowHeight = 42, headerHeight = 36, titleHeight = 72, footerHeight = 28, padding = 4;
       const tableHeight = headerHeight + rows.length * rowHeight;

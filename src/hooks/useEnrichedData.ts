@@ -3,12 +3,11 @@
  */
 import { useMemo } from 'react';
 import { parseDate, beijingDate } from '../lib/dateUtils';
+import { getCenterClass, getScoringConfig, getSpanTargets } from '../lib/dashboardConfig';
 
-// ── 评分常量 ──
+// ── 评分常量（权重固定不变）──
 const SCORE =   { JOB: 25, SALARY: 15, ATT15: 25, ATT7: 25, WH_HIGH: 5,  WH_LOW: 5  } as const;
 const PENALTY = { JOB_PER: 5, SALARY_PCT: 3, ATT15_PCT: 5, ATT15_O30: 2, ATT7_PER: 2, WH_HIGH_PCT: 1 } as const;
-const THRESH =  { JOB_DEV: 10, SALARY_RATE: 3, ATT15_RATE: 3, WH_HIGH_RATE: 10 } as const;
-const SPAN =    { COMP_TGT: 25, LEAD_TGT: 35 } as const;
 
 // ── 中心名称别名 ──
 
@@ -69,17 +68,11 @@ function findCount(map: Map<string, number>, centerName: string, provinceName: s
 }
 
 // ── 各岗位配置标准计算（按部门）──
-const CENTER_CLASS: Record<string, string> = {
-  '武汉':'A','郑州':'A','长沙':'A','漯河':'A','南昌':'A',
-  '武昌':'B','荆州':'B','衡阳':'B','新乡':'B',
-  '襄阳':'C','常德':'C','赣州':'C','横峰':'C','商丘':'C',
-};
-
 interface StaffingDept { dept: string; standard: number; actual: number; }
 interface StaffingStandard { departments: StaffingDept[]; totalStandard: number; totalActual: number; posStandards: { pos: string; standard: number; rule: string }[]; }
 
 function computeStaffingStandard(centerName: string, rosterTotal: number, deptActual: Record<string, number>): StaffingStandard {
-  const cls = CENTER_CLASS[centerName] || 'B';
+  const cls = getCenterClass(centerName);
   const x = rosterTotal;
   const depts: StaffingDept[] = [];
 
@@ -106,7 +99,7 @@ function computeStaffingStandard(centerName: string, rosterTotal: number, deptAc
 
 // ── 岗位级配置标准(按各岗位配置标准.xlsx顺序) ──
 function getPosStandards(centerName: string, rosterTotal: number): { pos: string; standard: number; rule: string }[] {
-  const cls = CENTER_CLASS[centerName] || 'B'; const x = rosterTotal;
+  const cls = getCenterClass(centerName); const x = rosterTotal;
   const hrTier = x<=500?2:x<=800?3:x<=1100?4:x<=1400?5:x<=1700?6:7;
   const chefCount = x<=900?2:x<=1400?3:x<=1800?4:5;
   const hasBagSup = centerName === '武汉' || centerName === '漯河';
@@ -163,6 +156,8 @@ export function useEnrichedData(
   outsourcingData: Record<string, number> | null,
 ) {
   return useMemo(() => {
+    const cfg = getScoringConfig();
+    const span = getSpanTargets();
     const hasJob = rawDataState && rawDataState.length > 0;
     const hasSalary = salaryDataState && salaryDataState.length > 0;
     const hasAtt15 = attendance15DataState && attendance15DataState.length > 0;
@@ -189,7 +184,7 @@ export function useEnrichedData(
     // 聚合各维度数据
     const jobByCenterDate = aggregateByCenterDate(rawDataState || [], row => {
       const deviation = parseFloat(row['目标偏离（%）'] || row.targetDeviation || 0);
-      return deviation >= THRESH.JOB_DEV;
+      return deviation >= cfg.jobDeviationThreshold;
     });
 
     const salaryByCenterDate = new Map<string, number>();
@@ -350,7 +345,7 @@ export function useEnrichedData(
         const t2SalaryCount = findCount(salaryByCenterDate, center.name, province.province, t2DateStr);
         const t3SalaryCount = findCount(salaryByCenterDate, center.name, province.province, t3DateStr);
         const rateNum = t2SalaryBase > 0 ? (t2SalaryCount / t2SalaryBase) * 100 : 0;
-        const salaryScore = rateNum <= THRESH.SALARY_RATE ? SCORE.SALARY : Math.max(0, SCORE.SALARY - Math.round((rateNum - THRESH.SALARY_RATE) * PENALTY.SALARY_PCT));
+        const salaryScore = rateNum <= cfg.salaryCoverageThreshold ? SCORE.SALARY : Math.max(0, SCORE.SALARY - Math.round((rateNum - cfg.salaryCoverageThreshold) * PENALTY.SALARY_PCT));
         if (salaryDataState && salaryDataState.length > 0) {
           enrichedCenter.metrics.salary = salaryScore;
           enrichedCenter.prevSalaryCount = t3SalaryCount;
@@ -364,7 +359,7 @@ export function useEnrichedData(
         const t3Att15Count = findCount(att15ByCenterDate, center.name, province.province, t3DateStr);
         const att15RateNum = t2SalaryBase > 0 ? (t2Att15Count / t2SalaryBase) * 100 : 0;
         const t2Over30 = findCount(att15Over30ByCenterDate, center.name, province.province, t2DateStr);
-        const coverageDeduction = att15RateNum <= THRESH.ATT15_RATE ? 0 : Math.round((att15RateNum - THRESH.ATT15_RATE) * PENALTY.ATT15_PCT);
+        const coverageDeduction = att15RateNum <= cfg.att15RateThreshold ? 0 : Math.round((att15RateNum - cfg.att15RateThreshold) * PENALTY.ATT15_PCT);
         const att15Score = Math.max(0, SCORE.ATT15 - coverageDeduction - t2Over30 * PENALTY.ATT15_O30);
         if (attendance15DataState && attendance15DataState.length > 0) {
           enrichedCenter.metrics.att15 = att15Score;
@@ -390,7 +385,7 @@ export function useEnrichedData(
         const t2WhHighCount = findCount(whHighByCenterDate, center.name, province.province, t2DateStr);
         const t3WhHighCount = findCount(whHighByCenterDate, center.name, province.province, t3DateStr);
         const whHighRateNum = t2SalaryBase > 0 ? (t2WhHighCount / t2SalaryBase) * 100 : 0;
-        const whHighScore = whHighRateNum <= THRESH.WH_HIGH_RATE ? SCORE.WH_HIGH : Math.max(0, SCORE.WH_HIGH - Math.round(whHighRateNum - THRESH.WH_HIGH_RATE) * PENALTY.WH_HIGH_PCT);
+        const whHighScore = whHighRateNum <= cfg.whHighRateThreshold ? SCORE.WH_HIGH : Math.max(0, SCORE.WH_HIGH - Math.round(whHighRateNum - cfg.whHighRateThreshold) * PENALTY.WH_HIGH_PCT);
         if (workHoursHighDataState && workHoursHighDataState.length > 0) {
           enrichedCenter.metrics.workHoursHigh = whHighScore;
           enrichedCenter.whHighCount = t2WhHighCount;
@@ -419,8 +414,8 @@ export function useEnrichedData(
           enrichedCenter.rosterManagers = rosterStats.managers;
           enrichedCenter.compositeScope = mgrTotal > 0 ? parseFloat((workers / mgrTotal).toFixed(1)) : 0;
           enrichedCenter.leaderScope = rosterStats.leaders > 0 ? parseFloat((workers / rosterStats.leaders).toFixed(1)) : 0;
-          enrichedCenter.compOverTarget = parseFloat((workers / SPAN.COMP_TGT - mgrTotal).toFixed(1));
-          enrichedCenter.leadOverTarget = parseFloat((workers / SPAN.LEAD_TGT - rosterStats.leaders).toFixed(1));
+          enrichedCenter.compOverTarget = parseFloat((workers / span.composite - mgrTotal).toFixed(1));
+          enrichedCenter.leadOverTarget = parseFloat((workers / span.leader - rosterStats.leaders).toFixed(1));
         }
 
         // === 非操占比 ===

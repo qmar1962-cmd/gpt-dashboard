@@ -5,6 +5,7 @@ import { RegionalData } from '../types';
 import { cn, formatNumber } from '../lib/utils';
 import { getWeeklyEfficiencyDetail, WeeklyDetail, getWeeklySalaryDetail, SalaryWeeklyDetail, getWeeklyAttendance15Detail, Attendance15WeeklyDetail, getWeeklyAttendance7Detail, Attendance7WeeklyDetail, getWorkHoursHighDetail, WorkHoursHighWeeklyDetail, getWorkHoursLowDetail, WorkHoursLowWeeklyDetail } from '../lib/dataProcessor';
 import { loadCollaborationData } from '../lib/collaborationApi';
+import { loadDashboardConfig } from '../lib/dashboardConfig';
 import EfficiencyDetailModal from './EfficiencyDetailModal';
 import SalaryDetailModal from './SalaryDetailModal';
 import Attendance15DetailModal from './Attendance15DetailModal';
@@ -80,8 +81,10 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     }).catch(e => console.error('[DataTable] 加载中心元数据失败:', e));
   }, []);
 
-  // 获取中心负责人（优先使用协作数据）
+  // 获取中心负责人（优先配置 > 协作数据 > 默认值）
   const getCenterResponsible = (centerName: string, fallback?: string) => {
+    const cfg = loadDashboardConfig();
+    if (cfg.centerResponsibles[centerName]) return cfg.centerResponsibles[centerName];
     return centerMeta[centerName]?.['考勤负责人'] || fallback || '';
   };
   const [detailModal, setDetailModal] = useState<DetailModalState>({
