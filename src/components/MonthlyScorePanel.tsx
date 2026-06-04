@@ -113,7 +113,7 @@ export default function MonthlyScorePanel({
             <tr>
               <th className="text-left px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200 w-8"></th>
               <th className="text-left px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">中心</th>
-              <th className="text-right px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">月均分</th>
+              <th className="text-right px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">月度得分</th>
               {DIM_COLS.map(d => (
                 <th key={d.key} className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">{d.label}</th>
               ))}
@@ -165,8 +165,8 @@ function MonthlyRow({ row, isExempt, isOpen, onToggle }: {
         <td className={cn('px-4 py-2.5 font-bold whitespace-nowrap', isExempt ? 'text-slate-400' : 'text-slate-800')}>
           {row.centerName}
         </td>
-        <td className={cn('px-4 py-2.5 text-right font-black tabular-nums whitespace-nowrap', scoreColor(row.monthlyAvg, isExempt))}>
-          {row.monthlyAvg}
+        <td className={cn('px-4 py-2.5 text-right font-black tabular-nums whitespace-nowrap', scoreColor(row.monthlyScore, isExempt))}>
+          {row.monthlyScore}
         </td>
         {DIM_COLS.map(d => (
           <td key={d.key} className={cn('px-3 py-2.5 text-right tabular-nums whitespace-nowrap font-medium', dimScoreColor(row.dimensionAvgs[d.key], d.max, isExempt))}>

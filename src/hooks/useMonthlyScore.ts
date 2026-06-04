@@ -24,7 +24,7 @@ export interface DailyDetail {
 export interface CenterMonthlyScore {
   centerName: string;
   province: string;
-  monthlyAvg: number;
+  monthlyScore: number;
   dimensionAvgs: { job: number; salary: number; att15: number; att7: number; whHigh: number; whLow: number };
   dataDays: number;
   dailyDetails: DailyDetail[];
@@ -205,7 +205,7 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
               results.push({
                 centerName,
                 province: provinceName,
-                monthlyAvg: monthlyScores.total,
+                monthlyScore: monthlyScores.total,
                 dimensionAvgs: {
                   job: monthlyScores.job,
                   salary: monthlyScores.salary,
@@ -222,7 +222,7 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
           });
         });
 
-        results.sort((a, b) => b.monthlyAvg - a.monthlyAvg);
+        results.sort((a, b) => b.monthlyScore - a.monthlyScore);
 
         if (!cancelled) setData(results);
       } catch (err) {
