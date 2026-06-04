@@ -54,33 +54,78 @@ export interface DimensionScores {
 export function computeDailyScore(counts: DailyCounts, rosterTotal: number): DimensionScores {
   const cfg = getScoringConfig();
 
-  // 效能（满分25）：当日异常岗位数 × 5 扣分
   const job = Math.max(0, SCORE.JOB - counts.jobAbnormal * PENALTY.JOB_PER);
 
-  // 绩效（满分15）：覆盖率超过阈值后按比例扣分
   const salaryRate = rosterTotal > 0 ? (counts.salaryAbnormal / rosterTotal) * 100 : 0;
   const salary = salaryRate <= cfg.salaryCoverageThreshold
     ? SCORE.SALARY
     : Math.max(0, SCORE.SALARY - Math.round((salaryRate - cfg.salaryCoverageThreshold) * PENALTY.SALARY_PCT));
 
-  // 连续出勤（满分25）：覆盖率扣分 + 超30天扣分
   const att15Rate = rosterTotal > 0 ? (counts.att15Count / rosterTotal) * 100 : 0;
   const coverageDeduction = att15Rate <= cfg.att15RateThreshold
     ? 0
     : Math.round((att15Rate - cfg.att15RateThreshold) * PENALTY.ATT15_PCT);
   const att15 = Math.max(0, SCORE.ATT15 - coverageDeduction - counts.att15Over30 * PENALTY.ATT15_O30);
 
-  // 未出勤（满分25）：人数 × 2 扣分
   const att7 = Math.max(0, SCORE.ATT7 - counts.att7Count * PENALTY.ATT7_PER);
 
-  // 工时高（满分5）：覆盖率超过阈值后按比例扣分
   const whHighRate = rosterTotal > 0 ? (counts.whHighCount / rosterTotal) * 100 : 0;
   const whHigh = whHighRate <= cfg.whHighRateThreshold
     ? SCORE.WH_HIGH
     : Math.max(0, SCORE.WH_HIGH - Math.round(whHighRate - cfg.whHighRateThreshold) * PENALTY.WH_HIGH_PCT);
 
-  // 工时低（满分5）：人数直接扣分
   const whLow = Math.max(0, SCORE.WH_LOW - counts.whLowCount);
+
+  const total = job + salary + att15 + att7 + whHigh + whLow;
+  return { job, salary, att15, att7, whHigh, whLow, total };
+}
+
+// ── 月度评分常量 ──
+const M_SCORE = { JOB: 25, SALARY: 15, ATT15: 25, ATT7: 25, WH_HIGH: 5, WH_LOW: 5 } as const;
+const M_PENALTY = { JOB_PER: 5, SALARY_PCT: 2, SALARY_THRESHOLD: 1, ATT15_PCT: 5, ATT15_THRESHOLD: 3, ATT15_O30: 2, ATT7_PER: 2, WH_HIGH_PCT: 1, WH_HIGH_THRESHOLD: 10 } as const;
+
+/** 计算月度六维度得分（用户给定口径） */
+export function computeMonthlyScore(
+  monthJobCount: number,
+  monthSalaryCount: number,
+  monthAtt15AvgPerDay: number,
+  monthAtt15Over30Total: number,
+  monthAtt7DistinctPeople: number,
+  monthWhHighAvgPerDay: number,
+  monthWhLowAvgPerDay: number,
+  rosterTotal: number,
+  dataDays: number,
+): DimensionScores {
+  const base = rosterTotal || 1;
+  const days = dataDays || 1;
+
+  // 效能（满分25）：当月滚动至最后一天触发岗位数，每岗扣5分
+  const job = Math.max(0, M_SCORE.JOB - monthJobCount * M_PENALTY.JOB_PER);
+
+  // 绩效（满分15）：当月滚动至最后一天触发人数 / 算薪人数，≤1%不扣分，>1%每增1%扣2分
+  const salaryRate = (monthSalaryCount / base) * 100;
+  const salary = salaryRate <= M_PENALTY.SALARY_THRESHOLD
+    ? M_SCORE.SALARY
+    : Math.max(0, M_SCORE.SALARY - Math.round((salaryRate - M_PENALTY.SALARY_THRESHOLD) * M_PENALTY.SALARY_PCT));
+
+  // 连续出勤≥20天（满分25）：日均触发人数 / 日均在职人数，≤3%不扣分，>3%每增1%扣5分，≥30天每人扣2分
+  const att15Rate = (monthAtt15AvgPerDay / base) * 100;
+  const att15Ded = att15Rate <= M_PENALTY.ATT15_THRESHOLD
+    ? 0
+    : Math.round((att15Rate - M_PENALTY.ATT15_THRESHOLD) * M_PENALTY.ATT15_PCT);
+  const att15 = Math.max(0, M_SCORE.ATT15 - att15Ded - monthAtt15Over30Total * M_PENALTY.ATT15_O30);
+
+  // 连续未出勤≥15天（满分25）：每出现1人扣2分（不含病假工伤/跨组织架构）
+  const att7 = Math.max(0, M_SCORE.ATT7 - monthAtt7DistinctPeople * M_PENALTY.ATT7_PER);
+
+  // 日工时≥12.5h（满分5）：日均触发占比 >10%，每增1%扣1分
+  const whHighRate = (monthWhHighAvgPerDay / base) * 100;
+  const whHigh = whHighRate <= M_PENALTY.WH_HIGH_THRESHOLD
+    ? M_SCORE.WH_HIGH
+    : Math.max(0, M_SCORE.WH_HIGH - Math.round(whHighRate - M_PENALTY.WH_HIGH_THRESHOLD) * M_PENALTY.WH_HIGH_PCT);
+
+  // 日工时≤8h（满分5）：每出现1人扣1分
+  const whLow = Math.max(0, M_SCORE.WH_LOW - monthWhLowAvgPerDay);
 
   const total = job + salary + att15 + att7 + whHigh + whLow;
   return { job, salary, att15, att7, whHigh, whLow, total };

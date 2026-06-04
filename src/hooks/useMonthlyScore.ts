@@ -1,11 +1,11 @@
 /**
- * 月度计分 Hook — 独立从 IndexedDB 读取全量数据，逐日计算每月所有中心的六维度得分
+ * 月度计分 Hook — 按用户给定口径：滚动累计 / 日均 / 去重计数
  */
 import { useState, useEffect } from 'react';
 import { parseDate, getMonthDateRange, formatMonth, getDatesInRange } from '../lib/dateUtils';
 import { getScoringConfig } from '../lib/dashboardConfig';
 import {
-  computeDailyScore,
+  computeMonthlyScore,
   buildRosterMap,
   matchRosterStats,
   aggregateByCenterDate,
@@ -41,7 +41,6 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
     const load = async () => {
       setLoading(true);
       try {
-        // 1. 并发读取全部 6 种数据类型的全量数据（不受 7 天过滤影响）
         const [jobResult, salaryResult, att15Result, att7Result, rosterResult, whHighResult, whLowResult] =
           await Promise.all([
             idbGetRawData('job_performance'),
@@ -61,7 +60,6 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
         const whHighData = whHighResult?.rawData || [];
         const whLowData  = whLowResult?.rawData  || [];
 
-        // 2. 构建 中心→省区 映射（用于反查无省区列的数据）
         const centerToProvince = new Map<string, string>();
         displayData.forEach((province: any) => {
           (province.subCenters || []).forEach((center: any) => {
@@ -69,19 +67,16 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
           });
         });
 
-        // 3. 构建花名册映射
         const rosterByCenter = buildRosterMap(rosterData);
-
-        // 4. 构建各维度聚合映射（与 useEnrichedData 完全一致）
         const cfg = getScoringConfig();
 
-        // 效能：仅统计偏离 >= 阈值的行
+        // 效能：仅统计偏离 >= 阈值
         const jobByCenterDate = aggregateByCenterDate(jobData, row => {
           const deviation = parseFloat(row['目标偏离（%）'] || row.targetDeviation || 0);
           return deviation >= cfg.jobDeviationThreshold;
         });
 
-        // 绩效：统计全部行（每人一行）
+        // 绩效：每人一行
         const salaryByCenterDate = new Map<string, number>();
         salaryData.forEach((row: any) => {
           const center = row.中心 || row.中心名称 || '';
@@ -91,7 +86,7 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
           salaryByCenterDate.set(key, (salaryByCenterDate.get(key) || 0) + 1);
         });
 
-        // 连续出勤：>=20 天 / >30 天
+        // 连续出勤：≥20 天 / >30 天
         const att15ByCenterDate = new Map<string, number>();
         const att15Over30ByCenterDate = new Map<string, number>();
         att15Data.forEach((row: any) => {
@@ -105,30 +100,31 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
           if (days > 30) att15Over30ByCenterDate.set(key, (att15Over30ByCenterDate.get(key) || 0) + 1);
         });
 
-        // 未出勤：>=7 天
+        // 未出勤：≥15 天（月度口径）— 还要去重统计人头
         const att7ByCenterDate = new Map<string, number>();
+        const att7Distinct = new Map<string, Set<string>>(); // center_province → Set<empId>
         att7Data.forEach((row: any) => {
           const days = parseInt(row.连续未出勤天数 || 0) || 0;
-          if (days < 7) return;
+          if (days < 15) return;
           const center = row.中心 || row.中心名称 || '';
           const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
           const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
+          const cpKey = `${center}_${province}`;
           const key = `${center}_${province}_${dateStr}`;
           att7ByCenterDate.set(key, (att7ByCenterDate.get(key) || 0) + 1);
+          // 去重统计人头（用工号）
+          if (!att7Distinct.has(cpKey)) att7Distinct.set(cpKey, new Set());
+          const empId = row.工号 || row.empId || row.员工ID || '';
+          if (empId) att7Distinct.get(cpKey)!.add(String(empId));
         });
 
-        // 工时高：全部行
         const whHighByCenterDate = aggregateByCenterDate(whHighData, () => true);
-
-        // 工时低：全部行
         const whLowByCenterDate = aggregateByCenterDate(whLowData, () => true);
 
-        // 5. 获取月份日期范围
         const { first, last } = getMonthDateRange(monthOffset);
         setMonthLabel(formatMonth(monthOffset));
         const dates = getDatesInRange(first, last);
 
-        // 6. 逐中心逐日计算得分
         const results: CenterMonthlyScore[] = [];
 
         displayData.forEach((province: any) => {
@@ -136,15 +132,17 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
             const centerName = center.name;
             const provinceName = province.province;
             const rosterStats = matchRosterStats(centerName, provinceName, rosterByCenter);
-            const rosterTotal = rosterStats ? rosterStats.total : 0;
+            const rosterTotal = rosterStats ? rosterStats.total : 1;
 
             const dailyDetails: DailyDetail[] = [];
-            let jobSum = 0, salarySum = 0, att15Sum = 0, att7Sum = 0, whHighSum = 0, whLowSum = 0, totalSum = 0;
+            let jobSum = 0, salarySum = 0, att15Sum = 0, att15O30Sum = 0;
+            let att7Sum = 0, whHighSum = 0, whLowSum = 0;
             let dataDays = 0;
 
-            dates.forEach(dateStr => {
-              if (rosterTotal === 0) return;
+            const cpKey = `${centerName}_${provinceName}`;
+            const monthAtt7Distinct = att7Distinct.get(cpKey)?.size || 0;
 
+            dates.forEach(dateStr => {
               const counts: DailyCounts = {
                 date: dateStr,
                 jobAbnormal: findCount(jobByCenterDate, centerName, provinceName, dateStr),
@@ -156,30 +154,65 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
                 whLowCount: findCount(whLowByCenterDate, centerName, provinceName, dateStr),
               };
 
-              const scores = computeDailyScore(counts, rosterTotal);
-              dailyDetails.push({ date: dateStr, counts, scores });
-              jobSum += scores.job;
-              salarySum += scores.salary;
-              att15Sum += scores.att15;
-              att7Sum += scores.att7;
-              whHighSum += scores.whHigh;
-              whLowSum += scores.whLow;
-              totalSum += scores.total;
+              // 当日得分（仅用于明细展示，用日常公式）
+              const dailyScore = {
+                job: Math.max(0, 25 - counts.jobAbnormal * 5),
+                salary: (() => {
+                  const rate = rosterTotal > 0 ? (counts.salaryAbnormal / rosterTotal) * 100 : 0;
+                  return rate <= 3 ? 15 : Math.max(0, 15 - Math.round((rate - 3) * 3));
+                })(),
+                att15: (() => {
+                  const rate = rosterTotal > 0 ? (counts.att15Count / rosterTotal) * 100 : 0;
+                  const ded = rate <= 3 ? 0 : Math.round((rate - 3) * 5);
+                  return Math.max(0, 25 - ded - counts.att15Over30 * 2);
+                })(),
+                att7: Math.max(0, 25 - counts.att7Count * 2),
+                whHigh: (() => {
+                  const rate = rosterTotal > 0 ? (counts.whHighCount / rosterTotal) * 100 : 0;
+                  return rate <= 10 ? 5 : Math.max(0, 5 - Math.round(rate - 10));
+                })(),
+                whLow: Math.max(0, 5 - counts.whLowCount),
+              };
+              const dailyTotal = dailyScore.job + dailyScore.salary + dailyScore.att15 + dailyScore.att7 + dailyScore.whHigh + dailyScore.whLow;
+              const dailyDimScores: DimensionScores = { ...dailyScore, total: dailyTotal };
+
+              dailyDetails.push({ date: dateStr, counts, scores: dailyDimScores });
+              jobSum += counts.jobAbnormal;
+              salarySum += counts.salaryAbnormal;
+              att15Sum += counts.att15Count;
+              att15O30Sum += counts.att15Over30;
+              att7Sum += counts.att7Count;
+              whHighSum += counts.whHighCount;
+              whLowSum += counts.whLowCount;
               dataDays++;
             });
 
             if (dataDays > 0) {
+              const days = dataDays || 1;
+              // 月度总分用用户给定口径
+              const monthlyScores = computeMonthlyScore(
+                jobSum,              // 当月滚动总异常岗位数
+                salarySum,           // 当月滚动总绩效触发人次
+                att15Sum / days,     // 日均连续出勤触发人数
+                att15O30Sum,         // 全月超30天总人次
+                monthAtt7Distinct,   // 去重人头数(≥15天)
+                whHighSum / days,    // 日均工时高触发人数
+                whLowSum / days,     // 日均工时低触发人数
+                rosterTotal,
+                dataDays,
+              );
+
               results.push({
                 centerName,
                 province: provinceName,
-                monthlyAvg: parseFloat((totalSum / dataDays).toFixed(1)),
+                monthlyAvg: monthlyScores.total,
                 dimensionAvgs: {
-                  job: parseFloat((jobSum / dataDays).toFixed(1)),
-                  salary: parseFloat((salarySum / dataDays).toFixed(1)),
-                  att15: parseFloat((att15Sum / dataDays).toFixed(1)),
-                  att7: parseFloat((att7Sum / dataDays).toFixed(1)),
-                  whHigh: parseFloat((whHighSum / dataDays).toFixed(1)),
-                  whLow: parseFloat((whLowSum / dataDays).toFixed(1)),
+                  job: monthlyScores.job,
+                  salary: monthlyScores.salary,
+                  att15: monthlyScores.att15,
+                  att7: monthlyScores.att7,
+                  whHigh: monthlyScores.whHigh,
+                  whLow: monthlyScores.whLow,
                 },
                 dataDays,
                 dailyDetails,
@@ -189,7 +222,6 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
           });
         });
 
-        // 7. 按月均分降序排列
         results.sort((a, b) => b.monthlyAvg - a.monthlyAvg);
 
         if (!cancelled) setData(results);
