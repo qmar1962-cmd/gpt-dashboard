@@ -69,11 +69,12 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
         });
 
         const rosterByCenter = buildRosterMap(rosterData);
+        const cfgVal = getScoringConfig();
 
         // 效能：仅统计偏离 >= 阈值
         const jobByCenterDate = aggregateByCenterDate(jobData, row => {
           const deviation = parseFloat(row['目标偏离（%）'] || row.targetDeviation || 0);
-          return deviation >= cfg.jobDeviationThreshold;
+          return deviation >= cfgVal.jobDeviationThreshold;
         });
 
         // 绩效：每人一行
@@ -122,12 +123,11 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
 
         // 最后一天各中心的异常岗位名称统计
         const lastDayJobPositions = new Map<string, Map<string, number>>();
-        const cfg = getScoringConfig();
         jobData.forEach((row: any) => {
           const d = parseDate(row['数据日期'] || row.date || row.日期);
           if (d !== lastDate) return;
           const deviation = parseFloat(row['目标偏离（%）'] || row.targetDeviation || 0);
-          if (!(deviation >= cfg.jobDeviationThreshold)) return;
+          if (!(deviation >= cfgVal.jobDeviationThreshold)) return;
           const c = (row.中心 || row.中心名称 || '').trim();
           const p = (row.省区 || row.省区名称 || centerToProvince.get(c) || '').trim();
           const pos = (row.岗位名称 || row.岗位 || '').trim();
