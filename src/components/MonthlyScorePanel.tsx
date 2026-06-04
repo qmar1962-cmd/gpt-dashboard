@@ -108,7 +108,7 @@ export default function MonthlyScorePanel({
 
       {/* 汇总表格（横向滚动） */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-[11px] border-collapse">
+        <table className="w-full text-[11px] border-collapse table-fixed">
           <thead className="sticky top-0 bg-slate-50 z-[5]">
             <tr>
               <th className="text-left px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200 w-8"></th>
