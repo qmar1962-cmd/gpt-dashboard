@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays } from 'lucide-react';
+import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays, TrendingUp } from 'lucide-react';
 import AttendanceModule from './components/AttendanceModule';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -16,6 +16,7 @@ import SidePanel from './components/SidePanel';
 import ConfigPanel from './components/ConfigPanel';
 import DataManagerEnhanced from './components/DataManagerEnhanced';
 import ReportModal from './components/ReportModal';
+import MonthlyScorePanel from './components/MonthlyScorePanel';
 import MetricHelpPanel from './components/MetricHelpPanel';
 import ConfirmModal from './components/ConfirmModal';
 import { PERFORMANCE_DATA } from './constants';
@@ -28,6 +29,7 @@ import { useViewMode } from './hooks/useViewMode';
 import { useDataInit } from './hooks/useDataInit';
 import { useEnrichedData } from './hooks/useEnrichedData';
 import { useFilteredData } from './hooks/useFilteredData';
+import { useMonthlyScore } from './hooks/useMonthlyScore';
 
 export type Selection = {
   type: 'all' | 'region' | 'center';
@@ -62,6 +64,7 @@ export default function App() {
   const [selection, setSelection] = useState<Selection>({ type: 'all', id: null });
   const [reportOpen, setReportOpen] = useState(false);
   const [outsourcingData, setOutsourcingData] = useState<Record<string, number> | null>(null);
+  const [monthOffset, setMonthOffset] = useState(0);
 
   // 加载外包人数数据
   useEffect(() => {
@@ -79,6 +82,7 @@ export default function App() {
     outsourcingData,
   );
   const filteredData = useFilteredData(enrichedData, exemptCenters);
+  const { data: monthlyData, loading: monthlyLoading, monthLabel } = useMonthlyScore(monthOffset, displayData);
 
   const avgTotalScore = Math.round(filteredData.reduce((acc, curr) => acc + curr.totalScore, 0) / filteredData.length);
   const totalUnits = filteredData.length;
@@ -162,6 +166,17 @@ export default function App() {
               >
                 <CalendarDays size={18} />
               </button>
+              <button
+                onClick={() => safeSetViewMode('monthly')}
+                className={`p-3 rounded-lg transition-all flex items-center justify-center ${
+                  viewMode === 'monthly'
+                    ? 'bg-blue-600 text-white shadow-lg scale-110'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                title="月度计分"
+              >
+                <TrendingUp size={18} />
+              </button>
               {isAdminLogin && (
                 <button
                   onClick={() => safeSetViewMode('data')}
@@ -208,7 +223,20 @@ export default function App() {
             </header>
 
             <main className="flex-1 grid grid-cols-12 auto-rows-min overflow-visible">
-              {viewMode === 'data' ? (
+              {viewMode === 'monthly' ? (
+                <div className="col-span-12 h-full">
+                  <ErrorBoundary label="月度计分模块">
+                    <MonthlyScorePanel
+                      data={monthlyData}
+                      loading={monthlyLoading}
+                      monthLabel={monthLabel}
+                      monthOffset={monthOffset}
+                      onOffsetChange={setMonthOffset}
+                      exemptCenters={exemptCenters}
+                    />
+                  </ErrorBoundary>
+                </div>
+              ) : viewMode === 'data' ? (
                 <div className="col-span-12">
                   <DataManagerEnhanced onDataLoaded={handleDataLoaded} />
                 </div>

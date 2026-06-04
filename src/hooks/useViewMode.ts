@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { saveCollaborationData } from '../lib/collaborationApi';
 
-export type ViewPage = 'dashboard' | 'data' | 'attendance';
+export type ViewPage = 'dashboard' | 'data' | 'attendance' | 'monthly';
 
 export function useViewMode() {
   const [viewMode, setViewMode] = useState<ViewPage>('dashboard');

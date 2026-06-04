@@ -61,3 +61,74 @@ export function weekDateRange(days: number = 7): DaySlot[] {
   }
   return slots;
 }
+
+/** 7 天日期范围集合（T-2 往前推 days 天），用于快速过滤行 */
+export function recentDateSet(days: number = 7): Set<string> {
+  return new Set(weekDateRange(days).map(s => s.dateStr));
+}
+
+/** 过滤数组行：保留"数据日期"列在近 days 天范围内的行 */
+export function filterRowsByDate<T extends Record<string, any>>(rows: T[], days: number = 7): T[] {
+  if (!rows || rows.length === 0) return rows;
+  const dates = recentDateSet(days);
+  const dateCols = ['数据日期', '日期', 'date'];
+  return rows.filter(row => {
+    if (!row || typeof row !== 'object') return false;
+    for (const col of dateCols) {
+      const raw = row[col];
+      if (raw !== undefined && raw !== null && raw !== '') {
+        const d = parseDate(raw);
+        if (d && dates.has(d)) return true;
+      }
+    }
+    return false;
+  });
+}
+
+/** 获取 T-2 所在月的第一天和最后一天（YYYY-MM-DD），offset 用于月份偏移（0=当月，-1=上月） */
+export function getMonthDateRange(offset: number = 0): { first: string; last: string } {
+  const now = new Date();
+  const t2ms = now.getTime() + 8 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000;
+  const t2 = new Date(t2ms);
+
+  const year = t2.getUTCFullYear();
+  const month = t2.getUTCMonth() + offset;
+
+  const firstDay = new Date(Date.UTC(year, month, 1));
+  const lastDay = new Date(Date.UTC(year, month + 1, 0));
+
+  // last 不能超过 T-2
+  const t2DateStr = `${t2.getUTCFullYear()}-${String(t2.getUTCMonth() + 1).padStart(2, '0')}-${String(t2.getUTCDate()).padStart(2, '0')}`;
+  const lastDateStr = `${lastDay.getUTCFullYear()}-${String(lastDay.getUTCMonth() + 1).padStart(2, '0')}-${String(lastDay.getUTCDate()).padStart(2, '0')}`;
+  const cappedLast = lastDateStr <= t2DateStr ? lastDateStr : t2DateStr;
+
+  const firstDateStr = `${firstDay.getUTCFullYear()}-${String(firstDay.getUTCMonth() + 1).padStart(2, '0')}-${String(firstDay.getUTCDate()).padStart(2, '0')}`;
+  return { first: firstDateStr, last: cappedLast };
+}
+
+/** 格式化月份显示（如 "2026年5月"） */
+export function formatMonth(offset: number = 0): string {
+  const { first } = getMonthDateRange(offset);
+  const [y, m] = first.split('-');
+  return `${y}年${parseInt(m)}月`;
+}
+
+/** 获取 T-2 所在月的月份标签（用于限制"下月"按钮） */
+export function getT2MonthLabel(): string {
+  return formatMonth(0);
+}
+
+/** 生成 first 到 last 之间所有日期字符串（含首尾），如 ["2026-05-01", "2026-05-02", ...] */
+export function getDatesInRange(first: string, last: string): string[] {
+  const dates: string[] = [];
+  const [y1, m1, d1] = first.split('-').map(Number);
+  const [y2, m2, d2] = last.split('-').map(Number);
+  const start = new Date(Date.UTC(y1, m1 - 1, d1));
+  const end = new Date(Date.UTC(y2, m2 - 1, d2));
+  const current = new Date(start);
+  while (current <= end) {
+    dates.push(`${current.getUTCFullYear()}-${String(current.getUTCMonth() + 1).padStart(2, '0')}-${String(current.getUTCDate()).padStart(2, '0')}`);
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+  return dates;
+}

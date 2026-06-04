@@ -21,6 +21,7 @@ import {
 } from '../lib/database';
 import { loadDefaultData, hasExistingData } from '../lib/defaultDataLoader';
 import { mergeAndDedupe } from '../lib/dataMerge';
+import { filterRowsByDate } from '../lib/dateUtils';
 
 interface LoadingState {
   isLoading: boolean;
@@ -72,26 +73,26 @@ export function useDataInit() {
         setLoading({ isLoading: true, message: '正在读取存储...', progress: 65 });
 
         const salaryStored = await getSalaryRawData();
-        if (salaryStored?.rawData?.length) setSalaryDataState(salaryStored.rawData);
+        if (salaryStored?.rawData?.length) setSalaryDataState(filterRowsByDate(salaryStored.rawData));
 
         const att15Stored = await getAttendance15RawData();
-        if (att15Stored?.rawData?.length) setAttendance15DataState(att15Stored.rawData);
+        if (att15Stored?.rawData?.length) setAttendance15DataState(filterRowsByDate(att15Stored.rawData));
 
         const att7Stored = await getAttendance7RawData();
-        if (att7Stored?.rawData?.length) setAttendance7DataState(att7Stored.rawData);
+        if (att7Stored?.rawData?.length) setAttendance7DataState(filterRowsByDate(att7Stored.rawData));
 
         const rosterStored = await getRosterRawData();
         if (rosterStored?.rawData?.length) setRosterDataState(rosterStored.rawData);
 
         const whHighStored = await getWorkHoursHighRawData();
-        if (whHighStored?.rawData?.length) setWorkHoursHighDataState(whHighStored.rawData);
+        if (whHighStored?.rawData?.length) setWorkHoursHighDataState(filterRowsByDate(whHighStored.rawData));
 
         const whLowStored = await getWorkHoursLowRawData();
-        if (whLowStored?.rawData?.length) setWorkHoursLowDataState(whLowStored.rawData);
+        if (whLowStored?.rawData?.length) setWorkHoursLowDataState(filterRowsByDate(whLowStored.rawData));
 
         const rawStored = await getLatestRawData();
         if (rawStored?.rawData?.length) {
-          setRawDataState(rawStored.rawData);
+          setRawDataState(filterRowsByDate(rawStored.rawData));
           const rebuilt = buildFixedHuazhongData(rawStored.rawData, rawStored.dataType, '');
           if (rebuilt?.length) {
             setCustomData(rebuilt);
@@ -122,14 +123,14 @@ export function useDataInit() {
             getLatestRawData(),
           ]);
 
-          if (s2?.rawData?.length) setSalaryDataState(s2.rawData);
-          if (a152?.rawData?.length) setAttendance15DataState(a152.rawData);
-          if (a72?.rawData?.length) setAttendance7DataState(a72.rawData);
+          if (s2?.rawData?.length) setSalaryDataState(filterRowsByDate(s2.rawData));
+          if (a152?.rawData?.length) setAttendance15DataState(filterRowsByDate(a152.rawData));
+          if (a72?.rawData?.length) setAttendance7DataState(filterRowsByDate(a72.rawData));
           if (r2?.rawData?.length) setRosterDataState(r2.rawData);
-          if (h2?.rawData?.length) setWorkHoursHighDataState(h2.rawData);
-          if (l2?.rawData?.length) setWorkHoursLowDataState(l2.rawData);
+          if (h2?.rawData?.length) setWorkHoursHighDataState(filterRowsByDate(h2.rawData));
+          if (l2?.rawData?.length) setWorkHoursLowDataState(filterRowsByDate(l2.rawData));
           if (raw2?.rawData?.length) {
-            setRawDataState(raw2.rawData);
+            setRawDataState(filterRowsByDate(raw2.rawData));
             const rebuilt = buildFixedHuazhongData(raw2.rawData, raw2.dataType, '');
             if (rebuilt?.length) {
               setCustomData(rebuilt);
