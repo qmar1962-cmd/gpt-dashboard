@@ -42,8 +42,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     e.preventDefault();
     if (!validate()) return;
     setIsLoggingIn(true);
-    // 短暂延迟，让灯泡闪烁效果呈现
-    setTimeout(() => onLoginSuccess(name.trim(), empId.trim(), false), 600);
+    setIsLit(false); // 熄灯过渡
+    setTimeout(() => onLoginSuccess(name.trim(), empId.trim(), false), 800);
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -53,7 +53,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     const inputHash = await sha256(adminPassword.trim());
     if (inputHash !== ADMIN_HASH) { setAdminError('密码错误'); return; }
     setIsLoggingIn(true);
-    setTimeout(() => onLoginSuccess(name.trim(), empId.trim(), true), 600);
+    setIsLit(false); // 熄灯过渡
+    setTimeout(() => onLoginSuccess(name.trim(), empId.trim(), true), 800);
   };
 
   // 灯链拖拽：拉到阈值触发开灯
@@ -67,7 +68,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   };
 
   // 关灯（用于管理员重置）
-  const turnOff = () => { setIsLit(false); setIsLoggingIn(false); };
+  const turnOff = () => { setIsLit(false); setIsLoggingIn(false); dragY.set(0); };
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col items-center overflow-hidden select-none">

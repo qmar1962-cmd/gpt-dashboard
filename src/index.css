@@ -14,7 +14,7 @@
 
 @layer base {
   body {
-    @apply bg-white text-slate-900 antialiased;
+    @apply bg-[#0a0a0a] text-slate-900 antialiased;
   }
 }
 

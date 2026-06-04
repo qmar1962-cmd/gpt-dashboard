@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'motion/react';
 import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays, TrendingUp, Trash2 } from 'lucide-react';
 import AttendanceModule from './components/AttendanceModule';
 import Login from './components/Login';
@@ -140,7 +141,12 @@ export default function App() {
       {!isLoggedIn ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <div className="h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden px-6 pt-[64px] pb-6" id="bold-dashboard">
+        <motion.div
+          className="h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden px-6 pt-[64px] pb-6" id="bold-dashboard"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
           {/* Vertical Intelligence Sidebar */}
           <nav className="w-16 h-full border-r border-slate-200 flex flex-col items-center bg-white">
             <div className="flex items-center gap-4 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
@@ -339,7 +345,7 @@ export default function App() {
               workHoursLowData: workHoursLowDataState || undefined,
             }}
           />
-        </div>
+        </motion.div>
       )}
 
       <ConfirmModal
