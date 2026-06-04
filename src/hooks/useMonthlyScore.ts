@@ -100,22 +100,16 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
           if (days > 30) att15Over30ByCenterDate.set(key, (att15Over30ByCenterDate.get(key) || 0) + 1);
         });
 
-        // 未出勤：≥15 天（月度口径）— 还要去重统计人头
+        // 未出勤：≥15 天（月度口径，每日人次合计不去重）
         const att7ByCenterDate = new Map<string, number>();
-        const att7Distinct = new Map<string, Set<string>>(); // center_province → Set<empId>
         att7Data.forEach((row: any) => {
           const days = parseInt(row.连续未出勤天数 || 0) || 0;
           if (days < 15) return;
           const center = row.中心 || row.中心名称 || '';
           const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
           const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
-          const cpKey = `${center}_${province}`;
           const key = `${center}_${province}_${dateStr}`;
           att7ByCenterDate.set(key, (att7ByCenterDate.get(key) || 0) + 1);
-          // 去重统计人头（用工号）
-          if (!att7Distinct.has(cpKey)) att7Distinct.set(cpKey, new Set());
-          const empId = row.工号 || row.empId || row.员工ID || '';
-          if (empId) att7Distinct.get(cpKey)!.add(String(empId));
         });
 
         const whHighByCenterDate = aggregateByCenterDate(whHighData, () => true);
@@ -135,12 +129,11 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
             const rosterTotal = rosterStats ? rosterStats.total : 1;
 
             const dailyDetails: DailyDetail[] = [];
-            let jobSum = 0, salarySum = 0, att15Sum = 0, att15O30Sum = 0;
+            let att15Sum = 0, att15O30Sum = 0;
             let att7Sum = 0, whHighSum = 0, whLowSum = 0;
+            let lastDayJob = 0, lastDaySalary = 0;
             let dataDays = 0;
-
-            const cpKey = `${centerName}_${provinceName}`;
-            const monthAtt7Distinct = att7Distinct.get(cpKey)?.size || 0;
+            const lastDate = dates.length > 0 ? dates[dates.length - 1] : '';
 
             dates.forEach(dateStr => {
               const counts: DailyCounts = {
@@ -154,7 +147,7 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
                 whLowCount: findCount(whLowByCenterDate, centerName, provinceName, dateStr),
               };
 
-              // 当日得分（仅用于明细展示，用日常公式）
+              // 当日得分（明细展示用）
               const dailyScore = {
                 job: Math.max(0, 25 - counts.jobAbnormal * 5),
                 salary: (() => {
@@ -177,8 +170,11 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
               const dailyDimScores: DimensionScores = { ...dailyScore, total: dailyTotal };
 
               dailyDetails.push({ date: dateStr, counts, scores: dailyDimScores });
-              jobSum += counts.jobAbnormal;
-              salarySum += counts.salaryAbnormal;
+              // 最后一天数据（效能+绩效用）
+              if (dateStr === lastDate) {
+                lastDayJob = counts.jobAbnormal;
+                lastDaySalary = counts.salaryAbnormal;
+              }
               att15Sum += counts.att15Count;
               att15O30Sum += counts.att15Over30;
               att7Sum += counts.att7Count;
@@ -189,15 +185,14 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
 
             if (dataDays > 0) {
               const days = dataDays || 1;
-              // 月度总分用用户给定口径
               const monthlyScores = computeMonthlyScore(
-                jobSum,              // 当月滚动总异常岗位数
-                salarySum,           // 当月滚动总绩效触发人次
+                lastDayJob,          // 月底最后一天异常岗位数
+                lastDaySalary,       // 月底最后一天绩效触发人数
                 att15Sum / days,     // 日均连续出勤触发人数
                 att15O30Sum,         // 全月超30天总人次
-                monthAtt7Distinct,   // 去重人头数(≥15天)
-                whHighSum / days,    // 日均工时高触发人数
-                whLowSum / days,     // 日均工时低触发人数
+                att7Sum,             // 每日≥15天人次合计(不去重)
+                whHighSum / days,    // 日均工时高人数
+                whLowSum,            // 每日工时低人次合计(不去重)
                 rosterTotal,
                 dataDays,
               );

@@ -17,12 +17,12 @@ interface MonthlyScorePanelProps {
 }
 
 const DIM_COLS = [
-  { key: 'job' as const,     label: '效能',  max: 25 },
-  { key: 'salary' as const,  label: '绩效',  max: 15 },
-  { key: 'att15' as const,   label: '出勤',  max: 25 },
-  { key: 'att7' as const,    label: '未出勤', max: 25 },
-  { key: 'whHigh' as const,  label: '工时高', max: 5  },
-  { key: 'whLow' as const,   label: '工时低', max: 5  },
+  { key: 'job' as const,     label: '效能异常',  max: 25 },
+  { key: 'salary' as const,  label: '绩效异常',  max: 15 },
+  { key: 'att15' as const,   label: '连续出勤',  max: 25 },
+  { key: 'att7' as const,    label: '长期未出勤', max: 25 },
+  { key: 'whHigh' as const,  label: '日工时高', max: 5  },
+  { key: 'whLow' as const,   label: '日工时低', max: 5  },
 ];
 
 function scoreColor(s: number, exempt: boolean): string {
