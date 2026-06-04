@@ -75,6 +75,16 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  // 6 小时自动登出，强制重新加载数据
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const timer = setTimeout(() => {
+      console.log('[自动登出] 6 小时会话到期，强制重新登录');
+      handleLogout();
+    }, 6 * 60 * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [isLoggedIn, handleLogout]);
+
   // ── 派生数据 ──
   const displayData = customData && customData.length > 0 ? customData : PERFORMANCE_DATA;
   const enrichedData = useEnrichedData(
