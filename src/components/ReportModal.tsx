@@ -255,7 +255,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         </div>
 
         {/* 报告正文 */}
-        <div className="flex-1 overflow-auto px-6 py-5 space-y-5">
+        <div className="flex-1 overflow-auto px-6 py-3 space-y-3">
           {/* 执行摘要 */}
           <div className="p-4 bg-slate-900 text-white rounded-xl">
             <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">执行摘要</h3>
@@ -326,7 +326,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         </div>
 
         {/* 底部 */}
-        <div className="px-6 py-2.5 bg-slate-100 border-t border-slate-200 text-[10px] text-slate-400 text-right shrink-0">
+        <div className="px-6 py-2 bg-slate-100 border-t border-slate-200 text-[10px] text-slate-400 text-right shrink-0">
           由 GPT 数据通报系统自动生成 · {report.generatedAt}
         </div>
       </div>

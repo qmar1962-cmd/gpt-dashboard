@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, AlertCircle, ChevronDown } from 'lucide-react';
+import { X, TrendingUp, AlertCircle, ChevronDown, AlertTriangle, Check } from 'lucide-react';
 import { Attendance7WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
 import ConfirmModal from './ConfirmModal';
+import { DIM_COLORS } from '../lib/theme';
 
 // ── 未出勤原因选项 ──
 const REASON_OPTIONS = [
@@ -348,7 +349,7 @@ export default function Attendance7DetailModal({
                   <TrendingUp size={11} />
                   近7天连续未出勤趋势（T-2 = 今天 - 2天）
                   <span className="inline-flex items-center gap-1 ml-2">
-                    <span className="text-red-600">T-2: {currentCount} 人</span>
+                    <span className="text-violet-600">T-2: {currentCount} 人</span>
                     <span className="text-slate-300">/</span>
                     <span className="text-slate-500">T-3: {prevCount} 人</span>
                   </span>
@@ -376,7 +377,7 @@ export default function Attendance7DetailModal({
                       <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                         <span className={cn(
                           "text-[10px] font-black",
-                          day.abnormalCount > 0 ? "text-red-500" : "text-slate-300"
+                          day.abnormalCount > 0 ? "text-violet-500" : "text-slate-300"
                         )}>
                           {day.abnormalCount > 0 ? day.abnormalCount : '—'}
                         </span>
@@ -388,16 +389,16 @@ export default function Attendance7DetailModal({
                             className={cn(
                               "w-6 rounded-t-md transition-all",
                               day.abnormalCount > 0
-                                ? "bg-gradient-to-t from-red-500 to-red-400"
+                                ? "bg-gradient-to-t from-violet-500 to-violet-400"
                                 : "bg-slate-200",
-                              isLatest && day.abnormalCount > 0 && "ring-2 ring-red-300 ring-offset-1"
+                              isLatest && day.abnormalCount > 0 && "ring-2 ring-violet-300 ring-offset-1"
                             )}
                             style={{ alignSelf: 'flex-end' }}
                           />
                         </div>
                         <span className={cn(
                           "text-[9px] font-bold",
-                          isLatest ? "text-red-500 font-black" : "text-slate-400"
+                          isLatest ? "text-violet-500 font-black" : "text-slate-400"
                         )}>
                           {day.dateLabel}
                           {isLatest && <span className="ml-0.5 text-slate-300">T-2</span>}
@@ -422,7 +423,7 @@ export default function Attendance7DetailModal({
                     className={cn(
                       "rounded-lg border p-3 transition-all",
                       day.abnormalCount > 0
-                        ? "border-red-100 bg-red-50/30"
+                        ? "border-violet-100 bg-violet-50/30"
                         : "border-slate-100 bg-slate-50/30"
                     )}
                   >
@@ -431,7 +432,7 @@ export default function Attendance7DetailModal({
                       <div className="flex items-center gap-2">
                         <span className="text-[12px] font-black text-slate-700">{day.dateLabel}</span>
                         {day.abnormalCount > 0 ? (
-                          <span className="text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded">
+                          <span className="text-[9px] font-black bg-violet-500 text-white px-1.5 py-0.5 rounded">
                             {day.abnormalCount} 人
                           </span>
                         ) : (
@@ -446,7 +447,7 @@ export default function Attendance7DetailModal({
                     {day.abnormalCount > 0 ? (
                       <div className="space-y-1">
                         {/* 表头 */}
-                        <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 px-3 pb-1 border-b border-red-50">
+                        <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 px-3 pb-1 border-b border-violet-50">
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">姓名</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">岗位</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right w-20">未出勤天数</span>
@@ -459,11 +460,11 @@ export default function Attendance7DetailModal({
                           return (
                             <div
                               key={idx}
-                              className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-red-50 relative"
+                              className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-violet-50 relative"
                             >
                               {/* 姓名 */}
                               <div className="flex items-center gap-1.5 min-w-0">
-                                <AlertCircle size={10} className="text-red-400 flex-shrink-0" />
+                                <AlertCircle size={10} className="text-violet-400 flex-shrink-0" />
                                 <span className="text-[11px] font-bold text-slate-700 truncate">{detail.name}</span>
                               </div>
                               {/* 岗位 */}
@@ -559,11 +560,11 @@ export default function Attendance7DetailModal({
               </p>
               {hasUnsavedChanges ? (
                 <p className="text-[9px] text-amber-600 font-bold text-center mt-1 flex items-center justify-center gap-1">
-                  <span>⚠️ 有未保存的更改，关闭弹窗时会提示保存</span>
+                  <AlertTriangle size={12} /><span>有未保存的更改，关闭弹窗时会提示保存</span>
                 </p>
               ) : (
-                <p className="text-[9px] text-emerald-600 font-bold text-center mt-1">
-                  ✓ 已同步到远端，其他用户刷新即可看到
+                <p className="text-[9px] text-emerald-600 font-bold text-center mt-1 flex items-center justify-center gap-1">
+                  <Check size={12} />已同步到远端，其他用户刷新即可看到
                 </p>
               )}
             </div>

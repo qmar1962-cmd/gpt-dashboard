@@ -4,6 +4,7 @@ import { X, TrendingUp, User, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { SalaryWeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
+import { DIM_COLORS } from '../lib/theme';
 
 interface SalaryDetailModalProps {
   isOpen: boolean;
@@ -62,7 +63,7 @@ export default function SalaryDetailModal({
                   <TrendingUp size={11} />
                   近7天绩效异常趋势（T-2 = 今天 - 2天）
                   <span className="inline-flex items-center gap-1 ml-2">
-                    <span className="text-emerald-600">T-2: {currentCount} 人</span>
+                    <span className="text-amber-600">T-2: {currentCount} 人</span>
                     <span className="text-slate-300">/</span>
                     <span className="text-slate-500">T-3: {prevCount} 人</span>
                     {latestDay?.salaryCount && (
@@ -121,7 +122,7 @@ export default function SalaryDetailModal({
                         )}
                         <span className={cn(
                           "text-[10px] font-black",
-                          day.abnormalCount > 0 ? "text-orange-500" : "text-slate-300"
+                          day.abnormalCount > 0 ? "text-amber-500" : "text-slate-300"
                         )}>
                           {day.abnormalCount > 0 ? day.abnormalCount : '—'}
                         </span>
@@ -133,16 +134,16 @@ export default function SalaryDetailModal({
                             className={cn(
                               "w-6 rounded-t-md transition-all",
                               day.abnormalCount > 0
-                                ? "bg-gradient-to-t from-orange-500 to-amber-400"
+                                ? "bg-gradient-to-t from-amber-500 to-amber-400"
                                 : "bg-slate-200",
-                              isLatest && day.abnormalCount > 0 && "ring-2 ring-orange-300 ring-offset-1"
+                              isLatest && day.abnormalCount > 0 && "ring-2 ring-amber-300 ring-offset-1"
                             )}
                             style={{ alignSelf: 'flex-end' }}
                           />
                         </div>
                         <span className={cn(
                           "text-[9px] font-bold",
-                          isLatest ? "text-orange-500 font-black" : "text-slate-400"
+                          isLatest ? "text-amber-500 font-black" : "text-slate-400"
                         )}>
                           {day.dateLabel}
                           {isLatest && <span className="ml-0.5 text-slate-300">T-2</span>}
@@ -167,7 +168,7 @@ export default function SalaryDetailModal({
                     className={cn(
                       "rounded-lg border p-3 transition-all",
                       day.abnormalCount > 0
-                        ? "border-orange-100 bg-orange-50/30"
+                        ? "border-amber-100 bg-amber-50/30"
                         : "border-slate-100 bg-slate-50/30"
                     )}
                   >
@@ -175,7 +176,7 @@ export default function SalaryDetailModal({
                       <div className="flex items-center gap-2">
                         <span className="text-[12px] font-black text-slate-700">{day.dateLabel}</span>
                         {day.abnormalCount > 0 ? (
-                          <span className="text-[9px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded">
+                          <span className="text-[9px] font-black bg-amber-500 text-white px-1.5 py-0.5 rounded">
                             {day.abnormalCount} 人
                           </span>
                         ) : (
@@ -207,7 +208,7 @@ export default function SalaryDetailModal({
                     {day.abnormalCount > 0 ? (
                       <div className="space-y-1">
                         {/* 表头 */}
-                        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 px-3 pb-1 border-b border-orange-50">
+                        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 px-3 pb-1 border-b border-amber-50">
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">姓名</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right w-14">岗位</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right w-12">出勤系数</span>
@@ -219,10 +220,10 @@ export default function SalaryDetailModal({
                         {day.details.slice(0, 20).map((detail, idx) => (
                           <div
                             key={idx}
-                            className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-orange-50"
+                            className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-amber-50"
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <User size={10} className="text-orange-400 flex-shrink-0" />
+                              <User size={10} className="text-amber-400 flex-shrink-0" />
                               <span className="text-[11px] font-bold text-slate-700 truncate">{detail.name}</span>
                             </div>
                             <span className="text-[11px] text-slate-600 text-right w-14 truncate">{detail.jobName}</span>

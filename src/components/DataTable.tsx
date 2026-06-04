@@ -210,8 +210,8 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
               onClick={() => handleRegionClick(item)}
               className={cn(
                 "grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-slate-100 cursor-pointer group transition-colors duration-200",
-                currentSelection?.id === item.id ? "bg-slate-900 text-white shadow-[0_0_30px_rgba(0,0,0,0.2)] z-20" :
-                expandedRows[item.id] ? "bg-white shadow-[0_0_25px_rgba(0,0,0,0.03)] z-10" : "bg-white hover:bg-slate-50/50"
+                currentSelection?.id === item.id ? "bg-slate-900 text-white shadow-lg z-20" :
+                expandedRows[item.id] ? "bg-white shadow-sm z-10" : "bg-white hover:bg-slate-50/50"
               )}
             >
               <div className={cn(

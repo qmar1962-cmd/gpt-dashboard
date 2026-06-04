@@ -4,6 +4,7 @@ import { X, TrendingUp, AlertTriangle, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
+import { DIM_COLORS } from '../lib/theme';
 
 interface EfficiencyDetailModalProps {
   isOpen: boolean;
@@ -59,7 +60,7 @@ export default function EfficiencyDetailModal({
                   <TrendingUp size={11} />
                   近7天效能异常趋势（T-2 = 今天 - 2天）
                   <span className="inline-flex items-center gap-1 ml-2">
-                    <span className="text-emerald-600">T-2: {currentCount} 个</span>
+                    <span className="text-red-600">T-2: {currentCount} 个</span>
                     <span className="text-slate-300">/</span>
                     <span className="text-slate-500">T-3: {prevCount} 个</span>
                   </span>

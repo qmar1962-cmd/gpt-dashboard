@@ -120,8 +120,8 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             <button
               type="button"
               onClick={handleAdminLogin}
-              className="text-center py-2.5 px-8 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-none transition-all"
-              style={{ marginTop: '0.75em', backgroundColor: '#b45309' }}
+              className="text-center py-2.5 px-8 rounded-lg bg-amber-700 text-white text-sm font-bold hover:bg-amber-800 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-none transition-all"
+              style={{ marginTop: '0.75em' }}
             >
               管理员登录
             </button>

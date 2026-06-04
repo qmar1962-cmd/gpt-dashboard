@@ -3,6 +3,7 @@ import { X, TrendingUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '../lib/utils';
 import { idbGetRawData } from '../lib/database';
+import { DIM_COLORS } from '../lib/theme';
 
 interface Props {
   centerName: string;
@@ -12,12 +13,12 @@ interface Props {
 }
 
 const DIMS = [
-  { key: 'job', label: '效能异常', color: '#ef4444', type: 'job_performance', abnormal: true },
-  { key: 'salary', label: '绩效异常', color: '#f59e0b', type: 'salary_performance', abnormal: false },
-  { key: 'att15', label: '连续出勤≥15天', color: '#10b981', type: 'attendance_15days', abnormal: false },
-  { key: 'att7', label: '长期未出勤≥7天', color: '#8b5cf6', type: 'attendance_7days', abnormal: false },
-  { key: 'whHigh', label: '日工时高>12.5h', color: '#f97316', type: 'work_hours_high', abnormal: false },
-  { key: 'whLow', label: '日工时低≤8h', color: '#06b6d4', type: 'work_hours_low', abnormal: false },
+  { key: 'job',    label: DIM_COLORS.job.label,    color: DIM_COLORS.job.hex,    type: 'job_performance',      abnormal: true },
+  { key: 'salary', label: DIM_COLORS.salary.label, color: DIM_COLORS.salary.hex, type: 'salary_performance',    abnormal: false },
+  { key: 'att15',  label: '连续出勤≥15天',          color: DIM_COLORS.att15.hex,  type: 'attendance_15days',      abnormal: false },
+  { key: 'att7',   label: '长期未出勤≥7天',          color: DIM_COLORS.att7.hex,   type: 'attendance_7days',       abnormal: false },
+  { key: 'whHigh', label: '日工时高>12.5h',           color: DIM_COLORS.whHigh.hex, type: 'work_hours_high',         abnormal: false },
+  { key: 'whLow',  label: '日工时低≤8h',             color: DIM_COLORS.whLow.hex,  type: 'work_hours_low',          abnormal: false },
 ];
 
 const DAY_OPTIONS = [7, 14, 30, 60, 999];

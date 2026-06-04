@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Zap, FileText, AlertTriangle, TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { DIM_COLORS } from '../lib/theme';
 
 interface Props {
   selection: any;
@@ -13,12 +14,12 @@ interface Props {
 }
 
 const DIMS = [
-  { key: 'job', label: '效能异常', color: '#ef4444', maxScore: 25 },
-  { key: 'salary', label: '绩效异常', color: '#f59e0b', maxScore: 15 },
-  { key: 'att15', label: '连续出勤', color: '#3b82f6', maxScore: 25 },
-  { key: 'att7', label: '长期未出勤', color: '#6366f1', maxScore: 25 },
-  { key: 'whHigh', label: '日工时高', color: '#f59e0b', maxScore: 5 },
-  { key: 'whLow', label: '日工时低', color: '#3b82f6', maxScore: 5 },
+  { key: 'job',    label: DIM_COLORS.job.label,    color: DIM_COLORS.job.hex,    maxScore: 25 },
+  { key: 'salary', label: DIM_COLORS.salary.label, color: DIM_COLORS.salary.hex, maxScore: 15 },
+  { key: 'att15',  label: DIM_COLORS.att15.label,  color: DIM_COLORS.att15.hex,  maxScore: 25 },
+  { key: 'att7',   label: DIM_COLORS.att7.label,   color: DIM_COLORS.att7.hex,   maxScore: 25 },
+  { key: 'whHigh', label: DIM_COLORS.whHigh.label, color: DIM_COLORS.whHigh.hex, maxScore: 5 },
+  { key: 'whLow',  label: DIM_COLORS.whLow.label,  color: DIM_COLORS.whLow.hex,  maxScore: 5 },
 ];
 
 export default function SidePanel({ selection, data, filteredData, exemptCenters, onOpenReport, onResetSelection }: Props) {
@@ -171,7 +172,7 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
     <div className="flex flex-col h-full bg-white border-l border-slate-200">
       {/* 综合总览 */}
       <div className="p-5 border-b border-slate-100">
-        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">
           {selection.type === 'all' ? '全区综合总览' : selection.type === 'center' ? overview?.province + ' · ' + (selection.label || '') : selection.label || '综合总览'}
         </span>
 
@@ -179,14 +180,14 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
           <div className="mt-3 space-y-2">
             {/* 得分大数 */}
             <div className="flex items-end justify-between">
-              <span className="text-[10px] text-slate-400">综合得分</span>
+              <span className="text-[11px] text-slate-500">综合得分</span>
               <span className={cn("text-2xl font-black tabular-nums", overview.score >= 80 ? "text-emerald-600" : overview.score >= 60 ? "text-blue-600" : overview.score >= 40 ? "text-amber-600" : "text-red-600")}>
                 {overview.score}
               </span>
             </div>
 
             {/* KPI 网格 */}
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pt-1 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 pt-2 border-t border-slate-100">
               <KPI label="非操占比" value={overview.nonOpRatio + '%'} />
               <KPI label="效能异常" value={overview.abnormalCount + '个'} warn={overview.abnormalCount >= 3} />
               <KPI label="绩效异常" value={overview.salaryCount + '人'} sub={overview.salaryCoverage + '%'} />
@@ -204,7 +205,7 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
 
       {/* 生成通报 */}
       {onOpenReport && (
-        <div className="px-5 pt-3">
+        <div className="px-5 pt-2">
           <button onClick={onOpenReport} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-[11px] font-bold hover:bg-slate-800 transition-colors">
             <FileText size={13} />生成通报报告
           </button>
@@ -212,22 +213,22 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
       )}
 
       {/* 底部对齐：维度评分 → 关键行动 */}
-      <div className="mt-auto">
+      <div>
         {/* 维度得分条 */}
         {overview && (
           <div className="px-5 py-3 border-t border-slate-100">
-            <div className="space-y-1.5">
+            <div className="space-y-2.5">
               {dimScores.map(dim => (
                 <div key={dim.key} className="flex items-center gap-2">
-                  <span className="text-[9px] text-slate-500 w-16 shrink-0">{dim.label}</span>
-                  <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <span className="text-[11px] text-slate-600 w-16 shrink-0">{dim.label}</span>
+                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div className="h-full rounded-full" style={{ backgroundColor: dim.color }}
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.max(2, (dim.score / dim.maxScore) * 100)}%` }}
                       transition={{ duration: 0.5, ease: 'easeOut' }}
                     />
                   </div>
-                  <span className="text-[9px] font-bold tabular-nums w-8 text-right" style={{ color: dim.color }}>{dim.score}</span>
+                  <span className="text-[11px] font-bold tabular-nums w-8 text-right" style={{ color: dim.color }}>{dim.score}</span>
                 </div>
               ))}
             </div>
@@ -236,30 +237,30 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
 
         {/* 关键行动 + 告警 */}
         {(actions.length > 0 || hasAlerts) && (
-          <div className="px-5 py-3 border-t border-slate-100">
+          <div className="px-5 py-4 border-t border-slate-100">
             <div className="flex items-center gap-2 mb-3">
               <Zap size={13} className="text-blue-500 fill-blue-500" />
-              <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">关键行动</span>
+              <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">关键行动</span>
               {hasAlerts && (
-                <span className={cn("ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full", total >= 5 ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600")}>
+                <span className={cn("ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full", total >= 5 ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600")}>
                   {total} 项关注
                 </span>
               )}
             </div>
             {actions.map((a, i) => (
-              <div key={i} className="flex items-start gap-2 text-[11px] text-slate-700 leading-relaxed mb-2">
+              <div key={i} className="flex items-start gap-2 text-[12px] text-slate-700 leading-relaxed mb-2.5">
                 <span className="text-blue-400 font-bold mt-0.5 shrink-0">{i + 1}.</span>
                 <span>{a}</span>
               </div>
             ))}
             {hasAlerts && (
               <>
-                <button onClick={() => setAlertsOpen(!alertsOpen)} className="flex items-center gap-1.5 text-[10px] text-slate-400 hover:text-slate-600 transition-colors">
+                <button onClick={() => setAlertsOpen(!alertsOpen)} className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-slate-600 transition-colors">
                   {alertsOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                   {alertsOpen ? '收起' : `展开详情 · ${worsen}恶化 ${improve}改善 ${warnings.length}校验`}
                 </button>
                 {alertsOpen && (
-                  <div className="mt-3 space-y-2.5 max-h-64 overflow-y-auto text-[10px] leading-relaxed">
+                  <div className="mt-3 space-y-3 max-h-64 overflow-y-auto text-[11px] leading-relaxed">
                     {alerts.filter(a => a.dir === 'up' && a.type !== '得分↓').length > 0 && (
                       <div>
                         <div className="flex items-center gap-1 mb-1 text-red-500">
@@ -322,9 +323,9 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
 function KPI({ label, value, sub, warn }: { label: string; value: string | number; sub?: string; warn?: boolean }) {
   return (
     <div className="flex flex-col">
-      <span className="text-[8px] text-slate-400 uppercase tracking-wider">{label}</span>
-      <span className={cn("text-[12px] font-bold tabular-nums leading-tight", warn ? "text-red-500" : "text-slate-800")}>{value}</span>
-      {sub && <span className="text-[9px] text-slate-400">{sub}</span>}
+      <span className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</span>
+      <span className={cn("text-[13px] font-bold tabular-nums leading-tight", warn ? "text-red-500" : "text-slate-800")}>{value}</span>
+      {sub && <span className="text-[10px] text-slate-400">{sub}</span>}
     </div>
   );
 }

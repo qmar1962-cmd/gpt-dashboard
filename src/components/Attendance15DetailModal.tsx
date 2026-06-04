@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, Check, Edit3, User } from 'lucide-react';
+import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, Check, Edit3, User, AlertTriangle } from 'lucide-react';
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
+import { DIM_COLORS } from '../lib/theme';
 import { loadCollaborationData, saveCollaborationData } from '../lib/collaborationApi';
 import { idbGetRawData } from '../lib/database';
 import ConfirmModal from './ConfirmModal';
@@ -633,7 +634,7 @@ export default function Attendance15DetailModal({
                   <TrendingUp size={11} />
                   近7天连续出勤趋势（T-2 = 今天 - 2天）
                   <span className="inline-flex items-center gap-1 ml-2">
-                    <span className="text-emerald-600">T-2: {currentCount} 人</span>
+                    <span className="text-blue-600">T-2: {currentCount} 人</span>
                     <span className="text-slate-300">/</span>
                     <span className="text-slate-500">T-3: {prevCount} 人</span>
                   </span>
@@ -830,11 +831,11 @@ export default function Attendance15DetailModal({
               </p>
               {hasUnsavedChanges ? (
                 <p className="text-[9px] text-amber-600 font-bold text-center mt-1 flex items-center justify-center gap-1">
-                  <span>⚠️ 有未保存的更改，关闭弹窗时会提示保存</span>
+                  <AlertTriangle size={12} /><span>有未保存的更改，关闭弹窗时会提示保存</span>
                 </p>
               ) : (
-                <p className="text-[9px] text-emerald-600 font-bold text-center mt-1">
-                  ✓ 已同步到远端，其他用户刷新即可看到
+                <p className="text-[9px] text-emerald-600 font-bold text-center mt-1 flex items-center justify-center gap-1">
+                  <Check size={12} />已同步到远端，其他用户刷新即可看到
                 </p>
               )}
             </div>

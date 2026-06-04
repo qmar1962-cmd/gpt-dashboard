@@ -120,14 +120,14 @@ export default function MonthlyScorePanel({
         <table className="w-full text-[11px] border-collapse table-fixed">
           <thead className="sticky top-0 bg-slate-50 z-[5]">
             <tr>
-              <th className="text-left px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200 w-8"></th>
-              <th className="text-left px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">中心</th>
-              <th className="text-right px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">排名得分</th>
-              <th className="text-right px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">月度得分</th>
+              <th className="text-left px-2 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'3%'}}></th>
+              <th className="text-left px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>中心</th>
+              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>排名得分</th>
+              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>月度得分</th>
               {DIM_COLS.map(d => (
-                <th key={d.key} className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">{d.label}</th>
+                <th key={d.key} className="text-right px-2 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>{d.label}</th>
               ))}
-              <th className="text-right px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">数据天数</th>
+              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>数据天数</th>
             </tr>
           </thead>
           <tbody>

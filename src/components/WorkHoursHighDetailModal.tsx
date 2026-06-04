@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, TrendingUp, Clock, ChevronDown } from 'lucide-react';
 import { WorkHoursHighWeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
+import { DIM_COLORS } from '../lib/theme';
 
 interface WorkHoursHighDetailModalProps {
   isOpen: boolean;
@@ -63,7 +64,7 @@ export default function WorkHoursHighDetailModal({
                   <TrendingUp size={11} />
                   近7天日工时高趋势（T-2 = 今天 - 2天）
                   <span className="inline-flex items-center gap-1 ml-2">
-                    <span className="text-red-600">T-2: {currentCount} 人</span>
+                    <span className="text-orange-600">T-2: {currentCount} 人</span>
                     <span className="text-slate-300">/</span>
                     <span className="text-slate-500">T-3: {prevCount} 人</span>
                   </span>
@@ -92,7 +93,7 @@ export default function WorkHoursHighDetailModal({
                         {/* 数值标签 */}
                         <span className={cn(
                           "text-[10px] font-black",
-                          day.abnormalCount > 0 ? "text-red-500" : "text-slate-300"
+                          day.abnormalCount > 0 ? "text-orange-500" : "text-slate-300"
                         )}>
                           {day.abnormalCount > 0 ? day.abnormalCount : '—'}
                         </span>
@@ -105,9 +106,9 @@ export default function WorkHoursHighDetailModal({
                             className={cn(
                               "w-6 rounded-t-md transition-all",
                               day.abnormalCount > 0
-                                ? "bg-gradient-to-t from-red-500 to-red-400"
+                                ? "bg-gradient-to-t from-orange-500 to-orange-400"
                                 : "bg-slate-200",
-                              isLatest && day.abnormalCount > 0 && "ring-2 ring-red-300 ring-offset-1"
+                              isLatest && day.abnormalCount > 0 && "ring-2 ring-orange-300 ring-offset-1"
                             )}
                             style={{ alignSelf: 'flex-end' }}
                           />
@@ -115,7 +116,7 @@ export default function WorkHoursHighDetailModal({
                         {/* 日期标签 */}
                         <span className={cn(
                           "text-[9px] font-bold",
-                          isLatest ? "text-red-500 font-black" : "text-slate-400"
+                          isLatest ? "text-orange-500 font-black" : "text-slate-400"
                         )}>
                           {day.dateLabel}
                           {isLatest && <span className="ml-0.5 text-slate-300">T-2</span>}
@@ -140,7 +141,7 @@ export default function WorkHoursHighDetailModal({
                     className={cn(
                       "rounded-lg border p-3 transition-all",
                       day.abnormalCount > 0
-                        ? "border-red-100 bg-red-50/30"
+                        ? "border-orange-100 bg-orange-50/30"
                         : "border-slate-100 bg-slate-50/30"
                     )}
                   >
@@ -149,7 +150,7 @@ export default function WorkHoursHighDetailModal({
                       <div className="flex items-center gap-2">
                         <span className="text-[12px] font-black text-slate-700">{day.dateLabel}</span>
                         {day.abnormalCount > 0 ? (
-                          <span className="text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded">
+                          <span className="text-[9px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded">
                             {day.abnormalCount} 人
                           </span>
                         ) : (
@@ -164,7 +165,7 @@ export default function WorkHoursHighDetailModal({
                     {day.abnormalCount > 0 ? (
                       <div className="space-y-1">
                         {/* 表头 */}
-                        <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 px-3 pb-1 border-b border-red-50">
+                        <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 px-3 pb-1 border-b border-orange-50">
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">姓名</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">岗位</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right w-20">出勤工时</span>
@@ -174,11 +175,11 @@ export default function WorkHoursHighDetailModal({
                         {day.details.slice(0, 20).map((detail, idx) => (
                           <div
                             key={idx}
-                            className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-red-50"
+                            className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-orange-50"
                           >
                             {/* 姓名 */}
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <Clock size={10} className="text-red-400 flex-shrink-0" />
+                              <Clock size={10} className="text-orange-400 flex-shrink-0" />
                               <span className="text-[11px] font-bold text-slate-700 truncate">{detail.name}</span>
                             </div>
                             {/* 岗位 */}
