@@ -355,7 +355,7 @@ export default function MetricHelpPanel() {
       <AnimateWrapper isOpen={isOpen} onClose={() => setIsOpen(false)}>
         <div className="flex flex-col h-full">
           {/* 头部 */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center justify-between pb-4 border-b border-[#e8e2d9] shrink-0">
             <div>
               <h3 className="text-sm font-black text-slate-900 tracking-tight">指标口径说明</h3>
               <p className="text-[10px] text-slate-400 mt-0.5">数据来源 / 取数字段 / 计算规则</p>
@@ -364,7 +364,7 @@ export default function MetricHelpPanel() {
           </div>
 
           {/* 章节导航 */}
-          <div className="flex gap-1 py-3 border-b border-slate-100 overflow-x-auto shrink-0">
+          <div className="flex gap-1 py-3 border-b border-[#e8e2d9] overflow-x-auto shrink-0">
             {SECTIONS.map(sec => (
               <button
                 key={sec.id}
@@ -373,7 +373,7 @@ export default function MetricHelpPanel() {
                   "flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors",
                   activeSection === sec.id
                     ? "bg-slate-900 text-white"
-                    : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                    : "bg-[#f0ebe3] text-slate-500 hover:bg-slate-100"
                 )}
               >
                 {sec.icon}
@@ -399,7 +399,7 @@ export default function MetricHelpPanel() {
       <AnimateWrapper isOpen={isManualOpen} onClose={() => setIsManualOpen(false)}>
         <div className="flex flex-col h-full">
           {/* 头部 */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center justify-between pb-4 border-b border-[#e8e2d9] shrink-0">
             <div>
               <h3 className="text-sm font-black text-slate-900 tracking-tight">版本修订历史</h3>
               <p className="text-[10px] text-slate-400 mt-0.5">功能更新 / 修复记录 / 版本说明</p>
@@ -800,7 +800,7 @@ export default function MetricHelpPanel() {
             </div>
 
             {/* V1.0 - 2026-05-15 */}
-            <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+            <div className="bg-[#f0ebe3] rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">V1.0</span>
                 <span className="text-[9px] text-slate-400">2026-05-15</span>
@@ -832,11 +832,11 @@ function OverviewSection() {
   return (
     <div className="space-y-5">
       {/* 日期概念 */}
-      <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+      <div className="bg-[#f0ebe3] rounded-lg p-3 space-y-2">
         <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider">日期概念</div>
         <div className="grid grid-cols-3 gap-1.5">
           {DATE_CONCEPTS.map(dc => (
-            <div key={dc.term} className="bg-white rounded-md px-2 py-1.5 border border-slate-100">
+            <div key={dc.term} className="bg-[#faf7f2] rounded-md px-2 py-1.5 border border-[#e8e2d9]">
               <span className="font-mono font-black text-[11px] text-slate-800">{dc.term}</span>
               <p className="text-[9px] text-slate-400 mt-0.5 leading-tight">{dc.desc}</p>
             </div>
@@ -849,7 +849,7 @@ function OverviewSection() {
         <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider">数据源总览（9种上传类型）</div>
         <div className="grid gap-1">
           {DATA_SOURCES.map(ds => (
-            <div key={ds.id} className="bg-slate-50 rounded-md px-3 py-2 flex items-center gap-3">
+            <div key={ds.id} className="bg-[#f0ebe3] rounded-md px-3 py-2 flex items-center gap-3">
               <span className="font-mono font-bold text-[10px] text-slate-700 min-w-[140px]">{ds.name}</span>
               <span className="text-[9px] text-slate-400">{ds.rows}</span>
               <span className="ml-auto text-[8px] text-slate-300 font-mono">{ds.dedup}</span>
@@ -882,10 +882,10 @@ function OperationSection() {
         <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-wider"><FileSpreadsheet size={11} /> 文件命名规范</div>
         <div className="grid gap-1">
           {OPERATION_SPEC.naming.map(n => (
-            <div key={n.type} className="bg-slate-50 rounded-md px-3 py-2 space-y-1">
+            <div key={n.type} className="bg-[#f0ebe3] rounded-md px-3 py-2 space-y-1">
               <span className="text-[10px] font-bold text-slate-700">{n.type}</span>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-100">{n.pattern}</span>
+                <span className="text-[9px] font-mono text-slate-500 bg-[#faf7f2] px-1.5 py-0.5 rounded border border-[#e8e2d9]">{n.pattern}</span>
                 <span className="text-[8px] text-slate-400">例: {n.example}</span>
               </div>
             </div>
@@ -929,7 +929,7 @@ function OperationSection() {
         <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-wider"><Clock size={11} /> 更新频率</div>
         <div className="grid gap-1">
           {OPERATION_SPEC.updateFreq.map(u => (
-            <div key={u.item} className="bg-slate-50 rounded-md px-3 py-2 flex items-center gap-2">
+            <div key={u.item} className="bg-[#f0ebe3] rounded-md px-3 py-2 flex items-center gap-2">
               <span className="text-[10px] font-bold text-slate-700 flex-1">{u.item}</span>
               <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">{u.freq}</span>
               <span className="text-[9px] text-slate-400">{u.note}</span>
@@ -968,9 +968,9 @@ function MetricsSection() {
             <span className="font-bold text-xs text-slate-900">{spec.name}</span>
             <FileSpreadsheet size={11} className="text-slate-300 ml-auto" />
           </div>
-          <div className="bg-slate-50 rounded-lg p-3 mb-2 space-y-2">
+          <div className="bg-[#f0ebe3] rounded-lg p-3 mb-2 space-y-2">
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
-            <div className="text-xs font-mono font-semibold text-slate-800 bg-white rounded-md px-2 py-1.5 border border-slate-100">{spec.sourceTable}</div>
+            <div className="text-xs font-mono font-semibold text-slate-800 bg-[#faf7f2] rounded-md px-2 py-1.5 border border-[#e8e2d9]">{spec.sourceTable}</div>
             <div className="grid grid-cols-2 gap-1">
               {spec.keyColumns.map((col) => (
                 <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
@@ -1083,14 +1083,14 @@ function StaffingSection() {
       <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider">各部门岗位配置标准（2025年暂定版）</div>
       <div className="space-y-4">
         {STAFFING_STANDARDS.map(dept => (
-          <div key={dept.dept} className="bg-slate-50 rounded-lg p-3 space-y-2">
+          <div key={dept.dept} className="bg-[#f0ebe3] rounded-lg p-3 space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black text-slate-700">{dept.dept}</span>
               <span className="text-[8px] text-slate-400">({dept.positions.length}个岗位)</span>
             </div>
             <div className="space-y-1.5">
               {dept.positions.map(p => (
-                <div key={p.pos} className="bg-white rounded-md px-3 py-2 border border-slate-100">
+                <div key={p.pos} className="bg-[#faf7f2] rounded-md px-3 py-2 border border-[#e8e2d9]">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="text-[10px] font-bold text-slate-700">{p.pos}</span>
                     {p.rule.includes('暂不计入') && <span className="text-[8px] font-bold text-amber-500 bg-amber-50 px-1 py-0.5 rounded">暂估</span>}
@@ -1125,7 +1125,7 @@ function ScopeSection() {
     <div className="space-y-4">
       <div className="bg-blue-50/50 rounded-lg p-3 mb-2 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 uppercase tracking-wider"><Table2 size={11} /> 数据来源</div>
-        <div className="text-xs font-mono font-semibold text-slate-800 bg-white rounded-md px-2 py-1.5 border border-slate-100">{SCOPE_SPEC.sourceTable}</div>
+        <div className="text-xs font-mono font-semibold text-slate-800 bg-[#faf7f2] rounded-md px-2 py-1.5 border border-[#e8e2d9]">{SCOPE_SPEC.sourceTable}</div>
         <div className="grid grid-cols-2 gap-1">
           {SCOPE_SPEC.keyColumns.map((col) => (
             <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
@@ -1151,12 +1151,12 @@ function AttendanceSection() {
   return (
     <div className="space-y-4">
       {ATTENDANCE_SPEC.dataSources.map((ds, idx) => (
-        <div key={idx} className="bg-slate-50 rounded-lg p-3 mb-2 space-y-2">
+        <div key={idx} className="bg-[#f0ebe3] rounded-lg p-3 mb-2 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider"><Table2 size={11} /> 数据来源{idx + 1}</div>
             <span className="text-[8px] font-medium px-1.5 py-0.5 rounded-full bg-cyan-50 text-cyan-600 border border-cyan-100">{ds.role.split('-')[0].trim()}</span>
           </div>
-          <div className="text-xs font-mono font-semibold text-slate-800 bg-white rounded-md px-2 py-1.5 border border-slate-100">{ds.table}</div>
+          <div className="text-xs font-mono font-semibold text-slate-800 bg-[#faf7f2] rounded-md px-2 py-1.5 border border-[#e8e2d9]">{ds.table}</div>
           <div className="grid grid-cols-1 gap-0.5">
             {ds.columns.map((col) => (
               <div key={col.col} className="flex items-start gap-1.5 text-[10px]">
@@ -1273,7 +1273,7 @@ function MatchingSection() {
           { title: '连续出勤', fields: DETAIL_FIELDS.att15, color: 'text-orange-600' },
           { title: '长期未出勤', fields: DETAIL_FIELDS.att7, color: 'text-purple-600' },
         ]).map(g => (
-          <div key={g.title} className="bg-slate-50 rounded-lg p-2.5 space-y-1">
+          <div key={g.title} className="bg-[#f0ebe3] rounded-lg p-2.5 space-y-1">
             <div className={cn("text-[9px] font-black uppercase tracking-wider", g.color)}>{g.title}</div>
             <div className="grid grid-cols-2 gap-0.5">
               {g.fields.map((f: { col: string; desc: string }) => (
@@ -1295,7 +1295,7 @@ function AnimateWrapper({ isOpen, onClose, children }: { isOpen: boolean; onClos
   return (
     <>
       <div className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-[2px]" onClick={onClose} />
-      <div className="fixed right-4 top-20 bottom-14 w-[420px] z-[101] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in slide-in-from-right duration-200 ease-out">
+      <div className="fixed right-4 top-20 bottom-14 w-[420px] z-[101] bg-[#faf7f2] rounded-xl shadow-2xl border border-[#e8e2d9] overflow-hidden flex flex-col animate-in slide-in-from-right duration-200 ease-out">
         <div className="flex-1 overflow-y-auto p-5">{children}</div>
       </div>
     </>

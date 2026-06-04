@@ -94,14 +94,14 @@ export default function TemplateSelector({ selectedTemplate, onSelectTemplate }:
                 "p-5 text-left transition-all rounded-xl",
                 isSelected
                   ? "bg-slate-900 text-white shadow-lg"
-                  : "bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm"
+                  : "bg-[#faf7f2] border border-[#e8e2d9] hover:border-slate-300 hover:shadow-sm"
               )}
             >
               <div className="flex items-center justify-end mb-2">
                 <span className={cn(
                   "text-[11px] font-bold px-2 py-0.5 rounded-md",
                   isSelected
-                    ? "bg-white/20 text-white/90"
+                    ? "bg-[#faf7f2]/20 text-white/90"
                     : "bg-slate-100 text-slate-400"
                 )}>
                   {t.cycle}
@@ -136,8 +136,8 @@ export default function TemplateSelector({ selectedTemplate, onSelectTemplate }:
                     className={cn(
                       "px-1.5 py-0.5 rounded text-[10px] font-medium",
                       isSelected
-                        ? "bg-white/10 text-slate-300"
-                        : "bg-slate-50 text-slate-400"
+                        ? "bg-[#faf7f2]/10 text-slate-300"
+                        : "bg-[#f0ebe3] text-slate-400"
                     )}
                   >
                     {f}

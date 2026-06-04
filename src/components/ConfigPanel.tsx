@@ -81,9 +81,9 @@ export default function ConfigPanel({ isOpen, onClose, centers, onConfigChange }
   return (
     <>
       <div className="fixed inset-0 bg-black/20 z-[80]" onClick={onClose} />
-      <div className="fixed right-0 top-0 bottom-0 w-[420px] bg-white shadow-2xl z-[90] flex flex-col">
+      <div className="fixed right-0 top-0 bottom-0 w-[420px] bg-[#faf7f2] shadow-2xl z-[90] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e8e2d9]">
           <div className="flex items-center gap-2">
             <Settings size={16} className="text-slate-600" />
             <h2 className="text-sm font-black text-slate-900">看板配置</h2>
@@ -97,7 +97,7 @@ export default function ConfigPanel({ isOpen, onClose, centers, onConfigChange }
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-100 px-5">
+        <div className="flex border-b border-[#e8e2d9] px-5">
           {[
             { key: 'centers' as const, label: '中心设置' },
             { key: 'scoring' as const, label: '评分规则' },
@@ -124,7 +124,7 @@ export default function ConfigPanel({ isOpen, onClose, centers, onConfigChange }
                       value={config.centerResponsibles[c.name] || ''}
                       onChange={e => update({ centerResponsibles: { ...config.centerResponsibles, [c.name]: e.target.value } })}
                       placeholder="负责人姓名"
-                      className="flex-1 px-2 py-1 text-[11px] border border-slate-200 rounded focus:outline-none focus:border-blue-400"
+                      className="flex-1 px-2 py-1 text-[11px] border border-[#e8e2d9] rounded focus:outline-none focus:border-blue-400"
                     />
                   </div>
                 ))}
@@ -138,7 +138,7 @@ export default function ConfigPanel({ isOpen, onClose, centers, onConfigChange }
                       {CLASS_OPTIONS.map(cls => (
                         <button key={cls} onClick={() => update({ centerClass: { ...config.centerClass, [c.name]: cls } })}
                           className={cn("px-2.5 py-0.5 text-[10px] font-bold rounded border transition-colors",
-                            (config.centerClass[c.name] || 'B') === cls ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-400 border-slate-200 hover:border-slate-400",
+                            (config.centerClass[c.name] || 'B') === cls ? "bg-slate-900 text-white border-slate-900" : "bg-[#faf7f2] text-slate-400 border-[#e8e2d9] hover:border-slate-400",
                         )}>{cls}类</button>
                       ))}
                     </div>
@@ -177,11 +177,11 @@ export default function ConfigPanel({ isOpen, onClose, centers, onConfigChange }
                   <span className="text-[11px] text-slate-600 flex-1">{item.label}</span>
                   <input type="number" value={config.scoring[item.key]} step={0.5}
                     onChange={e => update({ scoring: { ...config.scoring, [item.key]: parseFloat(e.target.value) || 0 } })}
-                    className="w-16 px-2 py-1 text-[11px] border border-slate-200 rounded text-right focus:outline-none focus:border-blue-400" />
+                    className="w-16 px-2 py-1 text-[11px] border border-[#e8e2d9] rounded text-right focus:outline-none focus:border-blue-400" />
                   <span className="text-[10px] text-slate-400 w-4">{item.unit}</span>
                 </div>
               ))}
-              <div className="pt-3 border-t border-slate-100">
+              <div className="pt-3 border-t border-[#e8e2d9]">
                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">管幅目标</h3>
                 {[
                   { key: 'composite' as const, label: '综合管幅目标' },
@@ -191,7 +191,7 @@ export default function ConfigPanel({ isOpen, onClose, centers, onConfigChange }
                     <span className="text-[11px] text-slate-600 flex-1">{item.label}</span>
                     <input type="number" value={config.spanTargets[item.key]} step={1}
                       onChange={e => update({ spanTargets: { ...config.spanTargets, [item.key]: parseInt(e.target.value) || 0 } })}
-                      className="w-16 px-2 py-1 text-[11px] border border-slate-200 rounded text-right focus:outline-none focus:border-blue-400" />
+                      className="w-16 px-2 py-1 text-[11px] border border-[#e8e2d9] rounded text-right focus:outline-none focus:border-blue-400" />
                     <span className="text-[10px] text-slate-400 w-4">:1</span>
                   </div>
                 ))}
@@ -207,7 +207,7 @@ export default function ConfigPanel({ isOpen, onClose, centers, onConfigChange }
                   <span className="text-[11px] text-slate-600 w-16">{cls}类中心</span>
                   <input type="number" value={config.nonopThresholds[cls] || 0} step={0.5}
                     onChange={e => update({ nonopThresholds: { ...config.nonopThresholds, [cls]: parseFloat(e.target.value) || 0 } })}
-                    className="w-20 px-2 py-1 text-[11px] border border-slate-200 rounded text-right focus:outline-none focus:border-blue-400" />
+                    className="w-20 px-2 py-1 text-[11px] border border-[#e8e2d9] rounded text-right focus:outline-none focus:border-blue-400" />
                   <span className="text-[10px] text-slate-400">%</span>
                 </div>
               ))}

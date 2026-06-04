@@ -52,10 +52,10 @@ export default function WorkHoursHighDetailModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-[#faf7f2] rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
           >
             {/* 头部 */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e8e2d9] flex-shrink-0">
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
@@ -81,7 +81,7 @@ export default function WorkHoursHighDetailModal({
             {/* 内容区域 */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {/* 柱状图趋势 */}
-              <div className="bg-slate-50 rounded-xl p-4">
+              <div className="bg-[#f0ebe3] rounded-xl p-4">
                 <div className="flex items-end gap-2 h-28">
                   {weeklyData.map((day, idx) => {
                     const barHeight = day.abnormalCount > 0
@@ -142,7 +142,7 @@ export default function WorkHoursHighDetailModal({
                       "rounded-lg border p-3 transition-all",
                       day.abnormalCount > 0
                         ? "border-orange-100 bg-orange-50/30"
-                        : "border-slate-100 bg-slate-50/30"
+                        : "border-[#e8e2d9] bg-[#f0ebe3]/30"
                     )}
                   >
                     {/* 日期行 */}
@@ -175,7 +175,7 @@ export default function WorkHoursHighDetailModal({
                         {day.details.slice(0, 20).map((detail, idx) => (
                           <div
                             key={idx}
-                            className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-orange-50"
+                            className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center bg-[#faf7f2] rounded-md px-3 py-2 border border-orange-50"
                           >
                             {/* 姓名 */}
                             <div className="flex items-center gap-1.5 min-w-0">
@@ -209,7 +209,7 @@ export default function WorkHoursHighDetailModal({
             </div>
 
             {/* 底部 */}
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
+            <div className="px-6 py-3 border-t border-[#e8e2d9] bg-[#f0ebe3]/50 flex-shrink-0">
               <p className="text-[9px] text-slate-400 font-bold text-center">
                 仅展示出勤工时 &gt; 12.5h 的人员明细
               </p>

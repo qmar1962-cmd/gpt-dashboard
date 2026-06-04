@@ -81,7 +81,7 @@ export default function MonthlyScorePanel({
   return (
     <div className="flex flex-col h-full">
       {/* 顶部栏 */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 bg-white sticky top-0 z-10">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-[#e8e2d9] bg-[#faf7f2] sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button
             onClick={() => onOffsetChange(monthOffset - 1)}
@@ -107,7 +107,7 @@ export default function MonthlyScorePanel({
       </div>
 
       {/* 省区 + 大区排名得分 */}
-      <div className="px-6 py-3 border-t border-slate-200 bg-slate-50/50 flex items-center gap-6 text-[11px]">
+      <div className="px-6 py-3 border-t border-[#e8e2d9] bg-[#f0ebe3]/50 flex items-center gap-6 text-[11px]">
         <span className="font-semibold text-slate-700">排名考核得分：</span>
         <span className="text-slate-600">大区 <span className="font-bold text-blue-600">{data.regionTieredScore}</span> 分</span>
         {data.provinceScores.map(p => (
@@ -118,16 +118,16 @@ export default function MonthlyScorePanel({
       {/* 汇总表格（横向滚动） */}
       <div className="flex-1 overflow-auto">
         <table className="w-full text-[11px] border-collapse table-fixed">
-          <thead className="sticky top-0 bg-slate-50 z-[5]">
+          <thead className="sticky top-0 bg-[#f0ebe3] z-[5]">
             <tr>
-              <th className="text-left px-2 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'3%'}}></th>
-              <th className="text-left px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>中心</th>
-              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>排名得分</th>
-              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>月度得分</th>
+              <th className="text-left px-2 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-[#e8e2d9]" style={{width:'3%'}}></th>
+              <th className="text-left px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-[#e8e2d9]" style={{width:'8.8%'}}>中心</th>
+              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-[#e8e2d9]" style={{width:'8.8%'}}>排名得分</th>
+              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-[#e8e2d9]" style={{width:'8.8%'}}>月度得分</th>
               {DIM_COLS.map(d => (
-                <th key={d.key} className="text-right px-2 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>{d.label}</th>
+                <th key={d.key} className="text-right px-2 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-[#e8e2d9]" style={{width:'8.8%'}}>{d.label}</th>
               ))}
-              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200" style={{width:'8.8%'}}>数据天数</th>
+              <th className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-[#e8e2d9]" style={{width:'8.8%'}}>数据天数</th>
             </tr>
           </thead>
           <tbody>
@@ -165,8 +165,8 @@ function MonthlyRow({ row, isExempt, isOpen, onToggle }: {
       <tr
         onClick={onToggle}
         className={cn(
-          'border-b border-slate-100 cursor-pointer hover:bg-slate-50/60 transition-colors',
-          isExempt && 'bg-slate-50/50'
+          'border-b border-[#e8e2d9] cursor-pointer hover:bg-[#f0ebe3]/60 transition-colors',
+          isExempt && 'bg-[#f0ebe3]/50'
         )}
       >
         <td className="px-4 py-2.5 text-slate-400">
@@ -197,7 +197,7 @@ function MonthlyRow({ row, isExempt, isOpen, onToggle }: {
 
       {/* 展开的每日明细 */}
       {isOpen && row.dailyDetails.map(dd => (
-        <tr key={dd.date} className="bg-slate-50/70 border-b border-slate-100">
+        <tr key={dd.date} className="bg-[#f0ebe3]/70 border-b border-[#e8e2d9]">
           <td></td>
           <td className="px-4 py-1.5 text-[10px] text-slate-400 whitespace-nowrap pl-8">
             {dd.date.slice(5)} {/* MM-DD */}

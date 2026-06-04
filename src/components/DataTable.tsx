@@ -185,13 +185,13 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
   };
 
   return (
-    <div className="w-full border-t border-slate-200 bg-white" id="performance-data-table">
+    <div className="w-full border-t border-[#e8e2d9] bg-[#faf7f2]" id="performance-data-table">
       {/* Toolbar */}
-      <div className="flex items-center justify-end px-4 py-1.5 bg-slate-50 border-b border-slate-100">
+      <div className="flex items-center justify-end px-4 py-1.5 bg-[#f0ebe3] border-b border-[#e8e2d9]">
         <button onClick={handleExportExcel} className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"><Download size={12} />导出 Excel</button>
       </div>
       {/* Table Header */}
-      <div className="grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] bg-slate-100/80 backdrop-blur-sm border-b border-slate-200 py-3 px-4 sticky top-[95px] z-20">
+      <div className="grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] bg-[#f0ebe3] border-b border-[#e8e2d9] py-3 px-4 sticky top-[95px] z-20">
         <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">排名</div>
         <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">分区 / 负责人</div>
         <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] text-center">得分</div>
@@ -209,9 +209,9 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
               layout
               onClick={() => handleRegionClick(item)}
               className={cn(
-                "grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-slate-100 cursor-pointer group transition-colors duration-200",
-                currentSelection?.id === item.id ? "bg-slate-900 text-white shadow-lg z-20" :
-                expandedRows[item.id] ? "bg-white shadow-sm z-10" : "bg-white hover:bg-slate-50/50"
+                "grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] items-center py-5 px-4 border-b border-[#e8e2d9] cursor-pointer group transition-colors duration-200",
+                currentSelection?.id === item.id ? "bg-[#4a4540] text-white shadow-lg z-20" :
+                expandedRows[item.id] ? "bg-[#faf7f2] shadow-sm z-10" : "bg-[#faf7f2] hover:bg-[#f0ebe3]"
               )}
             >
               <div className={cn(
@@ -240,7 +240,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
               <div className="text-center flex justify-center items-center gap-2 pr-4">
                 <div className={cn(
                   "px-3 py-1 font-mono font-black text-sm",
-                  item.performanceScore < 0 ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
+                  item.performanceScore < 0 ? "bg-[#8b6b4a] text-white" : "bg-[#5a7a5a] text-white"
                 )}>
                   {formatNumber(item.performanceScore)}
                 </div>
@@ -305,7 +305,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                 })()}
               </div>
 
-              <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-slate-100 min-w-0">
+              <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-[#e8e2d9] min-w-0">
                 <DimensionCell label="效能异常" score={item.dimensions?.job?.score ?? 0} metrics={item.dimensions?.job?.metrics ?? []} />
                 <DimensionCell label="绩效异常" score={item.dimensions?.salary?.score ?? 0} metrics={item.dimensions?.salary?.metrics ?? []} />
                 <DimensionCell label="连续出勤" score={item.dimensions?.attendance15?.score ?? 0} metrics={item.dimensions?.attendance15?.metrics ?? []} />
@@ -332,7 +332,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     "grid grid-cols-[50px_120px_80px_80px_100px_100px_1fr] items-center py-3 px-4 border-b border-slate-50 transition-all",
                     adminMode ? "cursor-default" : "cursor-pointer",
                     exempt ? "opacity-40" : "",
-                    currentSelection?.id === center.id && !adminMode ? "bg-red-600 text-white" : "bg-slate-50/20 hover:bg-slate-100/50 last:border-b-slate-200"
+                    currentSelection?.id === center.id && !adminMode ? "bg-[#6b5b47] text-white" : "bg-[#f0ebe3]/20 hover:bg-slate-100/50 last:border-b-slate-200"
                   )}
                 >
                   <div />
@@ -372,10 +372,10 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   <div className="flex items-center justify-center">
                     <span className={cn(
                       "text-[10px] font-black px-2 py-1 rounded tracking-tight",
-                      (center.score || 0) >= 80 ? "bg-emerald-100 text-emerald-700" :
-                      (center.score || 0) >= 60 ? "bg-blue-100 text-blue-700" :
-                      (center.score || 0) >= 40 ? "bg-amber-100 text-amber-700" :
-                      "bg-red-100 text-red-700"
+                      (center.score || 0) >= 80 ? "bg-[#d4e6d4] text-[#3d5a3d]" :
+                      (center.score || 0) >= 60 ? "bg-[#d4dde6] text-[#3d4d5a]" :
+                      (center.score || 0) >= 40 ? "bg-[#e6ddd4] text-[#5a4d3d]" :
+                      "bg-[#e6d4d4] text-[#5a3d3d]"
                     )}>
                       {center.score ?? 0}
                     </span>
@@ -434,10 +434,10 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                       <span className="text-xs font-bold text-slate-300">—</span>
                     )}
                   </div>
-                  <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-slate-100 min-w-0">
+                  <div className="grid grid-cols-[repeat(6,1fr)] gap-2 pl-4 border-l border-[#e8e2d9] min-w-0">
                     <div
                       className={cn(
-                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-[#e8e2d9] pl-3 py-1 group relative min-w-0 overflow-hidden",
                         rawData && rawData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={rawData && rawData.length > 0 ? "" : "请上传岗位效能异常数据以查看详情"}
@@ -464,7 +464,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-[#f0ebe3] text-slate-900 transition-colors",
                           rawData && rawData.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.job ?? 0}</span>
                       </div>
@@ -481,7 +481,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-[#e8e2d9] pl-3 py-1 group relative min-w-0 overflow-hidden",
                         salaryData && salaryData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={salaryData && salaryData.length > 0 ? "" : "请上传薪资异常数据以查看详情"}
@@ -508,7 +508,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-[#f0ebe3] text-slate-900 transition-colors",
                           salaryData && salaryData.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.salary ?? 0}</span>
                       </div>
@@ -525,7 +525,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-[#e8e2d9] pl-3 py-1 group relative min-w-0 overflow-hidden",
                         attendance15Data && attendance15Data.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={attendance15Data && attendance15Data.length > 0 ? "" : "请上传连续15日出勤数据以查看详情"}
@@ -552,7 +552,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-[#f0ebe3] text-slate-900 transition-colors",
                           attendance15Data && attendance15Data.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.att15 ?? 0}</span>
                       </div>
@@ -569,7 +569,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-[#e8e2d9] pl-3 py-1 group relative min-w-0 overflow-hidden",
                         attendance7Data && attendance7Data.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={attendance7Data && attendance7Data.length > 0 ? "" : "请上传连续7日未出勤数据以查看详情"}
@@ -596,7 +596,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-[#f0ebe3] text-slate-900 transition-colors",
                           attendance7Data && attendance7Data.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.att7 ?? 0}</span>
                       </div>
@@ -613,7 +613,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-[#e8e2d9] pl-3 py-1 group relative min-w-0 overflow-hidden",
                         workHoursHighData && workHoursHighData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={workHoursHighData && workHoursHighData.length > 0 ? "" : "请上传日工时高数据以查看详情"}
@@ -640,7 +640,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-[#f0ebe3] text-slate-900 transition-colors",
                           workHoursHighData && workHoursHighData.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.workHoursHigh ?? 0}</span>
                       </div>
@@ -657,7 +657,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                     </div>
                     <div
                       className={cn(
-                        "flex flex-col border-l border-slate-200 pl-3 py-1 group relative min-w-0 overflow-hidden",
+                        "flex flex-col border-l border-[#e8e2d9] pl-3 py-1 group relative min-w-0 overflow-hidden",
                         workHoursLowData && workHoursLowData.length > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                       )}
                       title={workHoursLowData && workHoursLowData.length > 0 ? "" : "请上传日工时低数据以查看详情"}
@@ -684,7 +684,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           )}
                         </span>
                         <span className={cn(
-                          "text-sm font-black px-1.5 py-0.5 rounded bg-slate-50 text-slate-900 transition-colors",
+                          "text-sm font-black px-1.5 py-0.5 rounded bg-[#f0ebe3] text-slate-900 transition-colors",
                           workHoursLowData && workHoursLowData.length > 0 && "group-hover:bg-slate-100"
                         )}>{center.metrics?.workHoursLow ?? 0}</span>
                       </div>
@@ -780,7 +780,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]" onClick={() => setNonOpDetail(null)} />
             {(() => { return (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[70] p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#faf7f2] rounded-xl shadow-2xl z-[70] p-6 w-[600px] max-h-[80vh] overflow-y-auto">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-black text-sm">{nonOpDetail.centerName}中心 · 非操明细</h3>
                     <button onClick={() => setNonOpDetail(null)} className="p-1 hover:bg-slate-100 rounded text-slate-400"><X size={14} /></button>
@@ -799,12 +799,12 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   </div>
                   {/* 部门维度 */}
                   {nonOpTab === 'dept' && nonOpDetail.staffingStandard && (
-                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                    <div className="border border-[#e8e2d9] rounded-lg overflow-hidden">
                       <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-slate-900 text-[10px] font-bold text-slate-400">
                         <div>部门</div><div className="text-center">标准</div><div className="text-center">实际</div><div className="text-center">差额</div>
                       </div>
                       {nonOpDetail.staffingStandard.departments.map(d => (
-                        <div key={d.dept} className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 border-b border-slate-50 text-[11px] hover:bg-slate-50/50">
+                        <div key={d.dept} className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 border-b border-slate-50 text-[11px] hover:bg-[#f0ebe3]/50">
                           <div className="font-medium text-slate-700">{d.dept}</div>
                           <div className="text-center font-mono text-slate-500">{d.standard}</div>
                           <div className="text-center font-mono font-bold text-slate-800">{d.actual || '—'}</div>
@@ -813,7 +813,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                           </div>
                         </div>
                       ))}
-                      <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-slate-50 text-[11px] font-bold">
+                      <div className="grid grid-cols-[1fr_80px_80px_80px] gap-2 px-3 py-2 bg-[#f0ebe3] text-[11px] font-bold">
                         <div>合计</div>
                         <div className="text-center font-mono text-slate-700">{nonOpDetail.staffingStandard.totalStandard}</div>
                         <div className="text-center font-mono text-slate-800">{nonOpDetail.staffingStandard.totalActual}</div>
@@ -825,7 +825,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                   )}
                   {/* 岗位维度 */}
                   {nonOpTab === 'pos' && nonOpDetail.positions && (
-                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                    <div className="border border-[#e8e2d9] rounded-lg overflow-hidden">
                       <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 bg-slate-900 text-[10px] font-bold text-slate-400">
                         <div>岗位</div><div className="text-center">标准</div><div className="text-center">实际</div><div className="text-center">差额</div>
                       </div>
@@ -855,7 +855,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
                         });
                         return rows.map(r => (
                           <React.Fragment key={r.pos}>
-                            <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 border-b border-slate-50 text-[11px] hover:bg-slate-50/50 cursor-pointer" onClick={() => setExpandedRule(expandedRule === r.pos ? null : r.pos)}>
+                            <div className="grid grid-cols-[1fr_70px_70px_60px] gap-2 px-3 py-2 border-b border-slate-50 text-[11px] hover:bg-[#f0ebe3]/50 cursor-pointer" onClick={() => setExpandedRule(expandedRule === r.pos ? null : r.pos)}>
                               <div className="font-medium text-slate-700 truncate flex items-center gap-1">
                                 {r.pos}
                                 {r.rule && <span className="text-slate-300 text-[9px]">ⓘ</span>}
@@ -883,7 +883,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
       </AnimatePresence>
 
       {/* Scoring Rules Footer */}
-      <div className="p-8 bg-slate-50 border-t border-slate-200 mt-4">
+      <div className="p-8 bg-[#f0ebe3] border-t border-[#e8e2d9] mt-4">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">计分规则解析</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
@@ -927,12 +927,12 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
 
 function DimensionCell({ label, score, metrics }: { label: string, score: number, metrics: any[] }) {
   return (
-    <div className="flex flex-col border-l border-slate-200 pl-3 py-1 min-w-0">
+    <div className="flex flex-col border-l border-[#e8e2d9] pl-3 py-1 min-w-0">
       <div className="flex justify-between items-center mb-1">
         <span className="text-[11px] font-black text-slate-400 uppercase tracking-tight truncate">{label}</span>
         <span className={cn(
           "text-sm font-black px-1.5 py-0.5 rounded flex-shrink-0",
-          score < 0 ? "bg-red-50 text-red-600" : "bg-slate-50 text-slate-900"
+          score < 0 ? "bg-red-50 text-red-600" : "bg-[#f0ebe3] text-slate-900"
         )}>
           {score}
         </span>
@@ -953,7 +953,7 @@ function DimensionMini({ score, label, active }: { score: number, label: string,
   return (
     <div className={cn(
       "pl-4 border-l flex items-center justify-between group/mini flex-1",
-      active ? "border-white/20" : "border-slate-100"
+      active ? "border-white/20" : "border-[#e8e2d9]"
     )}>
       <div className="flex flex-col">
         <span className={cn(

@@ -90,7 +90,7 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
         transition={{ duration: 0.15 }}
-        className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 w-[300px] overflow-hidden"
+        className="absolute right-0 top-full mt-1 bg-[#faf7f2] rounded-xl shadow-xl border border-[#e8e2d9] z-50 w-[300px] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {mode === 'view' ? (
@@ -105,7 +105,7 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-2 px-3 py-2.5 border-t border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-2 px-3 py-2.5 border-t border-[#e8e2d9] bg-[#f0ebe3]/50">
               <button onClick={() => setMode('add')} className="flex-1 px-2 py-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center justify-center gap-1">
                 <CalendarDays size={10} /> 添加日期段
               </button>
@@ -118,7 +118,7 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
         ) : (
           <>
             {/* 日期选择模式 */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#e8e2d9]">
               <button onClick={() => { setViewDate(new Date(year, month - 1, 1)); }} className="p-1 rounded hover:bg-slate-100 text-slate-400"><ChevronLeft size={14} /></button>
               <span className="text-xs font-bold text-slate-700">{year}年{month + 1}月</span>
               <button onClick={() => { setViewDate(new Date(year, month + 1, 1)); }} className="p-1 rounded hover:bg-slate-100 text-slate-400"><ChevronRight size={14} /></button>
@@ -139,7 +139,7 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
                     (isS || isE) && "bg-blue-500 text-white font-bold")}>{d}</button>;
               })}
             </div>
-            <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#e8e2d9] bg-[#f0ebe3]/50">
               <span className="text-[10px] font-bold text-slate-500 truncate max-w-[160px]">
                 {pickStart ? (pickEnd ? `${fmtMD(pickStart)} ~ ${fmtMD(pickEnd)}` : `起点 ${fmtMD(pickStart)}，选终点`) : '点击选择起始日期'}
               </span>
@@ -574,10 +574,10 @@ export default function Attendance15DetailModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-[#faf7f2] rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
           >
             {/* 头部 */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e8e2d9] flex-shrink-0">
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
@@ -596,7 +596,7 @@ export default function Attendance15DetailModal({
                         value={responsibleInput}
                         onChange={e => setResponsibleInput(e.target.value)}
                         placeholder="输入负责人姓名"
-                        className="text-[11px] px-2 py-0.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
+                        className="text-[11px] px-2 py-0.5 border border-[#e8e2d9] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
                         autoFocus
                         onKeyDown={e => {
                           if (e.key === 'Enter') handleSaveResponsible();
@@ -651,7 +651,7 @@ export default function Attendance15DetailModal({
             {/* 内容区域 */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {/* 柱状图趋势 */}
-              <div className="bg-slate-50 rounded-xl p-4">
+              <div className="bg-[#f0ebe3] rounded-xl p-4">
                 <div className="flex items-end gap-2 h-28">
                   {weeklyData.map((day, idx) => {
                     const barHeight = day.abnormalCount > 0
@@ -712,7 +712,7 @@ export default function Attendance15DetailModal({
                       "rounded-lg border p-3 transition-all",
                       day.abnormalCount > 0
                         ? "border-blue-100 bg-blue-50/30"
-                        : "border-slate-100 bg-slate-50/30"
+                        : "border-[#e8e2d9] bg-[#f0ebe3]/30"
                     )}
                   >
                     {/* 日期行 */}
@@ -749,7 +749,7 @@ export default function Attendance15DetailModal({
                           return (
                             <div
                               key={idx}
-                              className="bg-white rounded-md px-3 py-2 border border-blue-50 relative"
+                              className="bg-[#faf7f2] rounded-md px-3 py-2 border border-blue-50 relative"
                             >
                             <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center">
                               {/* 姓名 */}
@@ -782,7 +782,7 @@ export default function Attendance15DetailModal({
                                   "text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer border transition-all min-w-[80px] text-center",
                                   plan
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                    : "bg-slate-50 text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50"
+                                    : "bg-[#f0ebe3] text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50"
                                 )}>
                                   {plan ? formatPlanDisplay(plan) : (
                                     <span className="flex items-center justify-center gap-1">
@@ -825,7 +825,7 @@ export default function Attendance15DetailModal({
             </div>
 
             {/* 底部 */}
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
+            <div className="px-6 py-3 border-t border-[#e8e2d9] bg-[#f0ebe3]/50 flex-shrink-0">
               <p className="text-[9px] text-slate-400 font-bold text-center">
                 仅展示连续出勤 ≥ 15 天的人员明细
               </p>

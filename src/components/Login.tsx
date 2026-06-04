@@ -12,9 +12,10 @@ const ADMIN_HASH = import.meta.env.VITE_ADMIN_PASSWORD_HASH || '';
 
 interface LoginProps {
   onLoginSuccess: (name: string, empId: string, isAdmin: boolean) => void;
+  dataLoading?: boolean;
 }
 
-export default function Login({ onLoginSuccess }: LoginProps) {
+export default function Login({ onLoginSuccess, dataLoading }: LoginProps) {
   const [name, setName] = useState('');
   const [empId, setEmpId] = useState('');
   const [errors, setErrors] = useState<{ name?: string; empId?: string }>({});
@@ -123,11 +124,16 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {/* 链子 */}
+          {/* 链子（多节） */}
           <motion.div
-            className="w-[2px] h-10 bg-white/30"
-            animate={{ height: isLit ? 10 : 40 }}
-          />
+            className="flex flex-col items-center gap-[3px]"
+            animate={{ height: isLit ? 8 : 36 }}
+            style={{ overflow: 'hidden' }}
+          >
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="w-[2px] h-[3px] rounded-full bg-white/20" />
+            ))}
+          </motion.div>
           {/* 拉环 */}
           <motion.div
             className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
@@ -214,22 +220,29 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                 <button
                   type="button"
                   onClick={handleAdminLogin}
-                  disabled={isLoggingIn}
-                  className="text-center py-2.5 px-8 rounded-lg bg-amber-700 text-white text-sm font-bold hover:bg-amber-600 transition-all mt-1 disabled:opacity-50"
+                  disabled={isLoggingIn || dataLoading}
+                  className="text-center py-2.5 px-8 rounded-lg bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-all mt-1 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {isLoggingIn ? <Loader2 size={14} className="animate-spin mx-auto" /> : '管理员登录'}
+                  {isLoggingIn ? <><Loader2 size={14} className="animate-spin" />正在进入...</> : dataLoading ? '等待数据...' : '管理员登录'}
                 </button>
               </div>
             )}
 
             {!showAdminInput && (
-              <button
-                type="submit"
-                disabled={isLoggingIn}
-                className="text-center py-2.5 px-8 rounded-lg bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-all mt-1 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isLoggingIn ? <><Loader2 size={14} className="animate-spin" />正在进入...</> : '进入看板'}
-              </button>
+              <>
+                {dataLoading && (
+                  <p className="text-[11px] text-amber-400/80 text-center flex items-center justify-center gap-1.5">
+                    <Loader2 size={12} className="animate-spin" />数据加载中，请稍候...
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={isLoggingIn || dataLoading}
+                  className="text-center py-2.5 px-8 rounded-lg bg-white/10 text-white text-sm font-bold hover:bg-white/20 transition-all mt-1 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isLoggingIn ? <><Loader2 size={14} className="animate-spin" />正在进入...</> : dataLoading ? '等待数据...' : '进入看板'}
+                </button>
+              </>
             )}
 
             {/* 关灯按钮 */}

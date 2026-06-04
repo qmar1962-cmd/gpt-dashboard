@@ -5,7 +5,7 @@
  * 版本：2026-05-26 - 重构：拆分组件，提取数据加载逻辑
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'motion/react';
 import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays, TrendingUp, Trash2 } from 'lucide-react';
 import AttendanceModule from './components/AttendanceModule';
@@ -32,6 +32,7 @@ import { useEnrichedData } from './hooks/useEnrichedData';
 import { useFilteredData } from './hooks/useFilteredData';
 import { useMonthlyScore } from './hooks/useMonthlyScore';
 import { clearAllCache } from './lib/idb';
+import AlertToast, { AlertItem } from './components/AlertToast';
 
 export type Selection = {
   type: 'all' | 'region' | 'center';
@@ -61,6 +62,23 @@ export default function App() {
     workHoursHighDataState, workHoursLowDataState,
     dataFileName, handleDataLoaded: rawHandleDataLoaded, initError,
   } = useDataInit();
+
+  // ── 数据加载等待 ──
+  const loadingRef = useRef(loading.isLoading);
+  useEffect(() => { loadingRef.current = loading.isLoading; }, [loading.isLoading]);
+  const [loginWaiting, setLoginWaiting] = useState(false);
+
+  const handleLoginWithReady = useCallback(async (name: string, empId: string, isAdmin: boolean) => {
+    if (loadingRef.current) {
+      setLoginWaiting(true);
+      const start = Date.now();
+      while (loadingRef.current && Date.now() - start < 30000) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      setLoginWaiting(false);
+    }
+    handleLoginSuccess(name, empId, isAdmin);
+  }, [handleLoginSuccess]);
 
   // ── 局部状态 ──
   const [selection, setSelection] = useState<Selection>({ type: 'all', id: null });
@@ -99,6 +117,42 @@ export default function App() {
   const avgTotalScore = Math.round(filteredData.reduce((acc, curr) => acc + curr.totalScore, 0) / filteredData.length);
   const totalUnits = filteredData.length;
 
+  // ── 告警通知 ──
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const allAlerts = (() => {
+    const items: AlertItem[] = [];
+    filteredData.forEach((prov: any) => {
+      (prov.subCenters || []).forEach((c: any) => {
+        // 得分骤降
+        if (c.prevScore != null && (c.score || 0) < (c.prevScore || 0) - 10) {
+          items.push({ id: `score-${c.id}`, center: c.name, province: prov.province, type: '得分骤降', detail: `${c.prevScore}→${c.score || 0}分`, severity: 5 });
+        }
+        // 效能异常恶化
+        const jc = (c.abnormalCount || 0) - (c.prevAbnormalCount || 0);
+        if (jc >= 2) {
+          items.push({ id: `job-${c.id}`, center: c.name, province: prov.province, type: '效能异常恶化', detail: `${c.prevAbnormalCount || 0}→${c.abnormalCount}个`, severity: 4 });
+        }
+        // 工时高暴增
+        const whc = (c.t2WhHighCount || 0) - (c.whHighPrevCount || 0);
+        if (whc >= 5) {
+          items.push({ id: `wh-${c.id}`, center: c.name, province: prov.province, type: '高工时暴增', detail: `${c.whHighPrevCount || 0}→${c.t2WhHighCount || 0}人`, severity: 3 });
+        }
+      });
+    });
+    return items.sort((a, b) => b.severity - a.severity).slice(0, 3);
+  })();
+  const visibleAlerts = allAlerts.filter(a => !dismissedAlerts.has(a.id));
+  const handleDismissAlert = (id: string) => setDismissedAlerts(prev => new Set(prev).add(id));
+
+  // 逐条自动消失（8秒后开始，每条间隔1.5秒）
+  useEffect(() => {
+    if (visibleAlerts.length === 0) return;
+    const timers = visibleAlerts.map((a, i) =>
+      setTimeout(() => handleDismissAlert(a.id), 8000 + i * 1500)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [visibleAlerts.map(a => a.id).join(',')]);
+
   // ── 事件处理 ──
   const handleSelect = (newSelection: Selection) => {
     if (selection.id === newSelection.id && selection.type === newSelection.type) {
@@ -121,10 +175,14 @@ export default function App() {
   return (
     <>
       <LoadingOverlay
-        isLoading={loading.isLoading}
+        isLoading={isLoggedIn && loading.isLoading}
         message={loading.message}
         progress={loading.progress}
       />
+
+      {isLoggedIn && viewMode === 'dashboard' && (
+        <AlertToast alerts={visibleAlerts} onDismiss={handleDismissAlert} />
+      )}
 
       {initError && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[300] bg-red-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
@@ -139,34 +197,36 @@ export default function App() {
       )}
 
       {!isLoggedIn ? (
-        <Login onLoginSuccess={handleLoginSuccess} />
+        <Login onLoginSuccess={handleLoginWithReady} dataLoading={loginWaiting} />
       ) : (
         <motion.div
-          className="h-screen bg-white text-slate-900 font-sans flex relative overflow-hidden px-6 pt-[64px] pb-6" id="bold-dashboard"
+          className="h-screen bg-[#faf7f2] text-slate-900 font-sans flex relative overflow-hidden px-6 pt-[64px] pb-6" id="bold-dashboard"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
+          transition={{ duration: 1.2, ease: 'easeInOut' }}
         >
           {/* Vertical Intelligence Sidebar */}
-          <nav className="w-16 h-full border-r border-slate-200 flex flex-col items-center bg-white">
+          <nav className="w-16 h-full border-r border-[#e8e2d9] flex flex-col items-center bg-[#faf7f2]">
             <div className="flex items-center gap-4 whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
               <span className="text-[10px] uppercase tracking-[0.3em] font-bold">报告：刘洋 {formattedDate}</span>
             </div>
 
             <div className="mt-auto mb-2 flex flex-col gap-3">
-              <button
-                onClick={() => setConfigOpen(true)}
-                className="p-3 rounded-lg transition-all flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-slate-200"
-                title="看板配置"
-              >
-                <Settings size={18} />
-              </button>
+              {isAdminLogin && (
+                <button
+                  onClick={() => setConfigOpen(true)}
+                  className="p-3 rounded-lg transition-all flex items-center justify-center bg-[#f0ebe3] text-[#8a8278] hover:bg-[#e8e2d9]"
+                  title="看板配置"
+                >
+                  <Settings size={18} />
+                </button>
+              )}
               <button
                 onClick={() => safeSetViewMode('dashboard')}
                 className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                   viewMode === 'dashboard'
-                    ? 'bg-blue-600 text-white shadow-lg scale-110'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-[#4a4540] text-white shadow-lg scale-110'
+                    : 'bg-[#f0ebe3] text-[#8a8278] hover:bg-[#e8e2d9]'
                 }`}
                 title="数据看板"
               >
@@ -176,8 +236,8 @@ export default function App() {
                 onClick={() => safeSetViewMode('attendance')}
                 className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                   viewMode === 'attendance'
-                    ? 'bg-blue-600 text-white shadow-lg scale-110'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-[#4a4540] text-white shadow-lg scale-110'
+                    : 'bg-[#f0ebe3] text-[#8a8278] hover:bg-[#e8e2d9]'
                 }`}
                 title="中心考勤"
               >
@@ -187,8 +247,8 @@ export default function App() {
                 onClick={() => safeSetViewMode('monthly')}
                 className={`p-3 rounded-lg transition-all flex items-center justify-center ${
                   viewMode === 'monthly'
-                    ? 'bg-blue-600 text-white shadow-lg scale-110'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-[#4a4540] text-white shadow-lg scale-110'
+                    : 'bg-[#f0ebe3] text-[#8a8278] hover:bg-[#e8e2d9]'
                 }`}
                 title="月度计分"
               >
@@ -199,13 +259,13 @@ export default function App() {
                   onClick={() => safeSetViewMode('data')}
                   className={`relative p-3 rounded-lg transition-all flex items-center justify-center ${
                     viewMode === 'data'
-                      ? 'bg-blue-600 text-white shadow-lg scale-110'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-[#4a4540] text-white shadow-lg scale-110'
+                      : 'bg-[#f0ebe3] text-[#8a8278] hover:bg-[#e8e2d9]'
                   }`}
                   title="数据上传与管理"
                 >
                   <Upload size={20} strokeWidth={2.5} />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#7a5a5a] rounded-full border-2 border-[#faf7f2] animate-pulse"></span>
                 </button>
               )}
             </div>
@@ -213,7 +273,7 @@ export default function App() {
 
           {/* Main Stream Area */}
           <div className="flex-1 flex flex-col overflow-auto [scrollbar-gutter:stable]">
-            <header className="h-16 min-h-[64px] border-b border-slate-200 flex items-center justify-between px-12 bg-white sticky top-0 z-50">
+            <header className="h-16 min-h-[64px] border-b border-[#e8e2d9] flex items-center justify-between px-12 bg-[#faf7f2] sticky top-0 z-50">
               <div className="flex items-center gap-4">
                 <h1 className="text-xl font-black tracking-tighter leading-none">GPT 数据通报</h1>
                 <p className="text-[10px] text-slate-400">华中大区 · 绩效数据复盘</p>
@@ -227,7 +287,7 @@ export default function App() {
                   <Trash2 size={11} />清除缓存
                 </button>
                 <span className="text-[10px] font-mono bg-black text-white px-2.5 py-0.5 rounded">数据日期 {formattedT2Date}</span>
-                <span className="text-[10px] text-red-500 font-bold flex items-center gap-1"><ShieldAlert size={12} />高风险动态反馈</span>
+                <span className="text-[10px] text-[#7a5a5a] font-bold flex items-center gap-1"><ShieldAlert size={12} />高风险动态反馈</span>
                 {loggedInUser && (
                   <div className="flex items-center gap-3 text-[11px] text-slate-500">
                     <span className="font-bold text-slate-700">
@@ -273,17 +333,17 @@ export default function App() {
               ) : (
                 <ErrorBoundary label="数据看板">
                   {/* Main Visual & Registry */}
-                  <div className="col-span-12 xl:col-span-9 border-r border-slate-200 bg-white">
+                  <div className="col-span-12 xl:col-span-9 border-r border-[#e8e2d9] bg-[#faf7f2]">
                     <div className="p-0">
-                      <div className="px-8 py-4 flex items-center justify-between border-b border-slate-100">
+                      <div className="px-8 py-4 flex items-center justify-between border-b border-[#e8e2d9]">
                         <div className="flex items-center gap-3">
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">全区均分</span>
-                          <span className={cn("text-lg font-black tabular-nums", avgTotalScore >= 80 ? "text-emerald-600" : avgTotalScore >= 60 ? "text-blue-600" : "text-amber-600")}>{avgTotalScore} 分</span>
+                          <span className={cn("text-lg font-black tabular-nums", avgTotalScore >= 80 ? "text-[#3d5a3d]" : avgTotalScore >= 60 ? "text-[#3d4d5a]" : "text-[#5a4d3d]")}>{avgTotalScore} 分</span>
                           <MetricHelpPanel />
                         </div>
                         <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                           <span>{selection.type === 'all' ? '全部中心' : selection.label}</span>
-                          {customData && customData.length > 0 && <span className="text-red-500 font-bold">• 自定义数据</span>}
+                          {customData && customData.length > 0 && <span className="text-[#7a5a5a] font-bold">• 自定义数据</span>}
                         </div>
                       </div>
                       <DataTable
@@ -314,7 +374,7 @@ export default function App() {
               )}
             </main>
 
-            <footer className="h-10 min-h-[40px] border-t border-slate-200 bg-white flex items-center px-12 justify-between z-10">
+            <footer className="h-10 min-h-[40px] border-t border-[#e8e2d9] bg-[#faf7f2] flex items-center px-12 justify-between z-10">
               <div className="flex gap-6 items-center text-[10px] text-slate-400">
                 <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />实时流：活跃</span>
                 <span>内部机密：4级加密</span>

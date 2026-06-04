@@ -322,7 +322,8 @@ async function clearDeletedFileData(
  * 支持进度回调（用于 UI 展示加载进度）
  */
 export async function loadDefaultData(
-  onProgress?: (loaded: number, total: number, currentFile: string) => void
+  onProgress?: (loaded: number, total: number, currentFile: string) => void,
+  filterTypes?: DataType[]
 ): Promise<boolean> {
   try {
     console.log('[默认数据] 开始加载默认数据（增量更新模式）...');
@@ -347,7 +348,16 @@ export async function loadDefaultData(
     await clearDeletedFileData(remoteFileList, localFileList);
 
     // 3. 对比，找出需要重新加载的文件
-    const filesToReload = getFilesToReload(remoteFileList, localFileList);
+    let filesToReload = getFilesToReload(remoteFileList, localFileList);
+
+    // 3.5 按数据类型过滤（按需加载）
+    if (filterTypes && filterTypes.length > 0) {
+      filesToReload = filesToReload.filter(file => {
+        const dataType = inferDataType(file);
+        return dataType && filterTypes.includes(dataType);
+      });
+    }
+
     const skipCount = remoteFiles.length - filesToReload.length;
 
     if (skipCount > 0) {

@@ -36,9 +36,9 @@ export default function ConfirmModal({ isOpen, title, message, confirmText = '�
         onClick={handleOverlayClick}
       />
       {/* 弹窗 */}
-      <div className="fixed z-[201] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] bg-white rounded-xl shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-150 origin-center">
+      <div className="fixed z-[201] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] bg-[#faf7f2] rounded-xl shadow-2xl border border-[#e8e2d9] animate-in zoom-in-95 duration-150 origin-center">
         {/* 标题 */}
-        <div className="px-5 pt-5 pb-3 border-b border-slate-100">
+        <div className="px-5 pt-5 pb-3 border-b border-[#e8e2d9]">
           <h3 className="text-sm font-bold text-slate-900">{title}</h3>
         </div>
         {/* 内容 */}

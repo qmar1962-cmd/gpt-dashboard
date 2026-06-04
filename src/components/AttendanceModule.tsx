@@ -97,15 +97,15 @@ function FilterDropdown({ label, options, value, onChange }: FilterDropdownProps
         <SlidersHorizontal size={11} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1">
-          <div className="px-2 pb-1 border-b border-slate-100">
+        <div className="absolute top-full left-0 mt-1 w-48 bg-[#faf7f2] border border-[#e8e2d9] rounded-lg shadow-lg z-50 py-1">
+          <div className="px-2 pb-1 border-b border-[#e8e2d9]">
             <input
               autoFocus
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="搜索..."
-              className="w-full px-2 py-1 text-[11px] border border-slate-200 rounded focus:outline-none focus:border-blue-400"
+              className="w-full px-2 py-1 text-[11px] border border-[#e8e2d9] rounded focus:outline-none focus:border-blue-400"
             />
           </div>
           <div className="max-h-48 overflow-y-auto py-0.5" style={{ scrollbarWidth: 'thin' }}>
@@ -113,7 +113,7 @@ function FilterDropdown({ label, options, value, onChange }: FilterDropdownProps
               type="button"
               onClick={() => { onChange(''); setOpen(false); setSearch(''); }}
               className={`w-full px-3 py-1.5 text-left text-[11px] flex items-center gap-2 transition-colors ${
-                value === '' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                value === '' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-[#f0ebe3]'
               }`}
             >
               {value === '' && <Check size={12} className="text-blue-600" />}
@@ -125,7 +125,7 @@ function FilterDropdown({ label, options, value, onChange }: FilterDropdownProps
                 type="button"
                 onClick={() => { onChange(opt); setOpen(false); setSearch(''); }}
                 className={`w-full px-3 py-1.5 text-left text-[11px] flex items-center gap-2 transition-colors ${
-                  value === opt ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                  value === opt ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-[#f0ebe3]'
                 }`}
               >
                 {value === opt && <Check size={12} className="text-blue-600" />}
@@ -557,7 +557,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
 
   // ════ 渲染 ════
   return (
-    <div className="min-h-screen bg-slate-50 p-5">
+    <div className="min-h-screen bg-[#f0ebe3] p-5">
 
       {/* 标题区 */}
       <div className="mb-5">
@@ -572,7 +572,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-slate-400 transition-colors text-sm font-medium text-slate-700"
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#faf7f2] border border-[#e8e2d9] rounded-lg hover:border-slate-400 transition-colors text-sm font-medium text-slate-700"
             >
               <span>{center || '选择中心'}</span>
               <span className="text-xs text-slate-400 font-normal">
@@ -581,7 +581,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
               <ChevronDown size={13} className={`text-slate-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             {dropdownOpen && (
-              <div className="absolute top-full left-0 mt-1.5 w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1 max-h-64 overflow-y-auto">
+              <div className="absolute top-full left-0 mt-1.5 w-52 bg-[#faf7f2] border border-[#e8e2d9] rounded-xl shadow-lg z-50 py-1 max-h-64 overflow-y-auto">
                 {centersList.length === 0 ? (
                   <div className="px-4 py-2 text-xs text-slate-400">加载中...</div>
                 ) : (
@@ -589,7 +589,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                     <button
                       key={c}
                       onClick={() => { setCenter(c); setDropdownOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex justify-between items-center ${
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-[#f0ebe3] transition-colors flex justify-between items-center ${
                         c === center ? 'text-red-600 bg-red-50 font-semibold' : 'text-slate-700'
                       }`}
                     >
@@ -605,12 +605,12 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
 
       {/* 无数据提示 */}
       {rosterLoading ? (
-        <div className="bg-white rounded-xl border border-slate-200 py-24 text-center">
+        <div className="bg-[#faf7f2] rounded-xl border border-[#e8e2d9] py-24 text-center">
           <LoadingSpinner size={28} />
           <p className="text-slate-400 text-xs mt-4">正在加载考勤数据…</p>
         </div>
       ) : rows.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 py-20 text-center">
+        <div className="bg-[#faf7f2] rounded-xl border border-[#e8e2d9] py-20 text-center">
           <CalendarDays size={48} className="mx-auto mb-4 text-slate-200" />
           <p className="text-slate-500 font-bold">未找到该中心人员数据</p>
           <p className="text-slate-400 text-xs mt-1">请确认花名册中包含「{center}」人员</p>
@@ -639,14 +639,14 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
 
             return (
               <div className="grid grid-cols-3 gap-3 mb-5">
-                <div className="bg-white rounded-xl border border-slate-100 px-4 py-3.5 flex flex-col gap-0.5">
+                <div className="bg-[#faf7f2] rounded-xl border border-[#e8e2d9] px-4 py-3.5 flex flex-col gap-0.5">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">在职人数</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-black text-slate-800">{rows.length}</span>
                     <span className="text-[10px] text-slate-400">人</span>
                   </div>
                 </div>
-                <div className="bg-white rounded-xl border border-slate-100 px-4 py-3.5 flex flex-col gap-0.5">
+                <div className="bg-[#faf7f2] rounded-xl border border-[#e8e2d9] px-4 py-3.5 flex flex-col gap-0.5">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">出勤人数</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-black text-slate-800">{presentCount}</span>
@@ -654,7 +654,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                   </div>
                   <span className="text-[9px] text-slate-300">T-2 · {t2Str}</span>
                 </div>
-                <div className="bg-white rounded-xl border border-slate-100 px-4 py-3.5 flex flex-col gap-0.5">
+                <div className="bg-[#faf7f2] rounded-xl border border-[#e8e2d9] px-4 py-3.5 flex flex-col gap-0.5">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">缺勤人数</span>
                   <div className="flex items-baseline gap-1">
                     <span className={`text-2xl font-black ${absentCount > 0 ? 'text-red-600' : 'text-slate-800'}`}>{absentCount}</span>
@@ -863,8 +863,8 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
             };
 
             return (
-              <div className="mb-5 bg-white rounded-xl border border-slate-100 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+              <div className="mb-5 bg-[#faf7f2] rounded-xl border border-[#e8e2d9] overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#e8e2d9] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <AlertTriangle size={14} className="text-amber-500" />
                     <span className="text-[11px] font-bold text-slate-700">出勤预警</span>
@@ -873,7 +873,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                     <button
                         onClick={() => handleExportText(centersList)}
                         disabled={textCopyState === 'loading'}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all border border-slate-200 hover:scale-[1.02] active:scale-[0.98] ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium rounded-lg transition-all border border-[#e8e2d9] hover:scale-[1.02] active:scale-[0.98] ${
                           textCopyState === 'loading' ? 'text-slate-400 cursor-wait'
                           : textCopyState === 'success' ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
                           : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 hover:border-slate-300'
@@ -885,7 +885,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                 </div>
                 <div className="flex gap-0">
                   {/* 左：长出勤 */}
-                  <div className="flex-1 px-4 py-3 border-r border-slate-100 min-w-0 min-h-[400px]">
+                  <div className="flex-1 px-4 py-3 border-r border-[#e8e2d9] min-w-0 min-h-[400px]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-bold text-slate-500">
                         连续出勤 ≥10 天
@@ -896,7 +896,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                       <button
                         onClick={() => handleExportWarningImage('work', setWorkCopyState)}
                         disabled={workCopyState === 'loading'}
-                        className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium rounded-md transition-all border border-slate-200 hover:scale-[1.02] active:scale-[0.98] ${
+                        className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium rounded-md transition-all border border-[#e8e2d9] hover:scale-[1.02] active:scale-[0.98] ${
                           workCopyState === 'loading' ? 'text-slate-400 cursor-wait'
                           : workCopyState === 'success' ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
                           : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 hover:border-slate-300'
@@ -912,7 +912,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                         <div className="overflow-x-auto">
                           <table className="w-full text-[10px]">
                             <thead>
-                              <tr className="text-slate-400 border-b border-slate-100">
+                              <tr className="text-slate-400 border-b border-[#e8e2d9]">
                                 <th className="px-2 py-1.5 text-left font-medium w-24">工号</th>
                                 <th className="px-2 py-1.5 text-left font-medium w-20">姓名</th>
                                 <th className="px-2 py-1.5 text-left font-medium w-24">
@@ -941,7 +941,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                             </thead>
                             <tbody>
                               {warningWorkPageData.map((item, i) => (
-                                <tr key={item.empId} className={`border-b border-slate-50 ${i % 2 === 0 ? 'bg-slate-50/50' : ''}`}>
+                                <tr key={item.empId} className={`border-b border-slate-50 ${i % 2 === 0 ? 'bg-[#f0ebe3]/50' : ''}`}>
                                   <td className="px-2 py-1.5 text-slate-500 font-mono w-24 truncate">{item.empId}</td>
                                   <td className="px-2 py-1.5 text-slate-700 font-medium w-20 truncate">{item.name}</td>
                                   <td className="px-2 py-1.5 text-slate-400 w-24 truncate">{item.dept2}</td>
@@ -956,9 +956,9 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                         </div>
                         {warningWorkTotalPages > 1 && (
                           <div className="flex items-center justify-end gap-1 mt-2">
-                            <button onClick={() => setWarningWorkPage(p => Math.max(1, p - 1))} disabled={warningWorkPage === 1} className="p-1 rounded border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-30"><ChevronLeft size={11} /></button>
+                            <button onClick={() => setWarningWorkPage(p => Math.max(1, p - 1))} disabled={warningWorkPage === 1} className="p-1 rounded border border-[#e8e2d9] text-slate-400 hover:bg-[#f0ebe3] disabled:opacity-30"><ChevronLeft size={11} /></button>
                             <span className="text-[9px] text-slate-400 px-1">{warningWorkPage}/{warningWorkTotalPages}</span>
-                            <button onClick={() => setWarningWorkPage(p => Math.min(warningWorkTotalPages, p + 1))} disabled={warningWorkPage === warningWorkTotalPages} className="p-1 rounded border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-30"><ChevronRight size={11} /></button>
+                            <button onClick={() => setWarningWorkPage(p => Math.min(warningWorkTotalPages, p + 1))} disabled={warningWorkPage === warningWorkTotalPages} className="p-1 rounded border border-[#e8e2d9] text-slate-400 hover:bg-[#f0ebe3] disabled:opacity-30"><ChevronRight size={11} /></button>
                           </div>
                         )}
                       </>
@@ -976,7 +976,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                       <button
                         onClick={() => handleExportWarningImage('absent', setAbsentCopyState)}
                         disabled={absentCopyState === 'loading'}
-                        className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium rounded-md transition-all border border-slate-200 hover:scale-[1.02] active:scale-[0.98] ${
+                        className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium rounded-md transition-all border border-[#e8e2d9] hover:scale-[1.02] active:scale-[0.98] ${
                           absentCopyState === 'loading' ? 'text-slate-400 cursor-wait'
                           : absentCopyState === 'success' ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
                           : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 hover:border-slate-300'
@@ -992,7 +992,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                         <div className="overflow-x-auto">
                           <table className="w-full text-[10px]">
                             <thead>
-                              <tr className="text-slate-400 border-b border-slate-100">
+                              <tr className="text-slate-400 border-b border-[#e8e2d9]">
                                 <th className="px-2 py-1.5 text-left font-medium w-24">工号</th>
                                 <th className="px-2 py-1.5 text-left font-medium w-20">姓名</th>
                                 <th className="px-2 py-1.5 text-left font-medium w-24">
@@ -1021,7 +1021,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                             </thead>
                             <tbody>
                               {warningAbsentPageData.map((item, i) => (
-                                <tr key={item.empId} className={`border-b border-slate-50 ${i % 2 === 0 ? 'bg-slate-50/50' : ''}`}>
+                                <tr key={item.empId} className={`border-b border-slate-50 ${i % 2 === 0 ? 'bg-[#f0ebe3]/50' : ''}`}>
                                   <td className="px-2 py-1.5 text-slate-500 font-mono w-24 truncate">{item.empId}</td>
                                   <td className="px-2 py-1.5 text-slate-700 font-medium w-20 truncate">{item.name}</td>
                                   <td className="px-2 py-1.5 text-slate-400 w-24 truncate">{item.dept2}</td>
@@ -1036,9 +1036,9 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                         </div>
                         {warningAbsentTotalPages > 1 && (
                           <div className="flex items-center justify-end gap-1 mt-2">
-                            <button onClick={() => setWarningAbsentPage(p => Math.max(1, p - 1))} disabled={warningAbsentPage === 1} className="p-1 rounded border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-30"><ChevronLeft size={11} /></button>
+                            <button onClick={() => setWarningAbsentPage(p => Math.max(1, p - 1))} disabled={warningAbsentPage === 1} className="p-1 rounded border border-[#e8e2d9] text-slate-400 hover:bg-[#f0ebe3] disabled:opacity-30"><ChevronLeft size={11} /></button>
                             <span className="text-[9px] text-slate-400 px-1">{warningAbsentPage}/{warningAbsentTotalPages}</span>
-                            <button onClick={() => setWarningAbsentPage(p => Math.min(warningAbsentTotalPages, p + 1))} disabled={warningAbsentPage === warningAbsentTotalPages} className="p-1 rounded border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:opacity-30"><ChevronRight size={11} /></button>
+                            <button onClick={() => setWarningAbsentPage(p => Math.min(warningAbsentTotalPages, p + 1))} disabled={warningAbsentPage === warningAbsentTotalPages} className="p-1 rounded border border-[#e8e2d9] text-slate-400 hover:bg-[#f0ebe3] disabled:opacity-30"><ChevronRight size={11} /></button>
                           </div>
                         )}
                       </>
@@ -1050,13 +1050,13 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
           })()}
 
           {/* ── 主表格区 ── */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="bg-[#faf7f2] rounded-xl border border-[#e8e2d9] overflow-hidden">
             {/* 工具栏 */}
-            <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
+            <div className="px-4 py-2.5 border-b border-[#e8e2d9] flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2.5">
-                <div className="flex border border-slate-200 rounded-lg overflow-hidden text-[11px] font-medium">
-                  <button onClick={() => { setTab('summary'); setPage(1); }} className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all ${tab === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}><BarChart2 size={11} />汇总统计</button>
-                  <button onClick={() => { setTab('calendar'); setPage(1); }} className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all ${tab === 'calendar' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}><CalendarDays size={11} />出勤日历</button>
+                <div className="flex border border-[#e8e2d9] rounded-lg overflow-hidden text-[11px] font-medium">
+                  <button onClick={() => { setTab('summary'); setPage(1); }} className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all ${tab === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-[#f0ebe3]'}`}><BarChart2 size={11} />汇总统计</button>
+                  <button onClick={() => { setTab('calendar'); setPage(1); }} className={`flex items-center gap-1.5 px-3.5 py-1.5 transition-all ${tab === 'calendar' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-[#f0ebe3]'}`}><CalendarDays size={11} />出勤日历</button>
                 </div>
                 <span className="text-[10px] text-slate-400">共 {rows.length} 人{search && ` · 筛选 ${filtered.length} 人`}</span>
                 {/* 月份切换 */}
@@ -1072,7 +1072,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                   type="text" value={search}
                   onChange={e => { setSearch(e.target.value); setPage(1); }}
                   placeholder="搜索..."
-                  className="pl-8 pr-7 py-1.5 text-[11px] border border-slate-200 rounded-lg w-44 focus:outline-none focus:border-slate-400 transition-colors bg-slate-50/50"
+                  className="pl-8 pr-7 py-1.5 text-[11px] border border-[#e8e2d9] rounded-lg w-44 focus:outline-none focus:border-slate-400 transition-colors bg-[#f0ebe3]/50"
                 />
                 {search && (
                   <button onClick={() => { setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X size={12} /></button>
@@ -1136,20 +1136,20 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
               return (
                 <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-slate-100 w-8 text-[9px]">序</th>
-                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-500 whitespace-nowrap border-r border-slate-100 text-[9px]">中心</th>
-                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-slate-100 text-[9px]">
+                    <tr className="bg-[#f0ebe3] border-b border-[#e8e2d9]">
+                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] w-8 text-[9px]">序</th>
+                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-500 whitespace-nowrap border-r border-[#e8e2d9] text-[9px]">中心</th>
+                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[9px]">
                         <div className="flex items-center gap-0.5">部门
                           <FilterDropdown label="部门" options={Array.from(new Set(rows.map(r => r.dept2))).sort()} value={deptFilter} onChange={v => { setDeptFilter(v); setGroupFilter(''); setPage(1); }} />
                         </div>
                       </th>
-                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-slate-100 text-[9px]">
+                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[9px]">
                         <div className="flex items-center gap-0.5">组别
                           <FilterDropdown label="组别" options={Array.from(new Set(rows.filter(r => !deptFilter || r.dept2 === deptFilter).map(r => r.group))).sort()} value={groupFilter} onChange={v => { setGroupFilter(v); setPage(1); }} />
                         </div>
                       </th>
-                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-slate-100 text-[9px] min-w-[72px]">负责人</th>
+                      <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[9px] min-w-[72px]">负责人</th>
                       {Array.from({ length: 31 }, (_, i) => {
                         const d = i + 1;
                         const weekDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), d).getDay();
@@ -1164,13 +1164,13 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                   </thead>
                   <tbody>
                     {pPageRows.map((g, ri) => (
-                      <tr key={ri} className={`border-b border-slate-100/60 table-row-hover ${ri % 2 === 1 ? 'bg-slate-50/20' : ''}`}>
-                        <td className="px-2.5 py-2 text-slate-300 border-r border-slate-100 text-center text-[9px]">{((page - 1) * ATTENDANCE_PAGE_SIZE) + ri + 1}</td>
-                        <td className="px-2.5 py-2 text-slate-600 whitespace-nowrap border-r border-slate-100 text-[10px]">{center}</td>
-                        <td className="px-2.5 py-2 text-slate-400 whitespace-nowrap border-r border-slate-100 text-[10px]">{g.dept2}</td>
-                        <td className="px-2.5 py-2 text-slate-500 whitespace-nowrap border-r border-slate-100 text-[10px]">{g.group}</td>
+                      <tr key={ri} className={`border-b border-[#e8e2d9]/60 table-row-hover ${ri % 2 === 1 ? 'bg-[#f0ebe3]/20' : ''}`}>
+                        <td className="px-2.5 py-2 text-slate-300 border-r border-[#e8e2d9] text-center text-[9px]">{((page - 1) * ATTENDANCE_PAGE_SIZE) + ri + 1}</td>
+                        <td className="px-2.5 py-2 text-slate-600 whitespace-nowrap border-r border-[#e8e2d9] text-[10px]">{center}</td>
+                        <td className="px-2.5 py-2 text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[10px]">{g.dept2}</td>
+                        <td className="px-2.5 py-2 text-slate-500 whitespace-nowrap border-r border-[#e8e2d9] text-[10px]">{g.group}</td>
                         {/* 负责人 */}
-                        <td className="px-2.5 py-2 border-r border-slate-100 text-[10px] min-w-[72px]"
+                        <td className="px-2.5 py-2 border-r border-[#e8e2d9] text-[10px] min-w-[72px]"
                           onClick={e => {
                             const gKey = `${center}|||${g.group}`;
                             if (editingGroupKey !== gKey) { e.stopPropagation(); handleStartEdit(center, g.group, getGroupLeader(center, g.group)); }
@@ -1183,7 +1183,7 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                                 onChange={e => setEditingLeaderValue(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter') handleConfirmEdit(center, g.group); if (e.key === 'Escape') handleCancelEdit(); }}
                                 onBlur={() => handleConfirmEdit(center, g.group)}
-                                className="w-full px-1 py-0.5 text-[10px] border border-blue-300 rounded focus:outline-none focus:border-blue-500 bg-white"
+                                className="w-full px-1 py-0.5 text-[10px] border border-blue-300 rounded focus:outline-none focus:border-blue-500 bg-[#faf7f2]"
                                 placeholder="输入姓名"
                               />
                             </div>
@@ -1233,12 +1233,12 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
             {tab === 'calendar' && (
               <table className="w-full text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-slate-100 w-8 text-[9px]">序</th>
-                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-slate-100 text-[9px]">组别</th>
-                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-slate-100 text-[9px]">工号</th>
-                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-700 whitespace-nowrap border-r border-slate-100 text-[9px]">姓名</th>
-                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-slate-100 text-[9px]">岗位</th>
+                  <tr className="bg-[#f0ebe3] border-b border-[#e8e2d9]">
+                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] w-8 text-[9px]">序</th>
+                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[9px]">组别</th>
+                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[9px]">工号</th>
+                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-700 whitespace-nowrap border-r border-[#e8e2d9] text-[9px]">姓名</th>
+                    <th className="px-2.5 py-2.5 text-left font-bold text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[9px]">岗位</th>
                     {Array.from({ length: 31 }, (_, i) => {
                       const d = i + 1;
                       const weekDay = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), d).getDay();
@@ -1255,12 +1255,12 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                   {pageRows.map((row, ri) => {
                     const empAtt = calendarDataSource[row.empId] || {};
                     return (
-                      <tr key={ri} className={`border-b border-slate-100/60 table-row-hover ${ri % 2 === 1 ? 'bg-slate-50/20' : ''}`}>
-                        <td className="px-2.5 py-1.5 text-slate-300 border-r border-slate-100 text-center text-[9px]">{row.seq}</td>
-                        <td className="px-2.5 py-1.5 text-slate-400 whitespace-nowrap border-r border-slate-100 text-[10px]">{row.group}</td>
-                        <td className="px-2.5 py-1.5 text-slate-400 font-mono whitespace-nowrap border-r border-slate-100 text-[9px]">{row.empId}</td>
-                        <td className="px-2.5 py-1.5 font-semibold text-slate-700 whitespace-nowrap border-r border-slate-100 text-[10px]">{row.name}</td>
-                        <td className="px-2.5 py-1.5 text-slate-400 whitespace-nowrap border-r border-slate-100 text-[10px]">{row.role}</td>
+                      <tr key={ri} className={`border-b border-[#e8e2d9]/60 table-row-hover ${ri % 2 === 1 ? 'bg-[#f0ebe3]/20' : ''}`}>
+                        <td className="px-2.5 py-1.5 text-slate-300 border-r border-[#e8e2d9] text-center text-[9px]">{row.seq}</td>
+                        <td className="px-2.5 py-1.5 text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[10px]">{row.group}</td>
+                        <td className="px-2.5 py-1.5 text-slate-400 font-mono whitespace-nowrap border-r border-[#e8e2d9] text-[9px]">{row.empId}</td>
+                        <td className="px-2.5 py-1.5 font-semibold text-slate-700 whitespace-nowrap border-r border-[#e8e2d9] text-[10px]">{row.name}</td>
+                        <td className="px-2.5 py-1.5 text-slate-400 whitespace-nowrap border-r border-[#e8e2d9] text-[10px]">{row.role}</td>
                         {Array.from({ length: 31 }, (_, i) => {
                           const d = i + 1;
                           const fullDate = `${calendarMonth.getFullYear()}-${String(calendarMonth.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -1283,10 +1283,10 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
 
             {/* 分页 */}
             {totalPages > 1 && (
-              <div className="px-4 py-2.5 border-t border-slate-100 flex items-center justify-between">
+              <div className="px-4 py-2.5 border-t border-[#e8e2d9] flex items-center justify-between">
                 <span className="text-[10px] text-slate-400">第 {page} / {totalPages} 页 · 每页 {ATTENDANCE_PAGE_SIZE} 条</span>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 rounded border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"><ChevronLeft size={13} /></button>
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 rounded border border-[#e8e2d9] text-slate-400 hover:bg-[#f0ebe3] hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"><ChevronLeft size={13} /></button>
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let p = i + 1;
                     if (totalPages > 5) {
@@ -1297,10 +1297,10 @@ export default function AttendanceModule({ embedded = false, onAttendanceDetailO
                       p = start + i;
                     }
                     return (
-                      <button key={p} onClick={() => setPage(p)} className={`w-7 h-7 text-[10px] font-medium rounded transition-all ${p === page ? 'bg-slate-900 text-white' : 'border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}>{p}</button>
+                      <button key={p} onClick={() => setPage(p)} className={`w-7 h-7 text-[10px] font-medium rounded transition-all ${p === page ? 'bg-slate-900 text-white' : 'border border-[#e8e2d9] text-slate-400 hover:bg-[#f0ebe3] hover:text-slate-600'}`}>{p}</button>
                     );
                   })}
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 rounded border border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"><ChevronRight size={13} /></button>
+                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 rounded border border-[#e8e2d9] text-slate-400 hover:bg-[#f0ebe3] hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"><ChevronRight size={13} /></button>
                 </div>
               </div>
             )}

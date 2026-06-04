@@ -208,8 +208,8 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
                 className={cn(
                   "relative border-2 border-dashed rounded-xl p-14 text-center transition-all duration-300",
                   isDragging 
-                    ? "border-slate-900 bg-slate-50" 
-                    : "border-slate-200 bg-white hover:border-slate-300"
+                    ? "border-slate-900 bg-[#f0ebe3]" 
+                    : "border-[#e8e2d9] bg-[#faf7f2] hover:border-slate-300"
                 )}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -229,7 +229,7 @@ export default function DataUploader({ onFileProcessed, onError }: DataUploaderP
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="w-14 h-14 border-4 border-slate-100 border-t-slate-900 rounded-full animate-spin"
+                      className="w-14 h-14 border-4 border-[#e8e2d9] border-t-slate-900 rounded-full animate-spin"
                     />
                   ) : uploadStatus === 'success' ? (
                     <motion.div

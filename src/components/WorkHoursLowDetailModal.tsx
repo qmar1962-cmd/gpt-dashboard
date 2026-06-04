@@ -297,7 +297,7 @@ export default function WorkHoursLowDetailModal({
       '脱岗': 'bg-red-100 text-red-700 border-red-200',
       '其他': 'bg-slate-100 text-slate-700 border-slate-300',
     };
-    return colorMap[reason] || 'bg-slate-50 text-slate-600 border-slate-200';
+    return colorMap[reason] || 'bg-[#f0ebe3] text-slate-600 border-[#e8e2d9]';
   };
 
   return (
@@ -320,10 +320,10 @@ export default function WorkHoursLowDetailModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed inset-x-4 top-[6%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[720px] max-h-[88vh] bg-[#faf7f2] rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
           >
             {/* 头部 */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e8e2d9] flex-shrink-0">
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-black tracking-tight">
                   {provinceName} · {centerName}中心
@@ -349,7 +349,7 @@ export default function WorkHoursLowDetailModal({
             {/* 内容区域 */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {/* 柱状图趋势 */}
-              <div className="bg-slate-50 rounded-xl p-4">
+              <div className="bg-[#f0ebe3] rounded-xl p-4">
                 <div className="flex items-end gap-2 h-28">
                   {weeklyData.map((day, idx) => {
                     const barHeight = day.abnormalCount > 0
@@ -407,7 +407,7 @@ export default function WorkHoursLowDetailModal({
                       "rounded-lg border p-3 transition-all",
                       day.abnormalCount > 0
                         ? "border-cyan-100 bg-cyan-50/30"
-                        : "border-slate-100 bg-slate-50/30"
+                        : "border-[#e8e2d9] bg-[#f0ebe3]/30"
                     )}
                   >
                     {/* 日期行 */}
@@ -444,7 +444,7 @@ export default function WorkHoursLowDetailModal({
                           return (
                             <div
                               key={idx}
-                              className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-x-3 items-center bg-white rounded-md px-3 py-2 border border-cyan-50 relative"
+                              className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-x-3 items-center bg-[#faf7f2] rounded-md px-3 py-2 border border-cyan-50 relative"
                             >
                               {/* 姓名 */}
                               <div className="flex items-center gap-1.5 min-w-0">
@@ -476,7 +476,7 @@ export default function WorkHoursLowDetailModal({
                                     "text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer border transition-all text-center flex items-center justify-center gap-1",
                                     reason
                                       ? `${getReasonStyle(reason)} pr-0`
-                                      : "bg-slate-50 text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 min-w-[80px]"
+                                      : "bg-[#f0ebe3] text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 min-w-[80px]"
                                   )}
                                 >
                                   {reason || (
@@ -504,7 +504,7 @@ export default function WorkHoursLowDetailModal({
                                       animate={{ opacity: 1, y: 0, scale: 1 }}
                                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                                       transition={{ duration: 0.12 }}
-                                      className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-slate-200 z-50 w-28 overflow-hidden"
+                                      className="absolute right-0 top-full mt-1 bg-[#faf7f2] rounded-lg shadow-xl border border-[#e8e2d9] z-50 w-28 overflow-hidden"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       {REASON_OPTIONS.map(opt => (
@@ -515,7 +515,7 @@ export default function WorkHoursLowDetailModal({
                                             "w-full text-left px-3 py-1.5 text-[11px] font-medium transition-colors",
                                             opt === reason
                                               ? "bg-blue-50 text-blue-700 font-bold"
-                                              : "hover:bg-slate-50 text-slate-600"
+                                              : "hover:bg-[#f0ebe3] text-slate-600"
                                           )}
                                         >
                                           {opt}
@@ -543,7 +543,7 @@ export default function WorkHoursLowDetailModal({
             </div>
 
             {/* 底部 */}
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
+            <div className="px-6 py-3 border-t border-[#e8e2d9] bg-[#f0ebe3]/50 flex-shrink-0">
               <p className="text-[9px] text-slate-400 font-bold text-center">
                 仅展示出勤工时 ≤ 8h 的人员明细
               </p>

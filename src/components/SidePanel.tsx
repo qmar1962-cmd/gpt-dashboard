@@ -169,9 +169,9 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
   });
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-slate-200">
+    <div className="flex flex-col h-full bg-[#faf7f2] border-l border-[#e8e2d9]">
       {/* 综合总览 */}
-      <div className="p-5 border-b border-slate-100">
+      <div className="p-5 border-b border-[#e8e2d9]">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">
           {selection.type === 'all' ? '全区综合总览' : selection.type === 'center' ? overview?.province + ' · ' + (selection.label || '') : selection.label || '综合总览'}
         </span>
@@ -181,13 +181,13 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
             {/* 得分大数 */}
             <div className="flex items-end justify-between">
               <span className="text-[11px] text-slate-500">综合得分</span>
-              <span className={cn("text-2xl font-black tabular-nums", overview.score >= 80 ? "text-emerald-600" : overview.score >= 60 ? "text-blue-600" : overview.score >= 40 ? "text-amber-600" : "text-red-600")}>
+              <span className={cn("text-2xl font-black tabular-nums", overview.score >= 80 ? "text-[#3d5a3d]" : overview.score >= 60 ? "text-[#3d4d5a]" : overview.score >= 40 ? "text-[#5a4d3d]" : "text-[#5a3d3d]")}>
                 {overview.score}
               </span>
             </div>
 
             {/* KPI 网格 */}
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 pt-2 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 pt-2 border-t border-[#e8e2d9]">
               <KPI label="非操占比" value={overview.nonOpRatio + '%'} />
               <KPI label="效能异常" value={overview.abnormalCount + '个'} warn={overview.abnormalCount >= 3} />
               <KPI label="绩效异常" value={overview.salaryCount + '人'} sub={overview.salaryCoverage + '%'} />
@@ -216,7 +216,7 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
       <div>
         {/* 维度得分条 */}
         {overview && (
-          <div className="px-5 py-3 border-t border-slate-100">
+          <div className="px-5 py-3 border-t border-[#e8e2d9]">
             <div className="space-y-2.5">
               {dimScores.map(dim => (
                 <div key={dim.key} className="flex items-center gap-2">
@@ -237,19 +237,19 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
 
         {/* 关键行动 + 告警 */}
         {(actions.length > 0 || hasAlerts) && (
-          <div className="px-5 py-4 border-t border-slate-100">
+          <div className="px-5 py-4 border-t border-[#e8e2d9]">
             <div className="flex items-center gap-2 mb-3">
-              <Zap size={13} className="text-blue-500 fill-blue-500" />
-              <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">关键行动</span>
+              <Zap size={13} className="text-[#5a6b7a] fill-[#5a6b7a]" />
+              <span className="text-[11px] font-bold text-[#3d4d5a] uppercase tracking-wider">关键行动</span>
               {hasAlerts && (
-                <span className={cn("ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full", total >= 5 ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600")}>
+                <span className={cn("ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full", total >= 5 ? "bg-[#e6d4d4] text-[#5a3d3d]" : "bg-[#e6ddd4] text-[#5a4d3d]")}>
                   {total} 项关注
                 </span>
               )}
             </div>
             {actions.map((a, i) => (
               <div key={i} className="flex items-start gap-2 text-[12px] text-slate-700 leading-relaxed mb-2.5">
-                <span className="text-blue-400 font-bold mt-0.5 shrink-0">{i + 1}.</span>
+                <span className="text-[#5a6b7a] font-bold mt-0.5 shrink-0">{i + 1}.</span>
                 <span>{a}</span>
               </div>
             ))}
@@ -263,13 +263,13 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
                   <div className="mt-3 space-y-3 max-h-64 overflow-y-auto text-[11px] leading-relaxed">
                     {alerts.filter(a => a.dir === 'up' && a.type !== '得分↓').length > 0 && (
                       <div>
-                        <div className="flex items-center gap-1 mb-1 text-red-500">
+                        <div className="flex items-center gap-1 mb-1 text-[#7a5a5a]">
                           <TrendingUp size={10} /><span className="font-semibold">指标恶化</span>
                         </div>
                         {alerts.filter(a => a.dir === 'up' && a.type !== '得分↓').map((a, i) => (
                           <div key={i} className="text-slate-600 ml-3">
                             <span className="font-semibold text-slate-800">{a.center}</span>
-                            <span className="text-red-500"> {a.type}+{a.detail.split('→')[1]?.replace('个','') || a.detail}</span>
+                            <span className="text-[#7a5a5a]"> {a.type}+{a.detail.split('→')[1]?.replace('个','') || a.detail}</span>
                             <span className="text-slate-400">（前{a.detail.split('→')[0]}）</span>
                           </div>
                         ))}
@@ -277,20 +277,20 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
                     )}
                     {alerts.filter(a => a.dir === 'down' || a.type === '得分↓').length > 0 && (
                       <div>
-                        <div className="flex items-center gap-1 mb-1 text-emerald-600">
+                        <div className="flex items-center gap-1 mb-1 text-[#3d5a3d]">
                           <TrendingDown size={10} /><span className="font-semibold">改善</span>
                         </div>
                         {alerts.filter(a => a.dir === 'down' || a.type === '得分↓').map((a, i) => (
                           <div key={i} className="text-slate-600 ml-3">
                             <span className="font-semibold text-slate-800">{a.center}</span>
-                            <span className="text-emerald-600"> {a.type} {a.detail}</span>
+                            <span className="text-[#3d5a3d]"> {a.type} {a.detail}</span>
                           </div>
                         ))}
                       </div>
                     )}
                     {warnings.length > 0 && (
                       <div>
-                        <div className="flex items-center gap-1 mb-1 text-amber-600">
+                        <div className="flex items-center gap-1 mb-1 text-[#5a4d3d]">
                           <AlertTriangle size={10} /><span className="font-semibold">数据校验</span>
                         </div>
                         {warnings.map((w, i) => (
@@ -324,7 +324,7 @@ function KPI({ label, value, sub, warn }: { label: string; value: string | numbe
   return (
     <div className="flex flex-col">
       <span className="text-[10px] text-slate-500 uppercase tracking-wider">{label}</span>
-      <span className={cn("text-[13px] font-bold tabular-nums leading-tight", warn ? "text-red-500" : "text-slate-800")}>{value}</span>
+      <span className={cn("text-[13px] font-bold tabular-nums leading-tight", warn ? "text-[#7a5a5a]" : "text-slate-800")}>{value}</span>
       {sub && <span className="text-[10px] text-slate-400">{sub}</span>}
     </div>
   );

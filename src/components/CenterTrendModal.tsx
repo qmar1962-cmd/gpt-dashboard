@@ -98,9 +98,9 @@ export default function CenterTrendModal({ centerName, provinceName, isOpen, onC
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-[680px] max-h-[88vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="bg-[#faf7f2] rounded-2xl shadow-2xl w-[680px] max-h-[88vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 sticky top-0 bg-white z-10">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#e8e2d9] sticky top-0 bg-[#faf7f2] z-10">
           <div className="flex items-center gap-2">
             <TrendingUp size={16} className="text-blue-600" />
             <h2 className="text-sm font-black text-slate-900">{provinceName} · {centerName}</h2>
@@ -142,7 +142,7 @@ export default function CenterTrendModal({ centerName, provinceName, isOpen, onC
               <div className="overflow-x-auto">
                 <table className="w-full text-[10px]">
                   <thead>
-                    <tr className="bg-slate-50 sticky top-0">
+                    <tr className="bg-[#f0ebe3] sticky top-0">
                       <th className="px-2 py-2 text-left text-slate-400 font-medium">日期</th>
                       {DIMS.map(d => (
                         <th key={d.key} onClick={() => setDim(d.key)}
@@ -159,7 +159,7 @@ export default function CenterTrendModal({ centerName, provinceName, isOpen, onC
                   </thead>
                   <tbody>
                     {chartData.map((d: any) => (
-                      <tr key={d.fullDate} className="border-b border-slate-50 hover:bg-slate-50/50">
+                      <tr key={d.fullDate} className="border-b border-slate-50 hover:bg-[#f0ebe3]/50">
                         <td className="px-2 py-1.5 text-slate-600 font-medium">{d.fullDate}</td>
                         {DIMS.map(dd => (
                           <td key={dd.key} className={cn(
