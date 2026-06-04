@@ -284,12 +284,12 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
         });
         const provinceScores = [...provMap.entries()].map(([province, total]) => ({
           province,
-          tieredScore: Math.round(total / 2),
+          tieredScore: Math.min(10, Math.round(total / 2)),
         }));
 
-        // 大区排名得分：全部中心得分之和 / 2
+        // 大区排名得分：全部中心得分之和 / 2，上限 10
         const regionTotal = results.reduce((s, r) => s + r.rankingScore, 0);
-        const regionTieredScore = Math.round(regionTotal / 2);
+        const regionTieredScore = Math.min(10, Math.round(regionTotal / 2));
 
         if (!cancelled) setData({ centers: results, provinceScores, regionTieredScore });
       } catch (err) {
