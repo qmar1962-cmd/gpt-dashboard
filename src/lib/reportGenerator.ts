@@ -552,7 +552,7 @@ export function renderReportAsText(report: FullReport): string {
       
       // 日工时高
       if (center.workHoursHighCount > 0) {
-        abnormalItems.push(`日工时高：${center.whHighRate}(${center.workHoursHighCount}人)`);
+        abnormalItems.push(`日工时高：${center.workHoursHighRate}(${center.workHoursHighCount}人)`);
       }
       
       // 日工时低
@@ -677,7 +677,7 @@ export function renderReportAsTextCompact(report: FullReport): string {
       
       // 日工时高
       if (center.workHoursHighCount > 0) {
-        lines.push(`日工时高>12.5h：${center.whHighRate}(${center.workHoursHighCount}人)`);
+        lines.push(`日工时高>12.5h：${center.workHoursHighRate}(${center.workHoursHighCount}人)`);
       } else {
         lines.push(`日工时高>12.5h：无`);
       }
