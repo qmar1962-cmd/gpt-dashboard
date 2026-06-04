@@ -22,6 +22,7 @@ import {
 import { loadDefaultData, hasExistingData } from '../lib/defaultDataLoader';
 import { mergeAndDedupe } from '../lib/dataMerge';
 import { filterRowsByDate } from '../lib/dateUtils';
+import { ensureDataVersion } from '../lib/idb';
 
 interface LoadingState {
   isLoading: boolean;
@@ -55,6 +56,8 @@ export function useDataInit() {
     const loadStoredData = async () => {
       try {
         setLoading({ isLoading: true, message: '正在初始化数据库...', progress: 10 });
+        const cleared = await ensureDataVersion();
+        if (cleared) setLoading({ isLoading: true, message: '检测到数据结构更新，正在清除旧缓存...', progress: 5 });
         await initDatabase();
 
         // 检测 IndexedDB 是否为空，是则清缓存强制全量加载

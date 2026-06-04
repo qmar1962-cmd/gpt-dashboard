@@ -365,3 +365,52 @@ export async function migrateFromLocalStorage(): Promise<{ migrated: string[]; f
 
   return { migrated, failed };
 }
+
+// ── 数据版本管理 ──
+
+/** 数据管道版本号 — 改了数据加载/合并逻辑后 +1，自动清旧缓存 */
+export const DATA_VERSION = 1;
+const DATA_VERSION_KEY = 'gpt_data_version';
+
+/** 检查数据版本，不匹配则清空 IndexedDB 和 localStorage 缓存 */
+export async function ensureDataVersion(): Promise<boolean> {
+  const stored = localStorage.getItem(DATA_VERSION_KEY);
+  const current = String(DATA_VERSION);
+  if (stored === current) return false; // 版本一致，无需清理
+
+  console.log(`[数据版本] ${stored || '无'} → ${current}，清除旧缓存...`);
+  // 删除 IndexedDB
+  try {
+    const db = await openDB();
+    db.close();
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+    dbInstance = null;
+  } catch (e) { console.warn('[数据版本] IndexedDB 清理失败:', e); }
+
+  // 清 localStorage 中的加载缓存
+  localStorage.removeItem('gpt_loaded_files');
+  localStorage.removeItem('gpt_filelist_cache');
+  localStorage.setItem(DATA_VERSION_KEY, current);
+  return true;
+}
+
+/** 手动清除所有缓存（IndexedDB + localStorage） */
+export async function clearAllCache(): Promise<void> {
+  try {
+    const db = await openDB();
+    db.close();
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+    dbInstance = null;
+  } catch (e) { console.warn('[清除缓存] IndexedDB 清理失败:', e); }
+  localStorage.removeItem('gpt_loaded_files');
+  localStorage.removeItem('gpt_filelist_cache');
+  localStorage.removeItem(DATA_VERSION_KEY);
+}

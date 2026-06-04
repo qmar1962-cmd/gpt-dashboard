@@ -173,7 +173,7 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
         ctx.font = nonOpWarn ? 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif' : '11px -apple-system, BlinkMacSystemFont, sans-serif';
         cell(`${nonOpPct.toFixed(2)}%`, xPos, colWidths[4], nonOpWarn ? '#dc2626' : '#16a34a'); xPos += colWidths[4];
         [row.jobAbnormal, row.salaryCoverage, row.att15Rate, String(row.att7Count), row.workHoursHighRate, String(row.workHoursLowCount)].forEach((v, vi) => {
-          const n = parseFloat(v); const warn = vi <= 2 ? n > 3 : vi === 3 ? n > 0 : vi === 4 ? n > 10 : n > 0;
+          const n = parseFloat(v); const warn = vi === 0 ? n > 0 : vi <= 2 ? n > 3 : vi === 3 ? n > 0 : vi === 4 ? n > 10 : n > 0;
           ctx.font = warn ? 'bold 11px -apple-system, BlinkMacSystemFont, sans-serif' : '11px -apple-system, BlinkMacSystemFont, sans-serif';
           cell(v, xPos, colWidths[5 + vi], warn ? '#dc2626' : '#16a34a');
           xPos += colWidths[5 + vi];

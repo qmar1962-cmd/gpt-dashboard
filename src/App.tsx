@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays, TrendingUp } from 'lucide-react';
+import { ShieldAlert, Zap, ArrowRight, BarChart3, Upload, Settings, CalendarDays, TrendingUp, Trash2 } from 'lucide-react';
 import AttendanceModule from './components/AttendanceModule';
 import Login from './components/Login';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -30,6 +30,7 @@ import { useDataInit } from './hooks/useDataInit';
 import { useEnrichedData } from './hooks/useEnrichedData';
 import { useFilteredData } from './hooks/useFilteredData';
 import { useMonthlyScore } from './hooks/useMonthlyScore';
+import { clearAllCache } from './lib/idb';
 
 export type Selection = {
   type: 'all' | 'region' | 'center';
@@ -202,6 +203,13 @@ export default function App() {
                 <p className="text-[10px] text-slate-400">华中大区 · 绩效数据复盘</p>
               </div>
               <div className="flex items-center gap-4">
+                <button
+                  onClick={async () => { await clearAllCache(); window.location.reload(); }}
+                  className="text-[10px] text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1"
+                  title="清除所有本地缓存并重新加载"
+                >
+                  <Trash2 size={11} />清除缓存
+                </button>
                 <span className="text-[10px] font-mono bg-black text-white px-2.5 py-0.5 rounded">数据日期 {formattedT2Date}</span>
                 <span className="text-[10px] text-red-500 font-bold flex items-center gap-1"><ShieldAlert size={12} />高风险动态反馈</span>
                 {loggedInUser && (
