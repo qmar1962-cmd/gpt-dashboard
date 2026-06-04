@@ -69,7 +69,6 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
         });
 
         const rosterByCenter = buildRosterMap(rosterData);
-        const cfg = getScoringConfig();
 
         // 效能：仅统计偏离 >= 阈值
         const jobByCenterDate = aggregateByCenterDate(jobData, row => {
@@ -119,6 +118,25 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
         const { first, last } = getMonthDateRange(monthOffset);
         setMonthLabel(formatMonth(monthOffset));
         const dates = getDatesInRange(first, last);
+        const lastDate = dates.length > 0 ? dates[dates.length - 1] : '';
+
+        // 最后一天各中心的异常岗位名称统计
+        const lastDayJobPositions = new Map<string, Map<string, number>>();
+        const cfg = getScoringConfig();
+        jobData.forEach((row: any) => {
+          const d = parseDate(row['数据日期'] || row.date || row.日期);
+          if (d !== lastDate) return;
+          const deviation = parseFloat(row['目标偏离（%）'] || row.targetDeviation || 0);
+          if (!(deviation >= cfg.jobDeviationThreshold)) return;
+          const c = (row.中心 || row.中心名称 || '').trim();
+          const p = (row.省区 || row.省区名称 || centerToProvince.get(c) || '').trim();
+          const pos = (row.岗位名称 || row.岗位 || '').trim();
+          if (!c || !pos) return;
+          const cp = `${c}_${p}`;
+          if (!lastDayJobPositions.has(cp)) lastDayJobPositions.set(cp, new Map());
+          const m = lastDayJobPositions.get(cp)!;
+          m.set(pos, (m.get(pos) || 0) + 1);
+        });
 
         const results: CenterMonthlyScore[] = [];
 
@@ -199,8 +217,17 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
               const att15Rate = rosterTotal > 0 ? ((att15Sum / days / rosterTotal) * 100).toFixed(1) : '0';
               const whHighRate = rosterTotal > 0 ? ((whHighSum / days / rosterTotal) * 100).toFixed(1) : '0';
 
+              // 最后一天异常岗位明细
+              const cp = `${centerName}_${provinceName}`;
+              const jobPosMap = lastDayJobPositions.get(cp);
+              let jobPosNote = '';
+              if (jobPosMap && jobPosMap.size > 0) {
+                const top = [...jobPosMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+                jobPosNote = top.map(([pos, n]) => n > 1 ? `${pos}${n}` : pos).join('·');
+              }
+
               const dimensionNotes: Record<string, string> = {
-                job: lastDayJob > 0 ? `${lastDayJob}个异常岗位` : '',
+                job: lastDayJob > 0 ? (jobPosNote || `${lastDayJob}个异常岗位`) : '',
                 salary: lastDaySalary > 0 ? `${lastDaySalary}人·${salRate}%` : '',
                 att15: att15O30Sum > 0
                   ? `日均${(att15Sum/days).toFixed(1)}人·${att15Rate}%·超30天${att15O30Sum}人`
