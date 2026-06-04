@@ -25,6 +25,7 @@ export interface CenterMonthlyScore {
   centerName: string;
   province: string;
   monthlyScore: number;
+  rankingScore: number;        // 排名考核得分（20/15/10/5/0）
   dimensionAvgs: { job: number; salary: number; att15: number; att7: number; whHigh: number; whLow: number };
   dimensionNotes: Record<string, string>;
   dataDays: number;
@@ -32,8 +33,14 @@ export interface CenterMonthlyScore {
   rosterTotal: number;
 }
 
+export interface MonthlyResult {
+  centers: CenterMonthlyScore[];
+  provinceScores: { province: string; tieredScore: number }[];
+  regionTieredScore: number;
+}
+
 export function useMonthlyScore(monthOffset: number, displayData: any[]) {
-  const [data, setData] = useState<CenterMonthlyScore[]>([]);
+  const [data, setData] = useState<MonthlyResult>({ centers: [], provinceScores: [], regionTieredScore: 0 });
   const [loading, setLoading] = useState(true);
   const [monthLabel, setMonthLabel] = useState('');
 
@@ -258,12 +265,36 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
           });
         });
 
+        // 排名考核得分：按月度得分降序，20%/40%/60%/80% 分档
         results.sort((a, b) => b.monthlyScore - a.monthlyScore);
+        const n = results.length;
+        results.forEach((r, i) => {
+          const pct = (i + 1) / n;
+          if (pct <= 0.2) r.rankingScore = 20;
+          else if (pct <= 0.4) r.rankingScore = 15;
+          else if (pct <= 0.6) r.rankingScore = 10;
+          else if (pct <= 0.8) r.rankingScore = 5;
+          else r.rankingScore = 0;
+        });
 
-        if (!cancelled) setData(results);
+        // 省区排名得分：下属中心得分之和 / 2
+        const provMap = new Map<string, number>();
+        results.forEach(r => {
+          provMap.set(r.province, (provMap.get(r.province) || 0) + r.rankingScore);
+        });
+        const provinceScores = [...provMap.entries()].map(([province, total]) => ({
+          province,
+          tieredScore: Math.round(total / 2),
+        }));
+
+        // 大区排名得分：全部中心得分之和 / 2
+        const regionTotal = results.reduce((s, r) => s + r.rankingScore, 0);
+        const regionTieredScore = Math.round(regionTotal / 2);
+
+        if (!cancelled) setData({ centers: results, provinceScores, regionTieredScore });
       } catch (err) {
         console.error('[useMonthlyScore] 计算失败:', err);
-        if (!cancelled) setData([]);
+        if (!cancelled) setData({ centers: [], provinceScores: [], regionTieredScore: 0 });
       } finally {
         if (!cancelled) setLoading(false);
       }

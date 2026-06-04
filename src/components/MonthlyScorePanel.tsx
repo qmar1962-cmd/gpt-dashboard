@@ -5,15 +5,15 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, ChevronLeft, ChevronRight as ChevronRightIcon, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getT2MonthLabel, formatMonth } from '../lib/dateUtils';
-import type { CenterMonthlyScore, DailyDetail } from '../hooks/useMonthlyScore';
+import type { CenterMonthlyScore, DailyDetail, MonthlyResult } from '../hooks/useMonthlyScore';
 
 interface MonthlyScorePanelProps {
-  data: CenterMonthlyScore[];
+  data: MonthlyResult;
   loading: boolean;
   monthLabel: string;
   monthOffset: number;
   onOffsetChange: (offset: number) => void;
-  exemptCenters?: string[];
+  exemptCenters: Set<string>;
 }
 
 const DIM_COLS = [
@@ -69,7 +69,7 @@ export default function MonthlyScorePanel({
   }
 
   // ── 空数据 ──
-  if (!data || data.length === 0) {
+  if (!data || data.centers.length === 0) {
     return (
       <div className="min-h-[400px] flex flex-col items-center justify-center gap-2 text-slate-400">
         <span className="text-lg">📭</span>
@@ -102,8 +102,17 @@ export default function MonthlyScorePanel({
           </button>
         </div>
         <div className="text-[11px] text-slate-400">
-          共 {data.length} 个中心
+          共 {data.centers.length} 个中心
         </div>
+      </div>
+
+      {/* 省区 + 大区排名得分 */}
+      <div className="px-6 py-3 border-t border-slate-200 bg-slate-50/50 flex items-center gap-6 text-[11px]">
+        <span className="font-semibold text-slate-700">排名考核得分：</span>
+        <span className="text-slate-600">大区 <span className="font-bold text-blue-600">{data.regionTieredScore}</span> 分</span>
+        {data.provinceScores.map(p => (
+          <span key={p.province} className="text-slate-500">{p.province} <span className="font-bold text-blue-600">{p.tieredScore}</span> 分</span>
+        ))}
       </div>
 
       {/* 汇总表格（横向滚动） */}
@@ -114,6 +123,7 @@ export default function MonthlyScorePanel({
               <th className="text-left px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200 w-8"></th>
               <th className="text-left px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">中心</th>
               <th className="text-right px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">月度得分</th>
+              <th className="text-right px-4 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">排名得分</th>
               {DIM_COLS.map(d => (
                 <th key={d.key} className="text-right px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">{d.label}</th>
               ))}
@@ -121,7 +131,7 @@ export default function MonthlyScorePanel({
             </tr>
           </thead>
           <tbody>
-            {data.map(row => {
+            {data.centers.map(row => {
               const key = `${row.province}_${row.centerName}`;
               const isExempt = exemptCenters.has(row.centerName);
               const isOpen = expanded.has(key);
@@ -168,6 +178,9 @@ function MonthlyRow({ row, isExempt, isOpen, onToggle }: {
         <td className={cn('px-4 py-2.5 text-right font-black tabular-nums whitespace-nowrap', scoreColor(row.monthlyScore, isExempt))}>
           {row.monthlyScore}
         </td>
+        <td className="px-4 py-2.5 text-right font-bold tabular-nums whitespace-nowrap text-blue-600">
+          {row.rankingScore}
+        </td>
         {DIM_COLS.map(d => {
           const note = row.dimensionNotes?.[d.key];
           return (
@@ -192,6 +205,7 @@ function MonthlyRow({ row, isExempt, isOpen, onToggle }: {
           <td className={cn('px-4 py-1.5 text-right text-[10px] font-bold tabular-nums whitespace-nowrap', scoreColor(dd.scores.total, isExempt))}>
             {dd.scores.total}
           </td>
+          <td className="px-4 py-1.5 text-right text-[10px] text-slate-300 whitespace-nowrap">--</td>
           {DIM_COLS.map(d => (
             <td key={d.key} className={cn('px-3 py-1.5 text-right text-[10px] tabular-nums whitespace-nowrap', dimScoreColor(dd.scores[d.key], d.max, isExempt))}>
               {renderDim(dd.scores[d.key], d.max)}
