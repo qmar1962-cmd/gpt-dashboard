@@ -169,7 +169,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
           '综合管幅': c.compositeScope ?? '', '组长管幅': c.leaderScope ?? '',
           '综合超目标': c.compOverTarget ?? '', '组长超目标': c.leadOverTarget ?? '',
           '效能异常(个)': c.abnormalCount ?? 0, '绩效异常(人)': c.t2SalaryCount ?? 0,
-          '绩效覆盖率': c.salaryCoverage || '', '连续出勤≥15天(人)': c.att15Count ?? 0,
+          '绩效覆盖率': c.salaryCoverage || '', '连续出勤≥20天(人)': c.att15Count ?? 0,
           '连续出勤触发率': c.att15Rate || '', '长期未出勤≥7天(人)': c.att7Count ?? 0,
           '日工时高>12.5h(人)': c.t2WhHighCount ?? 0, '日工时高触发率': c.whHighRate || '',
           '日工时低≤8h(人)': c.t2WhLowCount ?? 0,
@@ -906,7 +906,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
           </div>
           <div className="space-y-3">
             <div className="rule-item">
-              <span className="text-[9px] font-bold block opacity-50 uppercase">连出勤15天异常占比</span>
+              <span className="text-[9px] font-bold block opacity-50 uppercase">连出勤20天异常占比</span>
               <p className="text-[11px] font-medium leading-relaxed">覆盖率 &le; 3% 不扣分；覆盖率 &gt; 3%，每增加1%扣5分。当月连续出勤 &gt; 30天，过程中每出现1人扣2分。</p>
             </div>
             <div className="rule-item">
