@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T01:05:59.251Z",
+  "generated_at": "2026-06-04T01:29:30.898Z",
   "files": {
     "attendance15_0527.xlsx": {
       "mtime": "2026-05-28T06:01:48.655Z",
@@ -184,6 +184,10 @@
     "salary_performance_0603.xlsx": {
       "mtime": "2026-06-03T13:53:55.083Z",
       "size": 23128
+    },
+    "salary_performance_0604.xlsx": {
+      "mtime": "2026-06-04T01:21:49.073Z",
+      "size": 13429
     },
     "work_hours_high_0527.xlsx": {
       "mtime": "2026-05-28T06:01:48.321Z",

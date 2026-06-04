@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Copy, Check, Download, Image, FileText, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { generateReport, renderReportAsText, type FullReport } from '../lib/reportGenerator';
+import { getNonopThreshold, getCenterClass } from '../lib/dashboardConfig';
 import { cn } from '../lib/utils';
 
 interface ReportModalProps {
