@@ -168,11 +168,15 @@ function MonthlyRow({ row, isExempt, isOpen, onToggle }: {
         <td className={cn('px-4 py-2.5 text-right font-black tabular-nums whitespace-nowrap', scoreColor(row.monthlyScore, isExempt))}>
           {row.monthlyScore}
         </td>
-        {DIM_COLS.map(d => (
-          <td key={d.key} className={cn('px-3 py-2.5 text-right tabular-nums whitespace-nowrap font-medium', dimScoreColor(row.dimensionAvgs[d.key], d.max, isExempt))}>
-            {renderDim(row.dimensionAvgs[d.key], d.max)}
-          </td>
-        ))}
+        {DIM_COLS.map(d => {
+          const note = row.dimensionNotes?.[d.key];
+          return (
+            <td key={d.key} className={cn('px-3 py-2.5 text-right tabular-nums whitespace-nowrap', dimScoreColor(row.dimensionAvgs[d.key], d.max, isExempt))}>
+              <span className="font-medium">{renderDim(row.dimensionAvgs[d.key], d.max)}</span>
+              {note && <div className="text-[9px] text-slate-400 font-normal leading-tight">{note}</div>}
+            </td>
+          );
+        })}
         <td className="px-4 py-2.5 text-right tabular-nums whitespace-nowrap text-slate-500">
           {row.dataDays}天
         </td>

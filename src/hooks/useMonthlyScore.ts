@@ -26,6 +26,7 @@ export interface CenterMonthlyScore {
   province: string;
   monthlyScore: number;
   dimensionAvgs: { job: number; salary: number; att15: number; att7: number; whHigh: number; whLow: number };
+  dimensionNotes: Record<string, string>;
   dataDays: number;
   dailyDetails: DailyDetail[];
   rosterTotal: number;
@@ -186,16 +187,28 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
             if (dataDays > 0) {
               const days = dataDays || 1;
               const monthlyScores = computeMonthlyScore(
-                lastDayJob,          // 月底最后一天异常岗位数
-                lastDaySalary,       // 月底最后一天绩效触发人数
-                att15Sum / days,     // 日均连续出勤触发人数
-                att15O30Sum,         // 全月超30天总人次
-                att7Sum,             // 每日≥15天人次合计(不去重)
-                whHighSum / days,    // 日均工时高人数
-                whLowSum,            // 每日工时低人次合计(不去重)
-                rosterTotal,
-                dataDays,
+                lastDayJob, lastDaySalary,
+                att15Sum / days, att15O30Sum,
+                att7Sum, whHighSum / days, whLowSum,
+                rosterTotal, dataDays,
               );
+
+              // 扣分明细摘要
+              const jobRate = rosterTotal > 0 ? ((lastDayJob / rosterTotal) * 100).toFixed(1) : '0';
+              const salRate = rosterTotal > 0 ? ((lastDaySalary / rosterTotal) * 100).toFixed(1) : '0';
+              const att15Rate = rosterTotal > 0 ? ((att15Sum / days / rosterTotal) * 100).toFixed(1) : '0';
+              const whHighRate = rosterTotal > 0 ? ((whHighSum / days / rosterTotal) * 100).toFixed(1) : '0';
+
+              const dimensionNotes: Record<string, string> = {
+                job: lastDayJob > 0 ? `${lastDayJob}个异常岗位` : '',
+                salary: lastDaySalary > 0 ? `${lastDaySalary}人·${salRate}%` : '',
+                att15: att15O30Sum > 0
+                  ? `日均${(att15Sum/days).toFixed(1)}人·${att15Rate}%·超30天${att15O30Sum}人`
+                  : `日均${(att15Sum/days).toFixed(1)}人·${att15Rate}%`,
+                att7: att7Sum > 0 ? `合计${att7Sum}人次` : '',
+                whHigh: whHighSum > 0 ? `日均${(whHighSum/days).toFixed(1)}人·${whHighRate}%` : '',
+                whLow: whLowSum > 0 ? `合计${whLowSum}人次` : '',
+              };
 
               results.push({
                 centerName,
@@ -209,6 +222,7 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
                   whHigh: monthlyScores.whHigh,
                   whLow: monthlyScores.whLow,
                 },
+                dimensionNotes,
                 dataDays,
                 dailyDetails,
                 rosterTotal,
