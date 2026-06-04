@@ -372,44 +372,43 @@ export async function migrateFromLocalStorage(): Promise<{ migrated: string[]; f
 export const DATA_VERSION = 1;
 const DATA_VERSION_KEY = 'gpt_data_version';
 
-/** 检查数据版本，不匹配则清空 IndexedDB 和 localStorage 缓存 */
+/** 清空 IndexedDB 中所有数据（用事务逐条清除，比 deleteDatabase 更可靠） */
+async function clearIndexedDBStores(): Promise<void> {
+  const db = await openDB();
+  const storeNames = [RAW_DATA_STORE, META_STORE];
+  for (const name of storeNames) {
+    if (!db.objectStoreNames.contains(name)) continue;
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(name, 'readwrite');
+        const store = tx.objectStore(name);
+        const req = store.clear();
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) { /* store may not exist */ }
+  }
+  db.close();
+  dbInstance = null;
+}
+
+/** 检查数据版本，不匹配则清除所有缓存 */
 export async function ensureDataVersion(): Promise<boolean> {
   const stored = localStorage.getItem(DATA_VERSION_KEY);
   const current = String(DATA_VERSION);
-  if (stored === current) return false; // 版本一致，无需清理
+  if (stored === current) return false;
 
   console.log(`[数据版本] ${stored || '无'} → ${current}，清除旧缓存...`);
-  // 删除 IndexedDB
-  try {
-    const db = await openDB();
-    db.close();
-    await new Promise<void>((resolve, reject) => {
-      const req = indexedDB.deleteDatabase(DB_NAME);
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
-    });
-    dbInstance = null;
-  } catch (e) { console.warn('[数据版本] IndexedDB 清理失败:', e); }
-
-  // 清 localStorage 中的加载缓存
+  await clearIndexedDBStores();
   localStorage.removeItem('gpt_loaded_files');
   localStorage.removeItem('gpt_filelist_cache');
   localStorage.setItem(DATA_VERSION_KEY, current);
   return true;
 }
 
-/** 手动清除所有缓存（IndexedDB + localStorage） */
+/** 手动清除所有缓存 */
 export async function clearAllCache(): Promise<void> {
-  try {
-    const db = await openDB();
-    db.close();
-    await new Promise<void>((resolve, reject) => {
-      const req = indexedDB.deleteDatabase(DB_NAME);
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
-    });
-    dbInstance = null;
-  } catch (e) { console.warn('[清除缓存] IndexedDB 清理失败:', e); }
+  await clearIndexedDBStores();
   localStorage.removeItem('gpt_loaded_files');
   localStorage.removeItem('gpt_filelist_cache');
   localStorage.removeItem(DATA_VERSION_KEY);
