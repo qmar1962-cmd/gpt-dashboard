@@ -3,7 +3,9 @@
 1. 扫描 Downloads/ 中的数据文件（不限日期）
 2. 过滤省区（只保留湖北/湖南/河南/江西）
 3. 效能异常表自动合并 7 个岗位
-4. 输出到 public/database/ 并 git push（推送前需确认）
+4. 花名册/外包/编制明细自动复制到项目
+5. Excel → JSON 转换
+6. Git 推送（自动确认）
 """
 import os, re, shutil, glob, subprocess, sys
 from datetime import datetime
@@ -32,6 +34,9 @@ RULES = [
     (["连续15天出勤"],                          "attendance15"),
     (["工资偏高"],                              "salary_performance"),
     (["绩效异常岗位"],                           "job_performance"),
+    (["花名册"],                                "roster"),
+    (["外包"],                                  "outsourcing"),
+    (["编制明细"],                              "staffing_detail"),
 ]
 
 
@@ -155,6 +160,18 @@ def main():
 
     if not data_files:
         print("No data files found in Downloads/")
+        # 即使没有新文件，也检查是否需要推送
+        print("\n检查是否有未推送的更改...")
+        os.chdir(PROJECT_DIR)
+        subprocess.run(["git", "add", "public/database/"], check=False)
+        result = subprocess.run(["git", "diff", "--cached", "--stat"], capture_output=True, text=True)
+        if result.stdout.strip():
+            print(f"\n发现未推送的更改，开始推送...")
+            subprocess.run(["git", "commit", "-m", f"data: {today.strftime('%m%d')} data update"], check=False)
+            subprocess.run(["git", "push", "origin", "master"], check=False)
+            print(f"[OK] Pushed to GitHub")
+        else:
+            print("[INFO] 无更改需要推送")
         return
 
     print(f"\nFound {len(data_files)} files.\n")
@@ -162,6 +179,7 @@ def main():
     # ── Step 2: 按数据类型分类 ──
     job_files = []   # 效能异常文件（需合并处理）
     simple = {}      # 普通文件（单独处理）
+    direct_copy = {} # 直接复制的文件（花名册/外包/编制明细）
     skipped = 0
 
     for fp in data_files:
@@ -173,9 +191,10 @@ def main():
         prefix = match_rule(basename)              # 匹配类型
         if not prefix:
             continue
-        if "花名册" in basename:                   # 跳过花名册（手动处理）
-            print(f"[SKIP] roster: {basename}")
-            skipped += 1
+
+        # 花名册/外包/编制明细：直接复制，不过滤省区
+        if prefix in ("roster", "outsourcing", "staffing_detail"):
+            direct_copy.setdefault(prefix, []).append((fp, date_str))
             continue
 
         if prefix == "job_performance":
@@ -197,6 +216,27 @@ def main():
                 except: pass
             except Exception as e:
                 err = f"  [ERR] {os.path.basename(fp)}: {e}"
+                print(err); errors.append(err)
+
+    # ── Step 3.5: 直接复制花名册/外包/编制明细 ──
+    for prefix, files in direct_copy.items():
+        for fp, ds in files:
+            try:
+                basename = os.path.basename(fp)
+                # 花名册保留原文件名（带日期），外包/编制明细用固定名
+                if prefix == "roster":
+                    out_name = basename
+                else:
+                    out_name = f"{prefix}.xlsx"
+                out_path = os.path.join(OUTPUT_DIR, out_name)
+                shutil.copy2(fp, out_path)
+                print(f"  [COPY] {basename} -> {out_name}")
+                processed += 1
+                # 归档
+                try: shutil.move(fp, os.path.join(ARCHIVE_DIR, basename))
+                except: pass
+            except Exception as e:
+                err = f"  [ERR] {prefix}: {e}"
                 print(err); errors.append(err)
 
     # ── Step 4: 处理效能异常文件（合并后输出）──
@@ -233,7 +273,7 @@ def main():
     else:
         print(f"[OK] JSON 生成完成")
 
-    # ── Step 7: Git 推送（需用户确认）──
+    # ── Step 7: Git 推送 ──
     subprocess.run(["git", "add", "public/database/"], check=False)
     result = subprocess.run(["git", "diff", "--cached", "--stat"], capture_output=True, text=True)
 
@@ -245,14 +285,10 @@ def main():
             print(f"  {line}")
         print(f"{'='*50}")
 
-        # 等待用户确认
-        confirm = input("\n确认推送？(y/n): ").strip().lower()
-        if confirm == 'y':
-            subprocess.run(["git", "commit", "-m", f"data: {today.strftime('%m%d')} data update"], check=False)
-            subprocess.run(["git", "push", "origin", "master"], check=False)
-            print(f"\n[OK] Pushed to GitHub")
-        else:
-            print(f"\n[INFO] 已取消推送，文件已处理但未提交。手动推送：git push")
+        # 自动推送
+        subprocess.run(["git", "commit", "-m", f"data: {today.strftime('%m%d')} data update"], check=False)
+        subprocess.run(["git", "push", "origin", "master"], check=False)
+        print(f"\n[OK] Pushed to GitHub")
     else:
         print(f"\n[INFO] No changes to push")
 
