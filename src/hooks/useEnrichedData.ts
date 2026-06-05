@@ -9,6 +9,9 @@ import { getCenterClass, getScoringConfig, getSpanTargets } from '../lib/dashboa
 const SCORE =   { JOB: 25, SALARY: 15, ATT15: 25, ATT7: 25, WH_HIGH: 5,  WH_LOW: 5  } as const;
 const PENALTY = { JOB_PER: 5, SALARY_PCT: 3, ATT15_PCT: 5, ATT15_O30: 2, ATT7_PER: 2, WH_HIGH_PCT: 1 } as const;
 
+// ── 未出勤豁免原因（有这些原因的人不计入扣分）──
+const EXEMPT_REASONS = ['工伤', '事假', '病假', '纠纷', '挂编', '出差'];
+
 // ── 中心名称别名 ──
 
 const CENTER_ALIASES: Record<string, string[]> = {
@@ -154,6 +157,7 @@ export function useEnrichedData(
   workHoursHighDataState: any[] | null,
   workHoursLowDataState: any[] | null,
   outsourcingData: Record<string, number> | null,
+  absenceReasons?: Record<string, Record<string, Record<string, { reason: string }>>>,
 ) {
   return useMemo(() => {
     const cfg = getScoringConfig();
@@ -221,6 +225,18 @@ export function useEnrichedData(
         const center = row.中心 || row.中心名称 || '';
         const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
         const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
+
+        // 检查是否有豁免原因
+        if (absenceReasons) {
+          const name = row.姓名 || '';
+          const centerReasons = absenceReasons[center] || {};
+          const dateReasons = centerReasons[dateStr] || {};
+          const record = dateReasons[name];
+          if (record && EXEMPT_REASONS.includes(record.reason)) {
+            return; // 有豁免原因，不计入扣分
+          }
+        }
+
         const key = `${center}_${province}_${dateStr}`;
         att7ByCenterDate.set(key, (att7ByCenterDate.get(key) || 0) + 1);
       });

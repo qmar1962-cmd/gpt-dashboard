@@ -32,6 +32,7 @@ import { useEnrichedData } from './hooks/useEnrichedData';
 import { useFilteredData } from './hooks/useFilteredData';
 import { useMonthlyScore } from './hooks/useMonthlyScore';
 import { clearAllCache } from './lib/idb';
+import { loadCollaborationData } from './lib/collaborationApi';
 import AlertToast, { AlertItem } from './components/AlertToast';
 
 export type Selection = {
@@ -94,6 +95,14 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  // 加载未出勤原因（用于豁免判定）
+  const [absenceReasons, setAbsenceReasons] = useState<Record<string, Record<string, Record<string, { reason: string }>>>({});
+  useEffect(() => {
+    loadCollaborationData('absence_reasons.json')
+      .then(data => { if (data) setAbsenceReasons(data); })
+      .catch(() => {});
+  }, []);
+
   // 6 小时自动登出，强制重新加载数据
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -109,7 +118,7 @@ export default function App() {
   const enrichedData = useEnrichedData(
     displayData, rawDataState, salaryDataState, attendance15DataState,
     attendance7DataState, rosterDataState, workHoursHighDataState, workHoursLowDataState,
-    outsourcingData,
+    outsourcingData, absenceReasons,
   );
   const filteredData = useFilteredData(enrichedData, exemptCenters);
   const { data: monthlyData, loading: monthlyLoading, monthLabel } = useMonthlyScore(monthOffset, displayData);

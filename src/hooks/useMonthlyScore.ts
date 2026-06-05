@@ -14,6 +14,10 @@ import {
   DimensionScores,
 } from '../lib/scoringEngine';
 import { idbGetRawData } from '../lib/database';
+import { loadCollaborationData } from '../lib/collaborationApi';
+
+// ── 未出勤豁免原因 ──
+const EXEMPT_REASONS = ['工伤', '事假', '病假', '纠纷', '挂编', '出差'];
 
 export interface DailyDetail {
   date: string;
@@ -68,6 +72,14 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
         const whHighData = whHighResult?.rawData || [];
         const whLowData  = whLowResult?.rawData  || [];
 
+        // 加载未出勤原因（用于豁免判定）
+        let absenceReasons: Record<string, Record<string, Record<string, { reason: string }>>> = {};
+        try {
+          absenceReasons = await loadCollaborationData('absence_reasons.json') || {};
+        } catch (e) {
+          console.warn('[月度计分] 加载未出勤原因失败:', e);
+        }
+
         const centerToProvince = new Map<string, string>();
         displayData.forEach((province: any) => {
           (province.subCenters || []).forEach((center: any) => {
@@ -116,6 +128,16 @@ export function useMonthlyScore(monthOffset: number, displayData: any[]) {
           const center = row.中心 || row.中心名称 || '';
           const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
           const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
+
+          // 检查是否有豁免原因
+          const name = row.姓名 || '';
+          const centerReasons = absenceReasons[center] || {};
+          const dateReasons = centerReasons[dateStr] || {};
+          const record = dateReasons[name];
+          if (record && EXEMPT_REASONS.includes(record.reason)) {
+            return; // 有豁免原因，不计入扣分
+          }
+
           const key = `${center}_${province}_${dateStr}`;
           att7ByCenterDate.set(key, (att7ByCenterDate.get(key) || 0) + 1);
         });
