@@ -96,7 +96,7 @@ export default function App() {
   }, []);
 
   // 加载未出勤原因（用于豁免判定）
-  const [absenceReasons, setAbsenceReasons] = useState<Record<string, Record<string, Record<string, { reason: string }>>>({});
+  const [absenceReasons, setAbsenceReasons] = useState<Record<string, Record<string, Record<string, { reason: string }>>>>({});
   useEffect(() => {
     loadCollaborationData('absence_reasons.json')
       .then(data => { if (data) setAbsenceReasons(data); })
