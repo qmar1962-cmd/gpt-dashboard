@@ -41,3 +41,4 @@ backup-*.zip
 public/database/json/roster_*.json
 .mcp.json
 data-pipeline/archive/
+__pycache__/
