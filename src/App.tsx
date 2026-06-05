@@ -95,6 +95,15 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  // 加载编制明细数据
+  const [staffingDetailData, setStaffingDetailData] = useState<Record<string, any> | null>(null);
+  useEffect(() => {
+    fetch('./database/json/staffing_detail.json?t=' + Date.now(), { cache: 'no-cache' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setStaffingDetailData(data); })
+      .catch(() => {});
+  }, []);
+
   // 加载未出勤原因（用于豁免判定）
   const [absenceReasons, setAbsenceReasons] = useState<Record<string, Record<string, Record<string, { reason: string }>>>>({});
   useEffect(() => {
@@ -118,7 +127,7 @@ export default function App() {
   const enrichedData = useEnrichedData(
     displayData, rawDataState, salaryDataState, attendance15DataState,
     attendance7DataState, rosterDataState, workHoursHighDataState, workHoursLowDataState,
-    outsourcingData, absenceReasons,
+    outsourcingData, absenceReasons, staffingDetailData,
   );
   const filteredData = useFilteredData(enrichedData, exemptCenters);
   const { data: monthlyData, loading: monthlyLoading, monthLabel } = useMonthlyScore(monthOffset, displayData);

@@ -74,7 +74,7 @@ function findCount(map: Map<string, number>, centerName: string, provinceName: s
 interface StaffingDept { dept: string; standard: number; actual: number; }
 interface StaffingStandard { departments: StaffingDept[]; totalStandard: number; totalActual: number; posStandards: { pos: string; standard: number; rule: string }[]; }
 
-function computeStaffingStandard(centerName: string, rosterTotal: number, deptActual: Record<string, number>): StaffingStandard {
+function computeStaffingStandard(centerName: string, rosterTotal: number, deptActual: Record<string, number>, staffingDetailData?: Record<string, any> | null): StaffingStandard {
   const cls = getCenterClass(centerName);
   const x = rosterTotal;
   const depts: StaffingDept[] = [];
@@ -94,14 +94,32 @@ function computeStaffingStandard(centerName: string, rosterTotal: number, deptAc
   add('中心工艺工程', 1); // 主管（工程师需维养工时数据，暂不计）
   add('中心安全监察', (cls!=='C'?1:0) + (cls==='A'?2:cls==='B'?1:0) + (cls==='C'?1:0)); // 主管+管理员(C类共用1)
 
-  const posStandards = getPosStandards(centerName, rosterTotal);
+  const posStandards = getPosStandards(centerName, rosterTotal, staffingDetailData);
   const totalStandard = depts.reduce((s, d) => s + d.standard, 0);
   const totalActual = depts.reduce((s, d) => s + d.actual, 0);
   return { departments: depts, totalStandard, totalActual, posStandards };
 }
 
-// ── 岗位级配置标准(按各岗位配置标准.xlsx顺序) ──
-function getPosStandards(centerName: string, rosterTotal: number): { pos: string; standard: number; rule: string }[] {
+// ── 岗位级配置标准(从staffing_detail.json读取固定编制) ──
+function getPosStandards(centerName: string, rosterTotal: number, staffingDetailData?: Record<string, any> | null): { pos: string; standard: number; rule: string }[] {
+  // 如果有staffingDetail数据，从固定编制列读取标准
+  if (staffingDetailData) {
+    const centerData = staffingDetailData[centerName] || staffingDetailData[centerName + '转运中心'];
+    if (centerData && centerData.positions) {
+      const result: { pos: string; standard: number; rule: string }[] = [];
+      for (const [pos, data] of Object.entries(centerData.positions)) {
+        const posData = data as any;
+        result.push({
+          pos: pos,
+          standard: posData.固定编制 || 0,
+          rule: '从staffing_detail.xls固定编制列读取'
+        });
+      }
+      return result;
+    }
+  }
+
+  // 如果没有staffingDetail数据，使用硬编码标准（兜底）
   const cls = getCenterClass(centerName); const x = rosterTotal;
   const hrTier = x<=500?2:x<=800?3:x<=1100?4:x<=1400?5:x<=1700?6:7;
   const chefCount = x<=900?2:x<=1400?3:x<=1800?4:5;
@@ -158,6 +176,7 @@ export function useEnrichedData(
   workHoursLowDataState: any[] | null,
   outsourcingData: Record<string, number> | null,
   absenceReasons?: Record<string, Record<string, Record<string, { reason: string }>>>,
+  staffingDetailData?: Record<string, any> | null,
 ) {
   return useMemo(() => {
     const cfg = getScoringConfig();
@@ -446,7 +465,7 @@ export function useEnrichedData(
           enrichedCenter.rosterInService = nonOpStats.total;
           enrichedCenter.nonOpDepartments = nonOpStats.departments; // 各部门人数明细
           enrichedCenter.nonOpPositions = nonOpStats.positions;       // 各岗位人数明细
-          enrichedCenter.staffingStandard = computeStaffingStandard(center.name, nonOpStats.total, nonOpStats.departments);
+          enrichedCenter.staffingStandard = computeStaffingStandard(center.name, nonOpStats.total, nonOpStats.departments, staffingDetailData);
         }
 
         // === 中心总分 = 六项之和 ===
