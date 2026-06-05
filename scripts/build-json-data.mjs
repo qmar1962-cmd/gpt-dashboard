@@ -52,8 +52,8 @@ function buildJsonData() {
   console.log(`  源目录: ${DATABASE_DIR}`);
   console.log(`  输出目录: ${JSON_DIR}`);
 
-  // 1. 读取所有 .xlsx 文件
-  const files = readdirSync(DATABASE_DIR).filter(f => f.endsWith('.xlsx'));
+  // 1. 读取所有 .xlsx 和 .xls 文件
+  const files = readdirSync(DATABASE_DIR).filter(f => f.endsWith('.xlsx') || f.endsWith('.xls'));
 
   if (files.length === 0) {
     console.warn('[构建 JSON 数据] 警告：没有找到 .xlsx 文件');
@@ -166,6 +166,166 @@ function buildJsonData() {
       successCount++;
     } catch (error) {
       console.error(`[构建 JSON 数据] 错误：处理 ${outsourcingFile} 失败:`, error.message);
+      failCount++;
+    }
+  }
+
+  // 特殊处理：staffing_detail.xls → staffing_detail.json（中心 → 非操编制/在岗人数 + 部门/岗位明细）
+  const staffingFile = files.find(f => f.startsWith('staffing_detail'));
+  if (staffingFile) {
+    try {
+      const filepath = join(DATABASE_DIR, staffingFile);
+      const workbook = XLSX.read(readFileSync(filepath), { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: true });
+
+      // 岗位名归一化：经理→主管、负责人→主管，去掉（代理）等后缀
+      function normalizePosition(pos) {
+        return pos
+          .replace(/经理/g, '主管')
+          .replace(/负责人/g, '主管')
+          .replace(/（代理）/g, '')
+          .replace(/（兼.*?）/g, '')
+          .trim();
+      }
+
+      // 岗位排序优先级：主管/经理排前面，专员排后面
+      function getPositionOrder(pos) {
+        if (/主管|经理|负责人/.test(pos)) return 0;
+        if (/专员/.test(pos)) return 2;
+        return 1; // 其他岗位
+      }
+
+      // 只保留转运中心和区域
+      function isValidCenter(name) {
+        return name.endsWith('转运中心') || name.endsWith('区域');
+      }
+
+      // 获取转运中心名称（区域→转运中心）
+      function getTransferCenter(name) {
+        if (name.endsWith('区域')) {
+          return name.replace('区域', '转运中心');
+        }
+        return name;
+      }
+
+      // 按中心汇总：区分操作/非操，含部门和岗位明细
+      const centerMap = {};
+      const regionData = {}; // 暂存区域数据
+
+      rows.forEach(r => {
+        let center = String(r['单位名称'] || '').trim();
+        if (!center) return;
+        if (!isValidCenter(center)) return; // 只保留转运中心和区域
+
+        const orgPath = String(r['组织路径'] || '');
+        const parts = orgPath.split('>');
+        const isOp = orgPath.includes('>中心操作>'); // 判断操作部门
+        if (isOp) return; // 操作部门不显示
+
+        const dept = parts[parts.length - 1] || '未知'; // 取组织路径最后一个字段作为部门
+        const headcount = parseInt(r['在职人数']) || 0;
+        const fixedStaff = parseInt(r['固定编制']) || 0;
+        const tempStaff = parseInt(r['临时编制']) || 0;
+        const position = String(r['岗位名称'] || '').trim();
+        const normalizedPos = normalizePosition(position);
+
+        // 如果是区域，暂存数据
+        if (center.endsWith('区域')) {
+          const transferCenter = getTransferCenter(center);
+          if (!regionData[transferCenter]) {
+            regionData[transferCenter] = { departments: {}, positions: {} };
+          }
+          // 部门明细
+          if (!regionData[transferCenter].departments[dept]) {
+            regionData[transferCenter].departments[dept] = { 固定编制: 0, 临时编制: 0, 在职人数: 0 };
+          }
+          regionData[transferCenter].departments[dept].固定编制 += fixedStaff;
+          regionData[transferCenter].departments[dept].临时编制 += tempStaff;
+          regionData[transferCenter].departments[dept].在职人数 += headcount;
+          // 岗位明细
+          if (!regionData[transferCenter].positions[dept]) {
+            regionData[transferCenter].positions[dept] = {};
+          }
+          if (!regionData[transferCenter].positions[dept][normalizedPos]) {
+            regionData[transferCenter].positions[dept][normalizedPos] = { 固定编制: 0, 临时编制: 0, 在职人数: 0 };
+          }
+          regionData[transferCenter].positions[dept][normalizedPos].固定编制 += fixedStaff;
+          regionData[transferCenter].positions[dept][normalizedPos].临时编制 += tempStaff;
+          regionData[transferCenter].positions[dept][normalizedPos].在职人数 += headcount;
+          return;
+        }
+
+        // 转运中心数据
+        if (!centerMap[center]) {
+          centerMap[center] = { 非操在岗: 0, 非操固定编制: 0, 非操临时编制: 0, departments: {}, positions: {} };
+        }
+        centerMap[center].非操在岗 += headcount;
+        centerMap[center].非操固定编制 += fixedStaff;
+        centerMap[center].非操临时编制 += tempStaff;
+
+        // 部门明细
+        if (!centerMap[center].departments[dept]) {
+          centerMap[center].departments[dept] = { 固定编制: 0, 临时编制: 0, 在职人数: 0 };
+        }
+        centerMap[center].departments[dept].固定编制 += fixedStaff;
+        centerMap[center].departments[dept].临时编制 += tempStaff;
+        centerMap[center].departments[dept].在职人数 += headcount;
+
+        // 岗位明细（按部门嵌套）
+        if (!centerMap[center].positions[dept]) {
+          centerMap[center].positions[dept] = {};
+        }
+        if (!centerMap[center].positions[dept][normalizedPos]) {
+          centerMap[center].positions[dept][normalizedPos] = { 固定编制: 0, 临时编制: 0, 在职人数: 0 };
+        }
+        centerMap[center].positions[dept][normalizedPos].固定编制 += fixedStaff;
+        centerMap[center].positions[dept][normalizedPos].临时编制 += tempStaff;
+        centerMap[center].positions[dept][normalizedPos].在职人数 += headcount;
+      });
+
+      // 合并区域数据到转运中心（区域有数据才替换，没有数据保留中心的）
+      for (const [transferCenter, regionInfo] of Object.entries(regionData)) {
+        if (!centerMap[transferCenter]) continue;
+        const centerInfo = centerMap[transferCenter];
+
+        // 检查并合并部门数据
+        for (const [dept, deptData] of Object.entries(regionInfo.departments)) {
+          // 区域财务组 → 中心财务，区域人资组 → 中心人资
+          let centerDept = dept.replace('区域', '中心').replace('组', '');
+          // 只有区域有数据（在职人数>0 或 固定编制>0）才替换
+          if (deptData.在职人数 > 0 || deptData.固定编制 > 0) {
+            centerInfo.departments[centerDept] = deptData;
+            // 同时更新岗位数据
+            if (regionInfo.positions[dept]) {
+              centerInfo.positions[centerDept] = regionInfo.positions[dept];
+            }
+          }
+        }
+      }
+
+      // 岗位排序：同一部门内主管/经理排前面，专员排后面
+      for (const center of Object.keys(centerMap)) {
+        const sortedPositions = {};
+        for (const dept of Object.keys(centerMap[center].positions)) {
+          const positions = centerMap[center].positions[dept];
+          const sorted = Object.entries(positions).sort((a, b) => {
+            const orderA = getPositionOrder(a[0]);
+            const orderB = getPositionOrder(b[0]);
+            if (orderA !== orderB) return orderA - orderB;
+            return a[0].localeCompare(b[0]); // 同优先级按字母排序
+          });
+          sortedPositions[dept] = Object.fromEntries(sorted);
+        }
+        centerMap[center].positions = sortedPositions;
+      }
+
+      const outPath = join(JSON_DIR, 'staffing_detail.json');
+      writeFileSync(outPath, JSON.stringify(centerMap, null, 2));
+      console.log(`  ✅ ${staffingFile} -> staffing_detail.json (${Object.keys(centerMap).length} 中心)`);
+      successCount++;
+    } catch (error) {
+      console.error(`[构建 JSON 数据] 错误：处理 ${staffingFile} 失败:`, error.message);
       failCount++;
     }
   }

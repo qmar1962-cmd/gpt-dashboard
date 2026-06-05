@@ -71,98 +71,77 @@ function findCount(map: Map<string, number>, centerName: string, provinceName: s
 }
 
 // ── 各岗位配置标准计算（按部门）──
-interface StaffingDept { dept: string; standard: number; actual: number; }
-interface StaffingStandard { departments: StaffingDept[]; totalStandard: number; totalActual: number; posStandards: { pos: string; standard: number; rule: string }[]; }
+interface StaffingDept { dept: string; fixedStandard: number; tempStandard: number; actual: number; }
+interface StaffingStandard { departments: StaffingDept[]; totalFixedStandard: number; totalTempStandard: number; totalActual: number; posStandards: { dept: string; pos: string; fixedStandard: number; tempStandard: number; actual: number }[]; }
 
 function computeStaffingStandard(centerName: string, rosterTotal: number, deptActual: Record<string, number>, staffingDetailData?: Record<string, any> | null): StaffingStandard {
-  const cls = getCenterClass(centerName);
-  const x = rosterTotal;
   const depts: StaffingDept[] = [];
+  let posStandards: { dept: string; pos: string; fixedStandard: number; tempStandard: number; actual: number }[] = [];
 
-  function add(dept: string, standard: number) {
-    const actual = deptActual[dept] || 0;
-    depts.push({ dept, standard, actual, diff: actual - standard });
-  }
-
-  add('转运中心', (cls !== 'C' ? 2 : 1)); // 部长+副部长
-  add('中心人资', 1 + (x<=500?2:x<=800?3:x<=1100?4:x<=1400?5:x<=1700?6:7)); // 主管+专员(分档)
-  add('中心环保袋管理', (centerName==='武汉'||centerName==='漯河'?1:0)); // 主管(仅维修工厂所在地)
-  add('中心行政保障', 1 + (cls==='A'?2:1) + 1 + (x<=900?2:x<=1400?3:x<=1800?4:5) + 2 + 2); // 负责人+专员+水电+主厨+保安+消防
-  add('中心财务', 1);
-  add('中心运能调度', 1); // 主管（专员需日均发车量数据，暂不计）
-  add('中心质量监督控制', 1 + (cls==='A'?2:1)); // 主管+专员
-  add('中心工艺工程', 1); // 主管（工程师需维养工时数据，暂不计）
-  add('中心安全监察', (cls!=='C'?1:0) + (cls==='A'?2:cls==='B'?1:0) + (cls==='C'?1:0)); // 主管+管理员(C类共用1)
-
-  const posStandards = getPosStandards(centerName, rosterTotal, staffingDetailData);
-  const totalStandard = depts.reduce((s, d) => s + d.standard, 0);
-  const totalActual = depts.reduce((s, d) => s + d.actual, 0);
-  return { departments: depts, totalStandard, totalActual, posStandards };
-}
-
-// ── 岗位级配置标准(从staffing_detail.json读取固定编制) ──
-function getPosStandards(centerName: string, rosterTotal: number, staffingDetailData?: Record<string, any> | null): { pos: string; standard: number; rule: string }[] {
-  // 如果有staffingDetail数据，从固定编制列读取标准
   if (staffingDetailData) {
+    // 尝试匹配中心名称
     const centerData = staffingDetailData[centerName] || staffingDetailData[centerName + '转运中心'];
-    if (centerData && centerData.positions) {
-      const result: { pos: string; standard: number; rule: string }[] = [];
-      for (const [pos, data] of Object.entries(centerData.positions)) {
-        const posData = data as any;
-        result.push({
-          pos: pos,
-          standard: posData.固定编制 || 0,
-          rule: '从staffing_detail.xls固定编制列读取'
-        });
+    if (centerData) {
+      // 从 staffingDetailData 读取部门数据
+      if (centerData.departments) {
+        for (const [dept, data] of Object.entries(centerData.departments)) {
+          const deptData = data as any;
+          depts.push({
+            dept: dept,
+            fixedStandard: deptData.固定编制 || 0,
+            tempStandard: deptData.临时编制 || 0,
+            actual: deptData.在职人数 || 0
+          });
+        }
       }
-      return result;
+
+      // 从 staffingDetailData 读取岗位数据（按部门嵌套）
+      if (centerData.positions) {
+        for (const [dept, positions] of Object.entries(centerData.positions)) {
+          for (const [pos, data] of Object.entries(positions as any)) {
+            const posData = data as any;
+            const fixedStandard = posData.固定编制 || 0;
+            const tempStandard = posData.临时编制 || 0;
+            const actual = posData.在职人数 || 0;
+            // 只保留有数据的岗位（编制>0 或 在职人数>0）
+            if (fixedStandard > 0 || tempStandard > 0 || actual > 0) {
+              posStandards.push({
+                dept: dept,
+                pos: pos,
+                fixedStandard: fixedStandard,
+                tempStandard: tempStandard,
+                actual: actual
+              });
+            }
+          }
+        }
+      }
     }
   }
 
-  // 如果没有staffingDetail数据，使用硬编码标准（兜底）
-  const cls = getCenterClass(centerName); const x = rosterTotal;
-  const hrTier = x<=500?2:x<=800?3:x<=1100?4:x<=1400?5:x<=1700?6:7;
-  const chefCount = x<=900?2:x<=1400?3:x<=1800?4:5;
-  const hasBagSup = centerName === '武汉' || centerName === '漯河';
-  return [
-    { pos: '部长', standard: 1, rule: 'A、B、C类中心均可配置部长1人' },
-    { pos: '副部长', standard: cls==='C'?0:1, rule: 'A、B类中心标配1人，C类不配置\n（中心有对应区域总、营运副总原则上不配置）' },
-    { pos: '中心人资主管', standard: 1, rule: '标配1人\n（省区驻地超过1350人可配置主管1人，低于1350人不配置负责人）' },
-    { pos: '薪酬绩效专员', standard: hrTier>=3?1:0, rule: `整体人资服务比1:190\n中心人数X≤500，配置2人；500＜X≤800人，配置3人；800＜X≤1100人，配置4人；1100<X≤1400人以上，配置5人；1400<X≤1700人以上，配置6人；1700人以上，配置7人\n配置2人，基础事务专员，招聘关怀专员（兼人才发展），主管兼薪酬绩效\n配置3人，薪酬绩效专员，招聘关怀专员，基础事务专员，主管兼人才发展\n配置4人，薪资绩效专员，招聘关怀专员，人才发展专员，基础事务专员\n配置5人，薪酬绩效专员，招聘关怀专员2个，人才发展专员，基础事务专员\n配置6人，薪酬绩效专员2个，招聘关怀专员2个，人才发展专员，基础事务专员\n配置7人，薪酬绩效专员2个，招聘关怀专员2个，人才发展专员，基础事务专员2个` },
-    { pos: '招聘关怀专员', standard: hrTier>=2?1:0, rule: '' },
-    { pos: '人才发展专员', standard: hrTier>=4?1:0, rule: '' },
-    { pos: '人资基础事务专员', standard: hrTier>=2?1:1, rule: '' },
-    { pos: '中心环保袋管理主管', standard: hasBagSup?1:0, rule: '仅维修工厂所在地设主管岗（漯河、揭阳、武汉）' },
-    { pos: '环保袋仓库管理员', standard: 0, rule: '上报维修量：每1560件配置1人；\n出入库登记量：每32500件配置1人\n（备注：出入库包含发放、调拨、退入库登记）\n数据维度：近3-6个月度日均数据\n（数据每季度对接环保袋项目组-慕峰）' },
-    { pos: '中心行政负责人', standard: 1, rule: '主管标配1人' },
-    { pos: '行政事务专员', standard: cls==='A'?2:1, rule: 'A类配置2人，B、C类配置1人' },
-    { pos: '行政车驾驶员', standard: 0, rule: '省总、区域总配置1个；特殊情况特殊申请' },
-    { pos: '宿舍管理员', standard: 0, rule: '1.集体间入住人数大于4人，住宿人员100-300人，配置1名；住宿人员301-1350人，配置2名；住宿人员>1350人，配置3名。\n2.集体间入住人数小于等于4人，入住房间数30-150间，配置1名；入住房间数151-300间，配置2名；入住房间数＞300间，配置3名。' },
-    { pos: '主厨', standard: chefCount, rule: `就餐人数X≤900，配置2名厨师；\n900＜X≤1400人，配置3名厨师；\n1400＜X≤1800人，配置4名厨师；\nX＞1800人，配置5名厨师；\n四餐中心，在以上标准上加1名厨师。\n厨师编制上限5人。厨师长共用厨师编制。` },
-    { pos: '帮厨', standard: 0, rule: '每天就餐人次服务比1：135。\n四餐中心，在以上标准上加1名厨师。' },
-    { pos: '水电维修工', standard: 1, rule: 'AB类中心配置1-2人（北京特殊情况配置6人），C类配置1人\n自有场地电工须持高低压证书' },
-    { pos: '锅炉工', standard: 0, rule: '标准配置2人，冬季使用，适用于北方城市，特殊情况需单独申请\n必须持证（华北为常驻人员）' },
-    { pos: '保洁', standard: 0, rule: '宿舍楼：宿舍区有公共卫生间的一般1人负责2-3层；无公共卫生间的1人负责3-4层；\n行政楼：办公区1-3层的配置1人\n操作场地和外场：卫生间由行政承接，其他由营运承接。' },
-    { pos: '护卫队长', standard: 0, rule: '' },
-    { pos: '保安', standard: 2, rule: '门岗每班次1人（分白晚班）；\n配置岗位：门岗、巡逻岗、礼仪岗及替补人员\n保安人数超过4人配置1名护卫队长，编制由保安编制划转；' },
-    { pos: '消防中控员', standard: 2, rule: '标准配置2人，白晚班各一人，如政府特殊要求可增编' },
-    { pos: '财务支持专员', standard: 1, rule: '配置1人；A类独立中心特殊情况最高可申请配置2人（需向总部财务申请报批）' },
-    { pos: '中心运能调度主管', standard: 1, rule: '标准配置1人' },
-    { pos: '运行质量专员', standard: 0, rule: '中心运能调度负责人标配1人。\n1类中心：日均发车200以上，3班，运力调度专员、配载调度专员、运行质量监控专员每班各1人，共9人；\n2类中心：日均发车100-200，监控3班，调度2班，运力调度专员、配载调度专员、运行质量监控专员每班各1人，共7人；\n3类中心：日均发车50-100，2班，运力调度专员、配载调度专员、运行质量监控专员每班各1人，共6人；\n4类中心：日均发车25-50，运力2班，配载、监控1班，运力调度专员、配载调度专员、运行质量监控专员每班各1人，共计4人；\n5类中心：日均发车10-25，1班，运力调度专员、运行质量监控专员每班各1人，共计2人\n6类中心：日均发车10以下，1班，监控专员配1人，共1人' },
-    { pos: '配载调度专员', standard: 0, rule: '' },
-    { pos: '运能调度专员', standard: 0, rule: '' },
-    { pos: '中心质量监督控制主管', standard: 1, rule: '1人' },
-    { pos: '异常件管理员', standard: 0, rule: '异常件日处理量135单/人\n（异常件处理含仲裁、无着件出入库+认领+申报、地址不详）' },
-    { pos: '中心客服员', standard: 0, rule: '日均工单处理量135单/人' },
-    { pos: '中心质量监督控制专员', standard: cls==='A'?2:1, rule: 'A类2人；B、C类1人；\n日均操作量大于400万或进港量大于150W万配置两人' },
-    { pos: '中心工艺工程主管', standard: 1, rule: '1人' },
-    { pos: 'IT运维工程师', standard: 0, rule: '按中心设备维养时长配置人数，基本维度如下：\n1、工作时间：月均工作26天\n2、日均有效作业时间：10小时（折合600分钟/天）\n3、维养工时：根据供应商提供工艺设备维养周期及工时\n4、维养周期：按季度测算\n注：个别场地因设备老旧等导致维养难度提高的，特殊申请\n\n岗位合并为设备工程师（分：IT方向、设备方向）' },
-    { pos: '自动化技术工程师', standard: 0, rule: '' },
-    { pos: '设备工程员', standard: 0, rule: '' },
-    { pos: '中心安全监察主管', standard: cls==='C'?0:1, rule: 'A、B类标配1人。C类中心负责人与安全管理员共用1个编制。' },
-    { pos: '安检员', standard: 0, rule: '根据安检机数量及班次配置，1台2人，2台以上按1.5倍比例配置，以此类推（四舍五入），现场安检人员不足可由操作主管临时调配操作员兼职（需持证）。' },
-    { pos: '安全管理员', standard: cls==='A'?2:cls==='B'?1:0, rule: 'A类中心2人，B类中心1人，C类中心负责人与安全管理员共用1个编制。\n特殊情况额外申请。' },
-  ];
+  // 如果没有 staffingDetailData，使用硬编码兜底
+  if (depts.length === 0) {
+    const cls = getCenterClass(centerName);
+    const x = rosterTotal;
+    function add(dept: string, fixedStandard: number) {
+      const actual = deptActual[dept] || 0;
+      depts.push({ dept, fixedStandard, tempStandard: 0, actual });
+    }
+    add('转运中心', (cls !== 'C' ? 2 : 1));
+    add('中心人资', 1 + (x<=500?2:x<=800?3:x<=1100?4:x<=1400?5:x<=1700?6:7));
+    add('中心环保袋管理', (centerName==='武汉'||centerName==='漯河'?1:0));
+    add('中心行政保障', 1 + (cls==='A'?2:1) + 1 + (x<=900?2:x<=1400?3:x<=1800?4:5) + 2 + 2);
+    add('中心财务', 1);
+    add('中心运能调度', 1);
+    add('中心质量监督控制', 1 + (cls==='A'?2:1));
+    add('中心工艺工程', 1);
+    add('中心安全监察', (cls!=='C'?1:0) + (cls==='A'?2:cls==='B'?1:0) + (cls==='C'?1:0));
+  }
+
+  const totalFixedStandard = depts.reduce((s, d) => s + d.fixedStandard, 0);
+  const totalTempStandard = depts.reduce((s, d) => s + d.tempStandard, 0);
+  const totalActual = depts.reduce((s, d) => s + d.actual, 0);
+  return { departments: depts, totalFixedStandard, totalTempStandard, totalActual, posStandards };
 }
 
 export function useEnrichedData(
