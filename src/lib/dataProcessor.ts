@@ -490,7 +490,7 @@ export function getWeeklyAttendance15Detail(
     days.push({
       date: dateStr,
       dateLabel,
-      abnormalCount: details.filter(d => d.continuousDays >= 20).length,
+      abnormalCount: rows.length,
       details,
     });
   }
@@ -550,7 +550,7 @@ export function getWeeklyAttendance7Detail(
     days.push({
       date: dateStr,
       dateLabel,
-      abnormalCount: details.filter(d => d.continuousDays >= 15).length,
+      abnormalCount: rows.length,
       details,
     });
   }

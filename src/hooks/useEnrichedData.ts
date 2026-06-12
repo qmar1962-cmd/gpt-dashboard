@@ -219,7 +219,7 @@ export function useEnrichedData(
     if (attendance7DataState) {
       attendance7DataState.forEach(row => {
         const days = parseInt(row.连续未出勤天数 || 0) || 0;
-        if (days < 7) return;
+        if (days < 15) return;
         const center = row.中心 || row.中心名称 || '';
         const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
         const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
