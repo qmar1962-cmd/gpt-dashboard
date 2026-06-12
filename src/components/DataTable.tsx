@@ -13,6 +13,7 @@ import Attendance7DetailModal from './Attendance7DetailModal';
 import WorkHoursHighDetailModal from './WorkHoursHighDetailModal';
 import WorkHoursLowDetailModal from './WorkHoursLowDetailModal';
 import CenterTrendModal from './CenterTrendModal';
+import DateRangeExportModal from './DateRangeExportModal';
 
 import { Selection } from '../App';
 
@@ -71,6 +72,7 @@ interface Attendance7ModalState {
 
 export default function DataTable({ data, onSelect, currentSelection, adminMode, exemptCenters, onToggleExempt, rawData, salaryData, attendance15Data, attendance7Data, rosterData, workHoursHighData, workHoursLowData, outsourcingData }: DataTableProps) {
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({ 'shanghai-prov': true });
+  const [showExportModal, setShowExportModal] = useState(false);
   // 中心元数据（负责人等）
   const [centerMeta, setCenterMeta] = useState<Record<string, Record<string, string>>>({});
 
@@ -159,29 +161,8 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
     }
   };
 
-  const handleExportExcel = async () => {
-    const rows: any[] = [];
-    data.forEach((item: any) => {
-      (item.subCenters || []).forEach((c: any) => {
-        rows.push({
-          '省区': item.province, '中心': c.name, '得分': c.score ?? 0,
-          '非操占比': c.nonOpRatio != null ? c.nonOpRatio + '%' : '',
-          '综合管幅': c.compositeScope ?? '', '组长管幅': c.leaderScope ?? '',
-          '综合超目标': c.compOverTarget ?? '', '组长超目标': c.leadOverTarget ?? '',
-          '效能异常(个)': c.abnormalCount ?? 0, '绩效异常(人)': c.t2SalaryCount ?? 0,
-          '绩效覆盖率': c.salaryCoverage || '', '连续出勤≥20天(人)': c.att15Count ?? 0,
-          '连续出勤触发率': c.att15Rate || '', '长期未出勤≥7天(人)': c.att7Count ?? 0,
-          '日工时高>12.5h(人)': c.t2WhHighCount ?? 0, '日工时高触发率': c.whHighRate || '',
-          '日工时低≤8h(人)': c.t2WhLowCount ?? 0,
-        });
-      });
-    });
-    const XLSX = await import('xlsx');
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = Object.keys(rows[0] || {}).map((k: string) => ({ wch: Math.max(k.length * 2, 12) }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '绩效通报');
-    XLSX.writeFile(wb, 'GPT绩效通报_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  const handleExportExcel = () => {
+    setShowExportModal(true);
   };
 
   return (
@@ -905,6 +886,7 @@ export default function DataTable({ data, onSelect, currentSelection, adminMode,
         </div>
       </div>
       <CenterTrendModal isOpen={trendModal !== null} centerName={trendModal?.centerName || ""} provinceName={trendModal?.provinceName || ""} onClose={() => setTrendModal(null)} />
+      <DateRangeExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} />
     </div>
   );
 }
