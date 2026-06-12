@@ -251,7 +251,7 @@ export function generateReport(params: {
           const days = parseInt(row.连续未出勤天数 || 0) || 0;
           const cMatch = rc.includes(center.name) || center.name.includes(rc);
           const pMatch = rp.includes(prov.province) || prov.province.includes(rp);
-          return pMatch && cMatch && rd === dateStr && days >= 15;
+          return pMatch && cMatch && rd === dateStr && days >= 7;
         });
         item.att7Details = t2Att7Rows.map(r => ({
           name: r.姓名 || '',
