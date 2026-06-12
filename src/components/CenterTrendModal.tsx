@@ -15,7 +15,7 @@ interface Props {
 const DIMS = [
   { key: 'job',    label: DIM_COLORS.job.label,    color: DIM_COLORS.job.hex,    type: 'job_performance',      abnormal: true },
   { key: 'salary', label: DIM_COLORS.salary.label, color: DIM_COLORS.salary.hex, type: 'salary_performance',    abnormal: false },
-  { key: 'att15',  label: '连续出勤≥15天',          color: DIM_COLORS.att15.hex,  type: 'attendance_15days',      abnormal: false },
+  { key: 'att15',  label: '连续出勤≥20天',          color: DIM_COLORS.att15.hex,  type: 'attendance_15days',      abnormal: false },
   { key: 'att7',   label: '长期未出勤≥15天',         color: DIM_COLORS.att7.hex,   type: 'attendance_7days',       abnormal: false },
   { key: 'whHigh', label: '日工时高>12.5h',           color: DIM_COLORS.whHigh.hex, type: 'work_hours_high',         abnormal: false },
   { key: 'whLow',  label: '日工时低≤8h',             color: DIM_COLORS.whLow.hex,  type: 'work_hours_low',          abnormal: false },

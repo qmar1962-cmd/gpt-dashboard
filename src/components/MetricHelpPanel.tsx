@@ -26,7 +26,7 @@ const DATE_CONCEPTS = [
 const DATA_SOURCES = [
   { id: 'job_performance', name: '岗位效能异常', rows: '岗位名称+省区+中心+日期', dedup: '岗位名称 + 数据日期 + 中心' },
   { id: 'salary_performance', name: '薪资绩效异常', rows: '每人一条（姓名+岗位+日期）', dedup: '姓名 + 岗位 + 数据日期' },
-  { id: 'attendance_15days', name: '连续15日出勤', rows: '连续出勤≥15天的员工', dedup: '工号 + 数据日期' },
+  { id: 'attendance_15days', name: '连续20日出勤', rows: '连续出勤≥20天的员工', dedup: '工号 + 数据日期' },
   { id: 'attendance_7days', name: '连续15日未出勤', rows: '连续未出勤≥15天的员工', dedup: '工号 + 数据日期' },
   { id: 'work_hours_high', name: '日工时高（&gt;12.5h）', rows: '出勤工时&gt;12.5h的员工', dedup: '工号 + 数据日期' },
   { id: 'work_hours_low', name: '日工时低（&le;8h）', rows: '出勤工时&le;8h的员工', dedup: '工号 + 数据日期' },

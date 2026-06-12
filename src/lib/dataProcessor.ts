@@ -477,7 +477,7 @@ export function getWeeklyAttendance15Detail(
       const normRowProv = rowProvince.replace(/区$/, '');
       const normProv = provinceName.replace(/区$/, '');
       const provinceMatch = rowProvince.includes(provinceName) || provinceName.includes(rowProvince) || normRowProv === normProv;
-      return provinceMatch && centerMatch && row._dateStr === dateStr && days >= 7;
+      return provinceMatch && centerMatch && row._dateStr === dateStr && days >= 15;
     });
 
     const details = rows.map(row => ({
@@ -490,7 +490,7 @@ export function getWeeklyAttendance15Detail(
     days.push({
       date: dateStr,
       dateLabel,
-      abnormalCount: rows.length,
+      abnormalCount: details.filter(d => d.continuousDays >= 20).length,
       details,
     });
   }
