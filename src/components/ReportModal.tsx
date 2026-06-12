@@ -203,8 +203,21 @@ export default function ReportModal({ isOpen, onClose, params }: ReportModalProp
   };
 
   const handleCopy = async () => {
-    try { await navigator.clipboard.writeText(textContent); } catch { /* ignore */ }
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(textContent);
+      ok = true;
+    } catch {
+      // fallback: textarea + execCommand（非 HTTPS 环境）
+      const ta = document.createElement('textarea');
+      ta.value = textContent;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { ok = document.execCommand('copy'); } catch { /* ignore */ }
+      document.body.removeChild(ta);
+    }
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   };
 
   const handleDownload = () => {
