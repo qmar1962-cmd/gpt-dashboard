@@ -192,7 +192,7 @@ export default function SidePanel({ selection, data, filteredData, exemptCenters
               <KPI label="效能异常" value={overview.abnormalCount + '个'} warn={overview.abnormalCount >= 3} />
               <KPI label="绩效异常" value={overview.salaryCount + '人'} sub={overview.salaryCoverage + '%'} />
               <KPI label="连续出勤≥15天" value={overview.att15Count + '人'} sub={overview.att15Rate + '%'} />
-              <KPI label="长期未出勤≥7天" value={overview.att7Count + '人'} warn={overview.att7Count > 0} />
+              <KPI label="长期未出勤≥15天" value={overview.att7Count + '人'} warn={overview.att7Count > 0} />
               <KPI label="日工时高>12.5h" value={overview.whHighCount + '人'} sub={overview.whHighRate + '%'} />
               <KPI label="日工时低≤8h" value={overview.whLowCount + '人'} warn={overview.whLowCount > 0} />
               <KPI label="综合管幅" value={overview.compositeScope} />

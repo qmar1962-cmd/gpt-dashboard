@@ -44,7 +44,7 @@ export interface CenterReportItem {
     continuousDays: number;
   }>;
 
-  /** 长期未出勤 ≥7天 */
+  /** 长期未出勤 ≥15天 */
   att7Count: number;
   att7PrevCount: number;  // 前一天长期未出勤人数
   att7New: number;
@@ -95,7 +95,7 @@ export interface OverviewTableRow {
   salaryCoverage: string;    // 绩效异常覆盖率
   att15Count: number;       // 连续出勤≥15天人数
   att15Rate: string;        // 连续出勤触发率
-  att7Count: number;        // 长期未出勤≥7天人数
+  att7Count: number;        // 长期未出勤≥15天人数
   att7Rate: string;         // 长期未出勤触发率
   workHoursHighCount: number; // 日工时高人数
   workHoursHighRate: string;  // 日工时高触发占比
@@ -251,7 +251,7 @@ export function generateReport(params: {
           const days = parseInt(row.连续未出勤天数 || 0) || 0;
           const cMatch = rc.includes(center.name) || center.name.includes(rc);
           const pMatch = rp.includes(prov.province) || prov.province.includes(rp);
-          return pMatch && cMatch && rd === dateStr && days >= 7;
+          return pMatch && cMatch && rd === dateStr && days >= 15;
         });
         item.att7Details = t2Att7Rows.map(r => ({
           name: r.姓名 || '',
@@ -424,7 +424,7 @@ function generateSummary(provinces: ProvinceReport[]): string {
   if (totalJobNow > 0) issues.push(`效能异常 ${totalJobNow} 个`);
   if (totalSalary > 0) issues.push(`绩效异常 ${totalSalary} 人`);
   if (totalAtt15 > 0) issues.push(`连续出勤≥15天 ${totalAtt15} 人`);
-  if (totalAtt7 > 0) issues.push(`长期未出勤≥7天 ${totalAtt7} 人`);
+  if (totalAtt7 > 0) issues.push(`长期未出勤≥15天 ${totalAtt7} 人`);
   if (totalWhHigh > 0) issues.push(`日工时高>12.5h ${totalWhHigh} 人`);
   if (totalWhLow > 0) issues.push(`日工时低≤8h ${totalWhLow} 人`);
 
@@ -450,7 +450,7 @@ function generateSummary(provinces: ProvinceReport[]): string {
     suggestions.push(`连续出勤≥15天人员共 ${totalAtt15} 人，建议合理安排轮休，避免疲劳作业`);
   }
   if (totalAtt7 > 0) {
-    suggestions.push(`长期未出勤≥7天人员共 ${totalAtt7} 人，请跟进确认人员状态`);
+    suggestions.push(`长期未出勤≥15天人员共 ${totalAtt7} 人，请跟进确认人员状态`);
   }
   if (totalWhHigh > 0) {
     suggestions.push(`日工时高>12.5h人员共 ${totalWhHigh} 人，请关注加班情况，合理安排工作量`);
@@ -609,7 +609,7 @@ export function renderReportAsTextCompact(report: FullReport): string {
     lines.push(`3. 连续出勤≥15天${totalAtt15}人，建议合理安排轮休`);
   }
   if (totalAtt7 > 0) {
-    lines.push(`4. 长期未出勤≥7天${totalAtt7}人，请跟进确认人员状态`);
+    lines.push(`4. 长期未出勤≥15天${totalAtt7}人，请跟进确认人员状态`);
   }
   if (totalWhHigh > 0) {
     lines.push(`5. 日工时高>12.5h${totalWhHigh}人，请关注加班情况`);
@@ -632,7 +632,7 @@ export function renderReportAsTextCompact(report: FullReport): string {
       if (center.jobAbnormalCount > 0) {
         actionTodo = `效能异常${center.jobAbnormalCount}个，请关注岗位效能偏离情况`;
       } else if (center.att7Count > 0) {
-        actionTodo = `长期未出勤≥7天${center.att7Count}人，请核实原因并填写至网页`;
+        actionTodo = `长期未出勤≥15天${center.att7Count}人，请核实原因并填写至网页`;
       } else if (center.salaryCount > 0 && parseFloat(center.salaryCoverage) > 3) {
         actionTodo = `绩效异常${center.salaryCoverage}（${center.salaryCount}人），请明确异常人员名单并制定改进计划`;
       } else if (center.att15Count > 0 && parseFloat(center.att15Rate) > 3) {
@@ -670,9 +670,9 @@ export function renderReportAsTextCompact(report: FullReport): string {
 
       // 长期未出勤（只保留数字）
       if (center.att7Count > 0) {
-        lines.push(`长期未出勤≥7天：${center.att7Count}人(新增${center.att7New})`);
+        lines.push(`长期未出勤≥15天：${center.att7Count}人(新增${center.att7New})`);
       } else {
-        lines.push(`长期未出勤≥7天：无`);
+        lines.push(`长期未出勤≥15天：无`);
       }
       
       // 日工时高

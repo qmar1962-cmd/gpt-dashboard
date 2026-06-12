@@ -27,7 +27,7 @@ const DATA_SOURCES = [
   { id: 'job_performance', name: '岗位效能异常', rows: '岗位名称+省区+中心+日期', dedup: '岗位名称 + 数据日期 + 中心' },
   { id: 'salary_performance', name: '薪资绩效异常', rows: '每人一条（姓名+岗位+日期）', dedup: '姓名 + 岗位 + 数据日期' },
   { id: 'attendance_15days', name: '连续15日出勤', rows: '连续出勤≥15天的员工', dedup: '工号 + 数据日期' },
-  { id: 'attendance_7days', name: '连续7日未出勤', rows: '连续未出勤≥7天的员工', dedup: '工号 + 数据日期' },
+  { id: 'attendance_7days', name: '连续15日未出勤', rows: '连续未出勤≥15天的员工', dedup: '工号 + 数据日期' },
   { id: 'work_hours_high', name: '日工时高（&gt;12.5h）', rows: '出勤工时&gt;12.5h的员工', dedup: '工号 + 数据日期' },
   { id: 'work_hours_low', name: '日工时低（&le;8h）', rows: '出勤工时&le;8h的员工', dedup: '工号 + 数据日期' },
   { id: 'employee_roster', name: '中心在职花名册', rows: '全部在职人员（含非操作部门）', dedup: '工号' },
@@ -329,7 +329,7 @@ const ATTENDANCE_SPEC = {
     trigger: '连续未出勤 ≥ 7天的人员',
     options: '工伤 / 事假 / 病假 / 纠纷 / 挂编 / 出差 / 离职未清 / 已返岗',
     storage: '存储于 Supabase absence_reasons 表，多人协作编辑，一人修改全员可见',
-    autoClean: '不在当前视图中的工号记录自动删除（断天 = 该人不再是连续未出勤≥7天）',
+    autoClean: '不在当前视图中的工号记录自动删除（断天 = 该人不再是连续未出勤≥15天）',
   },
   groupLeadersSpec: {
     storage: '存储于 GitHub 仓库 group_leaders.json，多人协作编辑，一人修改全员可见；修改后需点击"保存到云端"',
@@ -760,7 +760,7 @@ export default function MetricHelpPanel() {
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
-                  <span className="text-slate-600">未出勤原因协作编辑：支持为连续未出勤≥7天的员工添加未出勤原因，存储于 GitHub 仓库</span>
+                  <span className="text-slate-600">未出勤原因协作编辑：支持为连续未出勤≥15天的员工添加未出勤原因，存储于 Supabase</span>
                 </div>
                 <div className="flex items-start gap-1.5 text-[10px]">
                   <span className="text-emerald-600 font-bold shrink-0">新增</span>
