@@ -772,18 +772,21 @@ export default function Attendance15DetailModal({
                               </span>
                               {/* 排休计划（可点击） */}
                               <div
-                                className="relative w-28 flex items-center justify-center"
+                                className="relative flex items-center justify-center"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setPickerFor(isPickerOpen ? null : { date: day.date, name: detail.name, employeeId: detail.employeeId || '' });
                                 }}
                               >
-                                <span className={cn(
-                                  "text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer border transition-all min-w-[80px] text-center",
-                                  plan
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                    : "bg-[#f0ebe3] text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50"
-                                )}>
+                                <span
+                                  title={plan ? formatPlanDisplay(plan) : '点击设置排休'}
+                                  className={cn(
+                                    "text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer border transition-all min-w-[80px] max-w-[160px] text-center truncate",
+                                    plan
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                      : "bg-[#f0ebe3] text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50"
+                                  )}
+                                >
                                   {plan ? formatPlanDisplay(plan) : (
                                     <span className="flex items-center justify-center gap-1">
                                       <CalendarDays size={10} /> 排休
