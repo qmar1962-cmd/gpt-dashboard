@@ -659,11 +659,11 @@ export default function Attendance15DetailModal({
                     {day.abnormalCount > 0 ? (
                       <div className="space-y-1">
                         {/* 表头 */}
-                        <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 px-3 pb-1 border-b border-blue-50">
+                        <div className="grid grid-cols-[1fr_1fr_5rem_5rem] gap-x-3 px-3 pb-1 border-b border-blue-50">
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">姓名</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">岗位</span>
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right w-20">连续天数</span>
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-center w-20">排休计划</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right">连续天数</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-center">排休计划</span>
                         </div>
                         {/* 数据行 */}
                         {day.details.map((detail, idx) => {
@@ -675,7 +675,7 @@ export default function Attendance15DetailModal({
                               key={idx}
                               className="bg-[#faf7f2] rounded-md px-3 py-2 border border-blue-50 relative"
                             >
-                            <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-x-3 items-center">
+                            <div className="grid grid-cols-[1fr_1fr_5rem_5rem] gap-x-3 items-center">
                               {/* 姓名 */}
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <Clock size={10} className="text-blue-400 flex-shrink-0" />
@@ -685,7 +685,7 @@ export default function Attendance15DetailModal({
                               <span className="text-[11px] font-medium text-slate-500 truncate">{detail.jobName}</span>
                               {/* 连续天数 */}
                               <span className={cn(
-                                "text-[11px] font-black font-mono text-right w-20 px-1.5 py-0.5 rounded",
+                                "text-[11px] font-black font-mono text-right px-1.5 py-0.5 rounded",
                                 detail.continuousDays >= 30
                                   ? "bg-red-100 text-red-600"
                                   : detail.continuousDays >= 20
@@ -696,7 +696,7 @@ export default function Attendance15DetailModal({
                               </span>
                               {/* 排休计划（可点击） */}
                               <div
-                                className="relative flex items-center justify-center w-20 min-h-[26px]"
+                                className="relative flex items-center justify-center min-h-[26px]"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setPickerFor(isPickerOpen ? null : { date: day.date, name: detail.name, employeeId: detail.employeeId || '' });
