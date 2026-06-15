@@ -696,7 +696,7 @@ export default function Attendance15DetailModal({
                               </span>
                               {/* 排休计划（可点击） */}
                               <div
-                                className="relative flex items-center justify-center min-h-[26px]"
+                                className="relative flex items-center justify-center w-full min-h-[26px]"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setPickerFor(isPickerOpen ? null : { date: day.date, name: detail.name, employeeId: detail.employeeId || '' });
