@@ -472,12 +472,12 @@ export function getWeeklyAttendance15Detail(
     const rows = normalized.filter(row => {
       const rowProvince = row.省区 || row.省区名称 || '';
       const rowCenter = row.中心 || row.中心名称 || '';
-      const days = parseInt(row.连续出勤天数 || 0) || 0;
+      const consecutiveDays = parseInt(row.连续出勤天数 || 0) || 0;
       const centerMatch = rowCenter.includes(centerName) || centerName.includes(rowCenter);
       const normRowProv = rowProvince.replace(/区$/, '');
       const normProv = provinceName.replace(/区$/, '');
       const provinceMatch = rowProvince.includes(provinceName) || provinceName.includes(rowProvince) || normRowProv === normProv;
-      return provinceMatch && centerMatch && row._dateStr === dateStr && days >= 7;
+      return provinceMatch && centerMatch && row._dateStr === dateStr && consecutiveDays >= 7;
     });
 
     const details = rows.map(row => ({
@@ -532,12 +532,12 @@ export function getWeeklyAttendance7Detail(
     const rows = normalized.filter(row => {
       const rowProvince = row.省区 || row.省区名称 || '';
       const rowCenter = row.中心 || row.中心名称 || '';
-      const days = parseInt(row.连续未出勤天数 || 0) || 0;
+      const consecutiveDays = parseInt(row.连续未出勤天数 || 0) || 0;
       const centerMatch = rowCenter.includes(centerName) || centerName.includes(rowCenter);
       const normRowProv = rowProvince.replace(/区$/, '');
       const normProv = provinceName.replace(/区$/, '');
       const provinceMatch = rowProvince.includes(provinceName) || provinceName.includes(rowProvince) || normRowProv === normProv;
-      return provinceMatch && centerMatch && row._dateStr === dateStr && days >= 7;
+      return provinceMatch && centerMatch && row._dateStr === dateStr && consecutiveDays >= 7;
     });
 
     const details = rows.map(row => ({

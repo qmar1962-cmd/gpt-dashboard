@@ -84,7 +84,6 @@ export async function saveCollaborationData(
       }
     }
 
-    console.log(`[Supabase协作] 保存成功 ${fileName}`);
     return { success: true };
   } catch (error) {
     console.error(`[Supabase协作] 保存异常 ${fileName}:`, error);

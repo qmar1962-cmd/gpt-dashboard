@@ -198,10 +198,8 @@ export default function Attendance15DetailModal({
     if (!isOpen || !weeklyData.length) return;
 
     const loadData = async () => {
-      console.log('[加载] 开始加载协作数据, centerName:', centerName);
       // 1. 加载排休计划
       const plans = await loadCollaborationData('leave_plans.json');
-      console.log('[加载] leave_plans.json 加载结果:', plans);
       // 清理无效记录（无 ranges 或 ranges 为空）
       for (const c of Object.keys(plans)) {
         for (const d of Object.keys(plans[c] || {})) {
@@ -232,7 +230,6 @@ export default function Attendance15DetailModal({
       const matchedKeysBefore = new Set(Object.keys(matched));
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
       const today = new Date().toISOString().slice(0, 10);
-      console.log('[排休继承检查] today:', today, 'centerPlans keys:', Object.keys(centerPlans).length, 'window people:', allPeopleInWindow.size);
       let planInherited = 0;
       for (const personName of allPeopleInWindow) {
         let mostRecentSavedAt = '';
@@ -256,7 +253,6 @@ export default function Attendance15DetailModal({
           const gapDays = Math.round(
             (new Date(refDate).getTime() - new Date(mostRecentSavedAt).getTime()) / (1000 * 60 * 60 * 24)
           );
-          console.log('[排休继承检查]', personName, 'savedAt:', mostRecentSavedAt, 'refDate:', refDate, 'gap:', gapDays);
           if (gapDays <= 1) {
             for (const d of weeklyData) {
               if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
@@ -267,8 +263,6 @@ export default function Attendance15DetailModal({
           }
         }
       }
-      console.log('[排休继承检查] 继承完成, 继承条数:', planInherited);
-
       // 4. 自动保存继承的排休计划
       const inheritedKeys = Object.keys(matched).filter(k => !matchedKeysBefore.has(k));
       if (inheritedKeys.length > 0) {
@@ -286,11 +280,9 @@ export default function Attendance15DetailModal({
         }
         setCollaborationData(updatedPlans);
         const saveResult = await saveCollaborationData('leave_plans.json', updatedPlans, `自动继承排休计划: ${centerName}`);
-        console.log('[继承] 排休计划自动保存结果:', saveResult);
       }
 
       setLeavePlans(matched);
-      console.log('[加载] 匹配到的排休计划:', matched);
 
       // 3. 加载花名册和考勤原始数据（只存原始数据，计算结果在渲染时用 useMemo）
       try {
@@ -334,8 +326,7 @@ export default function Attendance15DetailModal({
           }
         }
         setT2PresentList(tp);
-        console.log('[排休判定] 花名册:', Object.keys(eg).length, '人, T-2出勤:', tp.length, '人');
-      } catch (e) { console.warn('[排休判定] 小组数据加载失败:', e); }
+      } catch (e) { /* 花名册加载失败不影响排休功能 */ }
 
       // 加载完成后才重置未保存标记
       setHasUnsavedChanges(false);
@@ -367,7 +358,6 @@ export default function Attendance15DetailModal({
         info.set(p.employeeId, { group: g, rate, judgment });
       }
     }
-    console.log('[排休判定] 组:', Object.keys(gTotal).length, '个, 连续出勤:', info.size, '人');
     return info;
   }, [empGroupObj, t2PresentList, weeklyData]);
 
@@ -474,13 +464,11 @@ export default function Attendance15DetailModal({
         }
       }
 
-      console.log('[保存] 开始保存 leave_plans.json, rebuiltData:', rebuiltData);
       const result = await saveCollaborationData(
         'leave_plans.json',
         rebuiltData,
         `Update leave plans for ${centerName}`
       );
-      console.log('[保存] leave_plans.json 保存结果:', result);
       if (result.success) {
         setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);
@@ -490,7 +478,6 @@ export default function Attendance15DetailModal({
         return false;
       }
     } catch (error) {
-      console.error('[保存] 保存失败:', error);
       alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return false;
     } finally {

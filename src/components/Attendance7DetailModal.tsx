@@ -62,10 +62,8 @@ export default function Attendance7DetailModal({
     if (!isOpen || !weeklyData.length) return;
 
     const loadData = async () => {
-      console.log('[加载] 开始加载协作数据, centerName:', centerName);
       // 1. 加载未出勤原因
       const reasons = await loadCollaborationData('absence_reasons.json');
-      console.log('[加载] absence_reasons.json 加载结果:', reasons);
       setCollaborationData(reasons);
 
       // 2. 按中心名和日期匹配到当前列表
@@ -85,7 +83,6 @@ export default function Attendance7DetailModal({
       const matchedKeysBefore = new Set(Object.keys(matched));
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
       const today = new Date().toISOString().slice(0, 10);
-      console.log('[继承检查] today:', today, 'centerReasons keys:', Object.keys(centerReasons).length, 'window people:', allPeopleInWindow.size);
       let inheritedCount = 0;
       for (const personName of allPeopleInWindow) {
         let mostRecentSavedAt = '';
@@ -119,11 +116,8 @@ export default function Attendance7DetailModal({
           }
         }
       }
-      console.log('[继承检查] 继承完成, 继承条数:', inheritedCount);
-
       // 4. 自动保存继承的条目（新出现的 key 写回 Supabase）
       const inheritedKeys = Object.keys(matched).filter(k => !matchedKeysBefore.has(k));
-      console.log('[继承检查] matched before:', matchedKeysBefore.size, 'after:', Object.keys(matched).length, 'new:', inheritedKeys.length);
       if (inheritedKeys.length > 0) {
         const updatedReasons = JSON.parse(JSON.stringify(reasons));
         if (!updatedReasons[centerName]) updatedReasons[centerName] = {};
@@ -147,12 +141,10 @@ export default function Attendance7DetailModal({
           };
         }
         setCollaborationData(updatedReasons);
-        const saveResult = await saveCollaborationData('absence_reasons.json', updatedReasons, `自动继承未出勤原因: ${centerName}`);
-        console.log('[继承] 自动保存结果:', saveResult);
+        await saveCollaborationData('absence_reasons.json', updatedReasons, `自动继承未出勤原因: ${centerName}`);
       }
 
       setReasonMap(matched);
-      console.log('[加载] 匹配到的原因:', matched);
 
       // 加载完成后才重置未保存标记
       setHasUnsavedChanges(false);
@@ -261,13 +253,11 @@ export default function Attendance7DetailModal({
         }
       }
 
-      console.log('[保存] 开始保存 absence_reasons.json, rebuiltData:', rebuiltData);
       const result = await saveCollaborationData(
         'absence_reasons.json',
         rebuiltData,
         `Update absence reasons for ${centerName}`
       );
-      console.log('[保存] absence_reasons.json 保存结果:', result);
       if (result.success) {
         setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);
@@ -277,7 +267,6 @@ export default function Attendance7DetailModal({
         return false;
       }
     } catch (error) {
-      console.error('[保存] 保存失败:', error);
       alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return false;
     } finally {
