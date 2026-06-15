@@ -695,30 +695,24 @@ export default function Attendance15DetailModal({
                                 {detail.continuousDays} 天
                               </span>
                               {/* 排休计划（可点击） */}
-                              <div
-                                className="relative flex items-center justify-center w-full min-h-[26px]"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPickerFor(isPickerOpen ? null : { date: day.date, name: detail.name, employeeId: detail.employeeId || '' });
-                                }}
-                              >
+                              <div className="relative">
                                 <span
                                   title={plan ? formatPlanDisplay(plan) : '点击设置排休'}
                                   className={cn(
-                                    "text-[11px] font-bold px-1.5 py-0.5 rounded cursor-pointer border transition-all w-full text-center truncate",
+                                    "text-[11px] font-bold px-1.5 py-0.5 rounded cursor-pointer border transition-all text-center truncate block min-h-[26px] leading-[26px]",
                                     plan
                                       ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                                       : "bg-[#f0ebe3] text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50"
                                   )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPickerFor(isPickerOpen ? null : { date: day.date, name: detail.name, employeeId: detail.employeeId || '' });
+                                  }}
                                 >
                                   {plan ? formatPlanDisplay(plan) : (
-                                    <span className="flex items-center justify-center gap-1">
-                                      <CalendarDays size={10} /> 排休
-                                    </span>
+                                    <><CalendarDays size={10} className="inline-block align-text-bottom" /> 排休</>
                                   )}
                                 </span>
-
-                                {/* 日期选择器弹窗 */}
                                 <DatePickerPopover
                                   isOpen={isPickerOpen}
                                   onClose={() => setPickerFor(null)}
