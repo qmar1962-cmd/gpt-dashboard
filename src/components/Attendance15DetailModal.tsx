@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, Check, Edit3, User, AlertTriangle } from 'lucide-react';
+import { X, TrendingUp, Clock, CalendarDays, ChevronLeft, ChevronRight, ChevronDown, Check, AlertTriangle } from 'lucide-react';
 import { Attendance15WeeklyDetail } from '../lib/dataProcessor';
 import { cn } from '../lib/utils';
 import { DIM_COLORS } from '../lib/theme';
@@ -189,10 +189,6 @@ export default function Attendance15DetailModal({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   // 保存中状态
   const [isSaving, setIsSaving] = useState(false);
-  // 考勤负责人
-  const [responsiblePerson, setResponsiblePerson] = useState('');
-  const [isEditingResponsible, setIsEditingResponsible] = useState(false);
-  const [responsibleInput, setResponsibleInput] = useState('');
   // 小组出勤率与排休判定：工号 → { group, rate, judgment }
   const [empGroupObj, setEmpGroupObj] = useState<Record<string, string>>({}); // 工号→组别
   const [t2PresentList, setT2PresentList] = useState<string[]>([]); // T-2出勤工号列表
@@ -296,14 +292,7 @@ export default function Attendance15DetailModal({
       setLeavePlans(matched);
       console.log('[加载] 匹配到的排休计划:', matched);
 
-      // 3. 加载中心元数据（负责人）
-      const meta = await loadCollaborationData('center_meta.json');
-      console.log('[加载] center_meta.json 加载结果:', meta);
-      const centerMeta = meta[centerName] || {};
-      if (centerMeta['考勤负责人']) {
-        setResponsiblePerson(centerMeta['考勤负责人']);
-      }
-      // 4. 加载花名册和考勤原始数据（只存原始数据，计算结果在渲染时用 useMemo）
+      // 3. 加载花名册和考勤原始数据（只存原始数据，计算结果在渲染时用 useMemo）
       try {
         const t2Date = weeklyData[weeklyData.length - 1]?.date || '';
         const [rosterStored, dailyStored] = await Promise.all([
@@ -495,20 +484,6 @@ export default function Attendance15DetailModal({
       if (result.success) {
         setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);
-        // 同时保存中心元数据（负责人）
-        if (responsiblePerson) {
-          console.log('[保存] 开始保存 center_meta.json');
-          const meta = await loadCollaborationData('center_meta.json');
-          const updatedMeta = { ...meta };
-          if (!updatedMeta[centerName]) updatedMeta[centerName] = {};
-          updatedMeta[centerName]['考勤负责人'] = responsiblePerson;
-          updatedMeta[centerName]['updatedAt'] = new Date().toISOString();
-          const metaResult = await saveCollaborationData('center_meta.json', updatedMeta, `Update responsible for ${centerName}`);
-          console.log('[保存] center_meta.json 保存结果:', metaResult);
-          if (!metaResult.success) {
-            alert(`负责人保存失败: ${metaResult.error}`);
-          }
-        }
         return true;
       } else {
         alert(`保存失败: ${result.error}`);
@@ -521,7 +496,7 @@ export default function Attendance15DetailModal({
     } finally {
       setIsSaving(false);
     }
-  }, [collaborationData, centerName, responsiblePerson, weeklyData, leavePlans]);
+  }, [collaborationData, centerName, weeklyData, leavePlans]);
 
   // 处理关闭弹窗（检查未保存修改）
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
@@ -538,13 +513,6 @@ export default function Attendance15DetailModal({
     setShowSaveConfirm(false);
     handleSave().then(saved => { if (saved) onClose(); });
   };
-
-  // 保存考勤负责人
-  const handleSaveResponsible = useCallback(async () => {
-    setResponsiblePerson(responsibleInput);
-    setIsEditingResponsible(false);
-    setHasUnsavedChanges(true);
-  }, [responsibleInput]);
 
   // 关闭 picker 的点击外部逻辑
   useEffect(() => {
@@ -586,50 +554,6 @@ export default function Attendance15DetailModal({
                   操作在职 {Object.keys(empGroupObj).length}人 · T-2出勤 {t2PresentList.length}人 · 出勤率 {Object.keys(empGroupObj).length > 0 ? Math.round(t2PresentList.length / Object.keys(empGroupObj).length * 100) : 0}%
                   （{weeklyData[weeklyData.length - 1]?.date?.slice(5) || ''}）
                 </p>
-                {/* 考勤负责人编辑 */}
-                <div className="mt-1 flex items-center gap-2">
-                  {isEditingResponsible ? (
-                    <div className="flex items-center gap-1.5">
-                      <User size={11} className="text-slate-400" />
-                      <input
-                        type="text"
-                        value={responsibleInput}
-                        onChange={e => setResponsibleInput(e.target.value)}
-                        placeholder="输入负责人姓名"
-                        className="text-[11px] px-2 py-0.5 border border-[#e8e2d9] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 w-32"
-                        autoFocus
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') handleSaveResponsible();
-                          if (e.key === 'Escape') setIsEditingResponsible(false);
-                        }}
-                      />
-                      <button
-                        onClick={handleSaveResponsible}
-                        className="text-[10px] px-1.5 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 font-bold"
-                      >
-                        保存
-                      </button>
-                      <button
-                        onClick={() => setIsEditingResponsible(false)}
-                        className="text-[10px] px-1.5 py-0.5 text-slate-400 hover:text-slate-600"
-                      >
-                        取消
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setResponsibleInput(responsiblePerson);
-                        setIsEditingResponsible(true);
-                      }}
-                      className="flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-700 transition-colors group"
-                    >
-                      <User size={11} className="text-slate-400 group-hover:text-slate-600" />
-                      <span>考勤负责人：{responsiblePerson || '未设置'}</span>
-                      <Edit3 size={10} className="text-slate-300 group-hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  )}
-                </div>
                 <p className="text-[11px] font-bold text-slate-400 mt-0.5 flex items-center gap-2">
                   <TrendingUp size={11} />
                   近7天连续出勤趋势（T-2 = 今天 - 2天）
@@ -739,7 +663,7 @@ export default function Attendance15DetailModal({
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">姓名</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide">岗位</span>
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-right w-20">连续天数</span>
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-center w-28">排休计划</span>
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wide text-center w-20">排休计划</span>
                         </div>
                         {/* 数据行 */}
                         {day.details.map((detail, idx) => {
@@ -772,7 +696,7 @@ export default function Attendance15DetailModal({
                               </span>
                               {/* 排休计划（可点击） */}
                               <div
-                                className="relative flex items-center justify-center"
+                                className="relative flex items-center justify-center w-20"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setPickerFor(isPickerOpen ? null : { date: day.date, name: detail.name, employeeId: detail.employeeId || '' });
@@ -781,7 +705,7 @@ export default function Attendance15DetailModal({
                                 <span
                                   title={plan ? formatPlanDisplay(plan) : '点击设置排休'}
                                   className={cn(
-                                    "text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer border transition-all min-w-[80px] max-w-[160px] text-center truncate",
+                                    "text-[11px] font-bold px-1.5 py-0.5 rounded cursor-pointer border transition-all w-full text-center truncate",
                                     plan
                                       ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                                       : "bg-[#f0ebe3] text-slate-400 border-dashed border-slate-300 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50"
