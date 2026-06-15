@@ -47,6 +47,7 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
 
   useEffect(() => {
     if (isOpen) {
+      console.log('[DatePickerPopover] 打开, currentRanges:', currentRanges);
       setRanges(currentRanges ? [...currentRanges] : []);
       setMode('view');
       setPickStart(null); setPickEnd(null); setSelectingStart(true);
@@ -669,6 +670,7 @@ export default function Attendance15DetailModal({
                         {day.details.map((detail, idx) => {
                           const plan = leavePlans[`${day.date}_${detail.name}`];
                           const isPickerOpen = pickerFor?.date === day.date && pickerFor?.name === detail.name;
+                          if (isPickerOpen) console.log('[排休按钮] 打开picker, name:', detail.name, 'plan:', plan, 'ranges:', plan?.ranges);
                           const gi = groupInfo.get(detail.employeeId);
                           return (
                             <div
