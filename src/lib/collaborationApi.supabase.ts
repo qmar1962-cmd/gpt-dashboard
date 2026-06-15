@@ -155,10 +155,9 @@ function leavePlansRowsToJson(rows: any[]): any {
     if (!result[row.center]) result[row.center] = {};
     if (!result[row.center][row.date]) result[row.center][row.date] = {};
     result[row.center][row.date][row.name] = {
-      start: row.start_date,
-      end: row.end_date,
+      ranges: row.start_date ? [{ start: row.start_date, end: row.end_date || row.start_date }] : [],
       setDate: row.set_date,
-      savedAt: row.set_date,       // 继承用：set_date 即为保存日期
+      savedAt: row.set_date,
     };
   }
   return result;
@@ -170,12 +169,16 @@ function leavePlansJsonToRows(data: any): any[] {
     for (const date of Object.keys(data[center])) {
       for (const name of Object.keys(data[center][date])) {
         const item = data[center][date][name];
+        // 兼容 ranges 格式和旧 start/end 格式
+        const startDate = item.ranges?.length > 0 ? item.ranges[0].start : item.start;
+        const endDate = item.ranges?.length > 0 ? item.ranges[item.ranges.length - 1].end : item.end;
+        if (!startDate) continue; // 跳过无效记录
         rows.push({
           center,
           date,
           name,
-          start_date: item.start,
-          end_date: item.end,
+          start_date: startDate,
+          end_date: endDate || startDate,
           set_date: item.savedAt || item.setDate,
         });
       }

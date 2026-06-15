@@ -202,17 +202,12 @@ export default function Attendance15DetailModal({
       // 1. 加载排休计划
       const plans = await loadCollaborationData('leave_plans.json');
       console.log('[加载] leave_plans.json 加载结果:', plans);
-      // 兼容旧数据：start/end → ranges，清理无效记录
+      // 清理无效记录（无 ranges 或 ranges 为空）
       for (const c of Object.keys(plans)) {
         for (const d of Object.keys(plans[c] || {})) {
           for (const n of Object.keys(plans[c][d] || {})) {
             const rec = plans[c][d][n];
-            if (!rec) continue;
-            if (!rec.ranges && rec.start) {
-              // 旧格式迁移
-              rec.ranges = [{ start: rec.start, end: rec.end || rec.start }];
-            } else if (!rec.ranges && !rec.start) {
-              // 无效记录（start=null, ranges=undefined），直接删
+            if (!rec || !rec.ranges || rec.ranges.length === 0) {
               delete plans[c][d][n];
             }
           }
