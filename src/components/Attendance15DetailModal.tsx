@@ -47,7 +47,6 @@ function DatePickerPopover({ isOpen, onClose, onSelect, onClear, currentRanges }
 
   useEffect(() => {
     if (isOpen) {
-      console.log('[DatePickerPopover] 打开, currentRanges:', currentRanges);
       setRanges(currentRanges ? [...currentRanges] : []);
       setMode('view');
       setPickStart(null); setPickEnd(null); setSelectingStart(true);
@@ -203,13 +202,18 @@ export default function Attendance15DetailModal({
       // 1. 加载排休计划
       const plans = await loadCollaborationData('leave_plans.json');
       console.log('[加载] leave_plans.json 加载结果:', plans);
-      // 兼容旧数据：start/end → ranges
+      // 兼容旧数据：start/end → ranges，清理无效记录
       for (const c of Object.keys(plans)) {
         for (const d of Object.keys(plans[c] || {})) {
           for (const n of Object.keys(plans[c][d] || {})) {
             const rec = plans[c][d][n];
-            if (rec && !rec.ranges && rec.start) {
+            if (!rec) continue;
+            if (!rec.ranges && rec.start) {
+              // 旧格式迁移
               rec.ranges = [{ start: rec.start, end: rec.end || rec.start }];
+            } else if (!rec.ranges && !rec.start) {
+              // 无效记录（start=null, ranges=undefined），直接删
+              delete plans[c][d][n];
             }
           }
         }
@@ -223,7 +227,7 @@ export default function Attendance15DetailModal({
         const dayPlans = centerPlans[day.date] || {};
         for (const person of day.details) {
           const plan = dayPlans[person.name];
-          if (plan) {
+          if (plan && plan.ranges?.length > 0) {
             matched[`${day.date}_${person.name}`] = plan;
           }
         }
@@ -241,7 +245,7 @@ export default function Attendance15DetailModal({
         for (const [histDate, histPeople] of Object.entries(centerPlans)) {
           const rec = histPeople[personName];
           const saveDate = rec?.savedAt || rec?.setDate;
-          if (rec && saveDate > mostRecentSavedAt) {
+          if (rec && rec.ranges?.length > 0 && saveDate > mostRecentSavedAt) {
             mostRecentSavedAt = saveDate;
             mostRecentPlan = rec;
           }
@@ -670,7 +674,6 @@ export default function Attendance15DetailModal({
                         {day.details.map((detail, idx) => {
                           const plan = leavePlans[`${day.date}_${detail.name}`];
                           const isPickerOpen = pickerFor?.date === day.date && pickerFor?.name === detail.name;
-                          if (isPickerOpen) console.log('[排休按钮] 打开picker, name:', detail.name, 'plan:', plan, 'ranges:', plan?.ranges);
                           const gi = groupInfo.get(detail.employeeId);
                           return (
                             <div
