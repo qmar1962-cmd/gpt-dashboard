@@ -461,7 +461,7 @@ export function useEnrichedData(
       // ── 省区维度聚合 ──
 
       // 绩效异常
-      const hasRealSalary = enrichedProvince.subCenters.some((c: any) => (c.t2SalaryCount || 0) > 0);
+      const hasRealSalary = enrichedProvince.subCenters.some((c: any) => c.t2SalaryCount !== undefined);
       if (enrichedProvince.subCenters.length > 0 && hasRealSalary) {
         const totalSalaryScore = enrichedProvince.subCenters.reduce((sum: number, c: any) => sum + (c.metrics?.salary || 0), 0);
         const totalSalaryBase = enrichedProvince.subCenters.reduce((s: number, c: any) => s + (c.salaryCount || 0), 0);
@@ -481,7 +481,7 @@ export function useEnrichedData(
       }
 
       // 连续出勤
-      const hasRealAtt15 = enrichedProvince.subCenters.some((c: any) => (c.t2Att15Count || 0) > 0);
+      const hasRealAtt15 = enrichedProvince.subCenters.some((c: any) => c.t2Att15Count !== undefined);
       if (enrichedProvince.subCenters.length > 0 && hasRealAtt15) {
         const totalAtt15Score = enrichedProvince.subCenters.reduce((sum: number, c: any) => sum + (c.metrics?.att15 || 0), 0);
         const totalAtt15Count = enrichedProvince.subCenters.reduce((s: number, c: any) => s + (c.att15Count || 0), 0);
@@ -505,7 +505,7 @@ export function useEnrichedData(
       }
 
       // 长期未出勤
-      const hasRealAtt7 = enrichedProvince.subCenters.some((c: any) => (c.t2Att7Count || 0) > 0);
+      const hasRealAtt7 = enrichedProvince.subCenters.some((c: any) => c.t2Att7Count !== undefined);
       if (enrichedProvince.subCenters.length > 0 && hasRealAtt7) {
         const totalAtt7Score = enrichedProvince.subCenters.reduce((sum: number, c: any) => sum + (c.metrics?.att7 || 0), 0);
         const totalAtt7Count = enrichedProvince.subCenters.reduce((s: number, c: any) => s + (c.att7Count || 0), 0);
@@ -562,7 +562,7 @@ export function useEnrichedData(
       }
 
       // 效能异常
-      const hasRealJob = enrichedProvince.subCenters.some((c: any) => (c.t2JobCount || 0) > 0);
+      const hasRealJob = enrichedProvince.subCenters.some((c: any) => c.t2JobCount !== undefined);
       if (enrichedProvince.subCenters.length > 0 && hasRealJob) {
         const totalJobScore = enrichedProvince.subCenters.reduce((sum: number, c: any) => sum + (c.metrics?.job || 0), 0);
         const totalAbnormalCount = enrichedProvince.subCenters.reduce((s: number, c: any) => s + (c.abnormalCount || 0), 0);
