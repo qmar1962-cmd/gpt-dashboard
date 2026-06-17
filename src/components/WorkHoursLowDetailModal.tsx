@@ -60,10 +60,8 @@ export default function WorkHoursLowDetailModal({
     if (!isOpen || !weeklyData.length) return;
 
     const loadData = async () => {
-      console.log('[工时低原因] 开始加载协作数据, centerName:', centerName);
       // 1. 加载日工时低原因
       const reasons = await loadCollaborationData('work_hours_low_reasons.json');
-      console.log('[工时低原因] work_hours_low_reasons.json 加载结果:', reasons);
       setCollaborationData(reasons);
 
       // 2. 按中心名和日期匹配到当前列表
@@ -140,12 +138,10 @@ export default function WorkHoursLowDetailModal({
           };
         }
         setCollaborationData(updatedReasons);
-        const saveResult = await saveCollaborationData('work_hours_low_reasons.json', updatedReasons, `自动继承工时低原因: ${centerName}`);
-        console.log('[工时低原因] 自动保存结果:', saveResult);
+        await saveCollaborationData('work_hours_low_reasons.json', updatedReasons, `自动继承工时低原因: ${centerName}`, centerName);
       }
 
       setReasonMap(matched);
-      console.log('[工时低原因] 匹配到的原因:', matched);
 
       // 加载完成后才重置未保存标记
       setHasUnsavedChanges(false);
@@ -248,13 +244,12 @@ export default function WorkHoursLowDetailModal({
         }
       }
 
-      console.log('[工时低原因] 开始保存 work_hours_low_reasons.json, rebuiltData:', rebuiltData);
       const result = await saveCollaborationData(
         'work_hours_low_reasons.json',
         rebuiltData,
-        `Update work hours low reasons for ${centerName}`
+        `Update work hours low reasons for ${centerName}`,
+        centerName
       );
-      console.log('[工时低原因] work_hours_low_reasons.json 保存结果:', result);
       if (result.success) {
         setCollaborationData(rebuiltData);
         setHasUnsavedChanges(false);

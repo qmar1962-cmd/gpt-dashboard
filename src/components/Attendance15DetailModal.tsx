@@ -279,7 +279,7 @@ export default function Attendance15DetailModal({
           updatedPlans[centerName][date][name] = plan;
         }
         setCollaborationData(updatedPlans);
-        const saveResult = await saveCollaborationData('leave_plans.json', updatedPlans, `自动继承排休计划: ${centerName}`);
+        const saveResult = await saveCollaborationData('leave_plans.json', updatedPlans, `自动继承排休计划: ${centerName}`, centerName);
       }
 
       setLeavePlans(matched);
@@ -467,7 +467,8 @@ export default function Attendance15DetailModal({
       const result = await saveCollaborationData(
         'leave_plans.json',
         rebuiltData,
-        `Update leave plans for ${centerName}`
+        `Update leave plans for ${centerName}`,
+        centerName
       );
       if (result.success) {
         setCollaborationData(rebuiltData);

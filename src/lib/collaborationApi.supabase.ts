@@ -49,20 +49,58 @@ export async function loadCollaborationData(fileName: string): Promise<any> {
 
 /**
  * 保存协作数据到 Supabase
- * 将 JSON 数据转换为行，删除旧数据，插入新数据
- * 注意：此操作非原子，低并发场景下可接受
+ * 只更新指定中心的数据，不影响其他中心
  */
 export async function saveCollaborationData(
   fileName: string,
   data: any,
-  message: string
+  message: string,
+  centerName?: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!supabase) return { success: false, error: 'Supabase 客户端未初始化' };
+  if (!supabase) { console.error('[Supabase协作] 客户端未初始化'); return { success: false, error: 'Supabase 客户端未初始化' }; }
   const tableName = getTableName(fileName);
-  const rows = jsonToRows(fileName, data);
 
   try {
-    // 先删除所有旧数据，再插入新数据（用 neq('id',0) 绕过 Supabase 禁止无条件 delete 的限制）
+    // 如果指定了中心，只更新该中心的数据
+    if (centerName) {
+      const rows = jsonToRows(fileName, data);
+      const centerRows = rows.filter(r => r.center === centerName);
+      console.log(`[Supabase协作] 保存中心 ${centerName}, 行数: ${centerRows.length}`);
+
+      // 只删除当前中心的数据
+      const { error: deleteError } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('center', centerName);
+
+      if (deleteError) {
+        console.error(`[Supabase协作] 删除失败 ${centerName}:`, deleteError);
+        return { success: false, error: deleteError.message };
+      }
+      console.log(`[Supabase协作] 删除 ${centerName} 成功`);
+
+      // 插入当前中心的数据
+      if (centerRows.length > 0) {
+        const { error: insertError } = await supabase
+          .from(tableName)
+          .insert(centerRows);
+
+        if (insertError) {
+          console.error(`[Supabase协作] 插入失败 ${centerName}:`, insertError);
+          return { success: false, error: insertError.message };
+        }
+        console.log(`[Supabase协作] 插入 ${centerName} 成功`);
+      }
+
+      console.log(`[Supabase协作] 保存完成 ${centerName}`);
+      return { success: true };
+    }
+
+    // 其他情况：删除所有旧数据，再插入新数据
+    const rows = jsonToRows(fileName, data);
+    console.log(`[Supabase协作] 开始保存 ${fileName}, 表: ${tableName}, 行数: ${rows.length}`);
+
+    // 先删除所有旧数据
     const { error: deleteError } = await supabase
       .from(tableName)
       .delete()
@@ -84,6 +122,7 @@ export async function saveCollaborationData(
       }
     }
 
+    console.log(`[Supabase协作] 保存完成 ${fileName}`);
     return { success: true };
   } catch (error) {
     console.error(`[Supabase协作] 保存异常 ${fileName}:`, error);

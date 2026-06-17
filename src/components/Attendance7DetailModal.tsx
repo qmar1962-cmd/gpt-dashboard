@@ -79,7 +79,7 @@ export default function Attendance7DetailModal({
         }
       }
 
-      // 3. 自动继承：用最近一次保存的真实日期（savedAt）与数据日期对比，≤ 1 天才继承
+      // 3. 自动继承：用最近一次保存的真实日期（savedAt）与数据日期对比，≤ 7 天才继承
       const matchedKeysBefore = new Set(Object.keys(matched));
       const allPeopleInWindow = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
       const today = new Date().toISOString().slice(0, 10);
@@ -106,7 +106,7 @@ export default function Attendance7DetailModal({
           const gapDays = Math.round(
             (new Date(refDate).getTime() - new Date(mostRecentSavedAt).getTime()) / (1000 * 60 * 60 * 24)
           );
-          if (gapDays <= 1) {
+          if (gapDays <= 7) {
             for (const d of weeklyData) {
               if (d.details.some(p => p.name === personName) && matched[`${d.date}_${personName}`] === undefined) {
                 matched[`${d.date}_${personName}`] = mostRecentReason;
@@ -141,7 +141,7 @@ export default function Attendance7DetailModal({
           };
         }
         setCollaborationData(updatedReasons);
-        await saveCollaborationData('absence_reasons.json', updatedReasons, `自动继承未出勤原因: ${centerName}`);
+        await saveCollaborationData('absence_reasons.json', updatedReasons, `自动继承未出勤原因: ${centerName}`, centerName);
       }
 
       setReasonMap(matched);
@@ -215,6 +215,7 @@ export default function Attendance7DetailModal({
       // 第一步：根据 reasonMap 重建 collaborationData[centerName]（确保同一个人所有日期都存进去）
       const rebuiltData = JSON.parse(JSON.stringify(collaborationData));
       if (!rebuiltData[centerName]) rebuiltData[centerName] = {};
+
       // 遍历 reasonMap，重建 centerName 下的数据结构
       for (const [key, reason] of Object.entries(reasonMap)) {
         // key 格式: YYYY-MM-DD_name（名字无下划线，用第一个下划线分割）
@@ -233,7 +234,25 @@ export default function Attendance7DetailModal({
         rebuiltData[centerName][date][name] = { employeeId, name, reason, date, savedAt };
       }
 
-      // 第二步：清理当前7天窗口内不在异常列表里的人（不碰历史数据）
+      // 第二步：确保所有异常人员都有记录（未选择原因的保存为空字符串）
+      const today = new Date().toISOString().slice(0, 10);
+      for (const day of weeklyData) {
+        if (!rebuiltData[centerName][day.date]) rebuiltData[centerName][day.date] = {};
+        for (const person of day.details) {
+          if (!rebuiltData[centerName][day.date][person.name]) {
+            // 没有记录的异常人员，保存为空字符串（表示未选择原因，需要扣分）
+            rebuiltData[centerName][day.date][person.name] = {
+              employeeId: person.employeeId || '',
+              name: person.name,
+              reason: '',  // 空字符串 = 未选择原因 = 需要扣分
+              date: day.date,
+              savedAt: today,
+            };
+          }
+        }
+      }
+
+      // 第三步：清理当前7天窗口内不在异常列表里的人（不碰历史数据）
       const validNames = new Set(weeklyData.flatMap(d => d.details.map(p => p.name)));
       const currentDates = new Set(weeklyData.map(d => d.date));
       if (rebuiltData[centerName]) {
@@ -241,7 +260,7 @@ export default function Attendance7DetailModal({
         for (const date of Object.keys(centerReasons)) {
           // 只清理当前窗口的日期，不碰历史数据
           if (!currentDates.has(date)) continue;
-          
+
           for (const personName of Object.keys(centerReasons[date])) {
             if (!validNames.has(personName)) {
               delete centerReasons[date][personName];
@@ -256,7 +275,8 @@ export default function Attendance7DetailModal({
       const result = await saveCollaborationData(
         'absence_reasons.json',
         rebuiltData,
-        `Update absence reasons for ${centerName}`
+        `Update absence reasons for ${centerName}`,
+        centerName
       );
       if (result.success) {
         setCollaborationData(rebuiltData);
