@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-17T09:17:39.628Z",
+  "generated_at": "2026-06-20T02:34:23.503Z",
   "files": {
     "attendance15_0527.xlsx": {
       "mtime": "2026-06-05T05:40:08.313Z",
@@ -89,6 +89,18 @@
       "mtime": "2026-06-17T01:38:20.889Z",
       "size": 14252
     },
+    "attendance15_0618.xlsx": {
+      "mtime": "2026-06-18T00:48:03.849Z",
+      "size": 14109
+    },
+    "attendance15_0619.xlsx": {
+      "mtime": "2026-06-20T01:26:55.829Z",
+      "size": 14245
+    },
+    "attendance15_0620.xlsx": {
+      "mtime": "2026-06-20T01:41:34.956Z",
+      "size": 14075
+    },
     "attendance7_0527.xlsx": {
       "mtime": "2026-06-05T05:40:08.318Z",
       "size": 10344
@@ -177,6 +189,18 @@
       "mtime": "2026-06-17T01:38:20.957Z",
       "size": 8317
     },
+    "attendance7_0618.xlsx": {
+      "mtime": "2026-06-18T00:48:03.926Z",
+      "size": 8352
+    },
+    "attendance7_0619.xlsx": {
+      "mtime": "2026-06-20T01:26:55.909Z",
+      "size": 8125
+    },
+    "attendance7_0620.xlsx": {
+      "mtime": "2026-06-20T01:41:35.020Z",
+      "size": 7940
+    },
     "center_attendance_0527.xlsx": {
       "mtime": "2026-06-05T05:40:08.324Z",
       "size": 615088
@@ -260,6 +284,18 @@
     "center_attendance_0617.xlsx": {
       "mtime": "2026-06-17T01:38:20.270Z",
       "size": 504998
+    },
+    "center_attendance_0618.xlsx": {
+      "mtime": "2026-06-18T00:48:03.057Z",
+      "size": 508879
+    },
+    "center_attendance_0619.xlsx": {
+      "mtime": "2026-06-20T01:26:55.212Z",
+      "size": 513040
+    },
+    "center_attendance_0620.xlsx": {
+      "mtime": "2026-06-20T01:41:34.117Z",
+      "size": 501093
     },
     "job_performance_0527.xlsx": {
       "mtime": "2026-06-05T05:40:08.352Z",
@@ -349,13 +385,25 @@
       "mtime": "2026-06-17T01:38:21.111Z",
       "size": 5647
     },
-    "outsourcing.xlsx": {
-      "mtime": "2026-06-12T00:56:52.305Z",
-      "size": 9869
+    "job_performance_0618.xlsx": {
+      "mtime": "2026-06-18T00:48:04.085Z",
+      "size": 5693
     },
-    "roster_0612.xlsx": {
-      "mtime": "2026-06-12T00:54:42.349Z",
-      "size": 3425867
+    "job_performance_0619.xlsx": {
+      "mtime": "2026-06-20T01:26:56.051Z",
+      "size": 5702
+    },
+    "job_performance_0620.xlsx": {
+      "mtime": "2026-06-20T01:41:35.183Z",
+      "size": 5746
+    },
+    "outsourcing.xlsx": {
+      "mtime": "2026-06-20T02:22:39.339Z",
+      "size": 9874
+    },
+    "roster_0620.xlsx": {
+      "mtime": "2026-06-20T02:20:10.608Z",
+      "size": 3425293
     },
     "salary_performance_0527.xlsx": {
       "mtime": "2026-06-05T05:40:08.755Z",
@@ -445,9 +493,21 @@
       "mtime": "2026-06-17T01:38:21.031Z",
       "size": 7345
     },
+    "salary_performance_0618.xlsx": {
+      "mtime": "2026-06-18T00:48:04.006Z",
+      "size": 7559
+    },
+    "salary_performance_0619.xlsx": {
+      "mtime": "2026-06-20T01:26:55.972Z",
+      "size": 7557
+    },
+    "salary_performance_0620.xlsx": {
+      "mtime": "2026-06-20T01:41:35.100Z",
+      "size": 7282
+    },
     "staffing_detail.xls": {
-      "mtime": "2026-06-12T01:09:24.468Z",
-      "size": 334877
+      "mtime": "2026-06-20T02:20:39.157Z",
+      "size": 343981
     },
     "work_hours_high_0527.xlsx": {
       "mtime": "2026-06-05T05:40:08.760Z",
@@ -537,6 +597,18 @@
       "mtime": "2026-06-17T01:38:20.635Z",
       "size": 12662
     },
+    "work_hours_high_0618.xlsx": {
+      "mtime": "2026-06-18T00:48:03.613Z",
+      "size": 39239
+    },
+    "work_hours_high_0619.xlsx": {
+      "mtime": "2026-06-20T01:26:55.608Z",
+      "size": 22939
+    },
+    "work_hours_high_0620.xlsx": {
+      "mtime": "2026-06-20T01:41:34.496Z",
+      "size": 19693
+    },
     "work_hours_low_0527.xlsx": {
       "mtime": "2026-06-05T05:40:08.763Z",
       "size": 6189
@@ -624,6 +696,18 @@
     "work_hours_low_0617.xlsx": {
       "mtime": "2026-06-17T01:38:20.334Z",
       "size": 7669
+    },
+    "work_hours_low_0618.xlsx": {
+      "mtime": "2026-06-18T00:48:03.104Z",
+      "size": 6515
+    },
+    "work_hours_low_0619.xlsx": {
+      "mtime": "2026-06-20T01:26:55.259Z",
+      "size": 6204
+    },
+    "work_hours_low_0620.xlsx": {
+      "mtime": "2026-06-20T01:41:34.164Z",
+      "size": 6465
     }
   }
 }

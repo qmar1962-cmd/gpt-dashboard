@@ -9,9 +9,6 @@ import { getCenterClass, getScoringConfig, getSpanTargets } from '../lib/dashboa
 const SCORE =   { JOB: 25, SALARY: 15, ATT15: 25, ATT7: 25, WH_HIGH: 5,  WH_LOW: 5  } as const;
 const PENALTY = { JOB_PER: 5, SALARY_PCT: 3, ATT15_PCT: 5, ATT15_O30: 2, ATT7_PER: 2, WH_HIGH_PCT: 1 } as const;
 
-// ── 未出勤扣分原因（只有这些原因才计入扣分，其他原因豁免）──
-const PENALTY_REASONS = ['', '离职未清'];
-
 // ── 中心名称别名 ──
 
 const CENTER_ALIASES: Record<string, string[]> = {
@@ -224,39 +221,7 @@ export function useEnrichedData(
         const province = row.省区 || row.省区名称 || centerToProvince.get(center) || '';
         const dateStr = parseDate(row['数据日期'] || row.date || row.日期);
 
-        // 检查是否需要扣分（只有原因为空或"离职未清"才扣分）
-        if (absenceReasons) {
-          const name = row.姓名 || '';
-          const centerReasons = absenceReasons[center] || {};
-
-          // 如果整个中心没有数据，豁免（不扣分）
-          if (!absenceReasons[center] || Object.keys(centerReasons).length === 0) {
-            return; // 中心没有数据，豁免
-          }
-
-          const dateReasons = centerReasons[dateStr] || {};
-          const record = dateReasons[name];
-          let reason = record?.reason || '';
-
-          // 如果没有该日期的记录，尝试从最近的有数据的日期继承（不限天数）
-          if (!record) {
-            let mostRecentSavedAt = '';
-            for (const [histDate, histPeople] of Object.entries(centerReasons)) {
-              const rec = (histPeople as any)[name];
-              if (rec) {
-                const saveDate = rec.savedAt || rec.date;
-                if (saveDate > mostRecentSavedAt) {
-                  mostRecentSavedAt = saveDate;
-                  reason = rec.reason;
-                }
-              }
-            }
-          }
-
-          if (!PENALTY_REASONS.includes(reason)) {
-            return; // 不在扣分原因列表中，豁免
-          }
-        }
+        // 连续未出勤≥15天直接扣分，不考虑原因
 
         const key = `${center}_${province}_${dateStr}`;
         att7ByCenterDate.set(key, (att7ByCenterDate.get(key) || 0) + 1);
