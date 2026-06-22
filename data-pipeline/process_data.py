@@ -154,9 +154,22 @@ def main():
 
     # ── Step 1: 扫描 Downloads 中的 Excel 文件 ──
     all_files = glob.glob(os.path.join(DOWNLOAD_DIR, "*.xlsx"))
+    all_files += glob.glob(os.path.join(DOWNLOAD_DIR, "*.xls"))
     # 只保留文件名含时间戳的（格式 YYYYMMDDxxxxxx），排除临时文件
     data_files = [f for f in all_files if re.search(r'\d{8}\d{6}', os.path.basename(f))]
     data_files = [f for f in data_files if not os.path.basename(f).startswith("~$")]
+
+    # 补充扫描：外包/编制明细/花名册 文件名可能不含时间戳，单独识别
+    DIRECT_KEYWORDS = ["外包", "编制明细", "花名册"]
+    for f in all_files:
+        basename = os.path.basename(f)
+        if basename.startswith("~$"):
+            continue
+        if f in data_files:
+            continue
+        if any(k in basename for k in DIRECT_KEYWORDS):
+            data_files.append(f)
+            print(f"  [SCAN] {basename} (无时间戳，按关键词识别)")
 
     if not data_files:
         print("No data files found in Downloads/")
@@ -184,17 +197,18 @@ def main():
 
     for fp in data_files:
         basename = os.path.basename(fp)
-        # 使用手动指定日期（如果有），否则从文件名提取
-        date_str = manual_date or extract_date(basename)
-        if not date_str:
-            continue
         prefix = match_rule(basename)              # 匹配类型
         if not prefix:
             continue
 
-        # 花名册/外包/编制明细：直接复制，不过滤省区
+        # 花名册/外包/编制明细：直接复制，不过滤省区，不需要时间戳
         if prefix in ("roster", "outsourcing", "staffing_detail"):
-            direct_copy.setdefault(prefix, []).append((fp, date_str))
+            direct_copy.setdefault(prefix, []).append((fp, manual_date or ''))
+            continue
+
+        # 使用手动指定日期（如果有），否则从文件名提取
+        date_str = manual_date or extract_date(basename)
+        if not date_str:
             continue
 
         if prefix == "job_performance":
@@ -223,11 +237,8 @@ def main():
         for fp, ds in files:
             try:
                 basename = os.path.basename(fp)
-                # 花名册保留原文件名（带日期），外包/编制明细用固定名
-                if prefix == "roster":
-                    out_name = basename
-                else:
-                    out_name = f"{prefix}.xlsx"
+                # 保留原文件名（带日期），如 roster_0620.xlsx / outsourcing_0620.xlsx
+                out_name = basename
                 out_path = os.path.join(OUTPUT_DIR, out_name)
                 shutil.copy2(fp, out_path)
                 print(f"  [COPY] {basename} -> {out_name}")

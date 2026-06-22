@@ -97,7 +97,12 @@ function buildJsonData() {
   let successCount = 0;
   let failCount = 0;
 
+  // 外包/编制明细有专门处理逻辑，跳过通用转换
+  const SKIP_PREFIXES = ['outsourcing', 'staffing_detail'];
+
   for (const file of files) {
+    if (SKIP_PREFIXES.some(p => file.startsWith(p))) continue;
+
     try {
       const filepath = join(DATABASE_DIR, file);
 
@@ -124,7 +129,7 @@ function buildJsonData() {
       }
 
       // 写入 JSON 文件
-      const jsonFilename = file.replace('.xlsx', '.json');
+      const jsonFilename = file.replace(/\.xlsx?$/, '.json');
       const jsonFilepath = join(JSON_DIR, jsonFilename);
       writeFileSync(jsonFilepath, JSON.stringify(data, null, 2));
 
