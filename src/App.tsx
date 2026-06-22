@@ -89,7 +89,7 @@ export default function App() {
 
   // 加载外包人数数据
   useEffect(() => {
-    fetch('./database/outsourcing.json?t=' + Date.now(), { cache: 'no-cache' })
+    fetch('./database/json/outsourcing.json?t=' + Date.now(), { cache: 'no-cache' })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setOutsourcingData(data); })
       .catch(() => {});
